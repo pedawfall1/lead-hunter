@@ -6,7 +6,6 @@ import { useState, useTransition } from "react";
 import Modal from "@/components/ui/Modal";
 import {
   IconChevron,
-  IconNoSite,
   IconPencil,
   IconPlus,
   IconTrash,
@@ -17,11 +16,12 @@ import {
   excluirProjeto,
 } from "@/app/actions/projetos";
 import { dataCurta } from "@/lib/format";
+import { SERVICOS, acharServico, criteriosSugeridos } from "@/lib/servicos";
 import type { Projeto } from "@/lib/types";
 
 export type ProjetoResumo = Projeto & {
   total: number;
-  semSite: number;
+  qualificados: number;
   fechou: number;
 };
 
@@ -36,15 +36,18 @@ export default function ListaProjetos({
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Projeto | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [servico, setServico] = useState<string>("site");
 
   function abrirNovo() {
     setEditando(null);
+    setServico("site");
     setErro(null);
     setAberto(true);
   }
 
   function abrirEdicao(p: Projeto) {
     setEditando(p);
+    setServico(p.servico ?? "site");
     setErro(null);
     setAberto(true);
   }
@@ -137,18 +140,18 @@ export default function ListaProjetos({
                 </div>
 
                 <p className="mt-1 truncate text-xs text-slate-400">
-                  {[p.nicho, p.regiao].filter(Boolean).join(" · ") ||
-                    "sem nicho / região"}
+                  {[acharServico(p.servico)?.label, p.nicho, p.regiao]
+                    .filter(Boolean)
+                    .join(" · ") || "sem serviço definido"}
                 </p>
 
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                   <span className="chip border-line bg-ink-700 text-slate-300">
                     {p.total} {p.total === 1 ? "lead" : "leads"}
                   </span>
-                  {p.semSite > 0 && (
+                  {p.qualificados > 0 && (
                     <span className="chip border-brand/30 bg-brand/10 text-brand-soft">
-                      <IconNoSite className="h-3.5 w-3.5" />
-                      {p.semSite} sem site
+                      {p.qualificados} qualificados
                     </span>
                   )}
                   {p.fechou > 0 && (
@@ -235,8 +238,84 @@ export default function ListaProjetos({
             </div>
           </div>
 
-          <p className="text-xs text-slate-500">
-            A região vira o valor padrão da variável{" "}
+          <div>
+            <label className="label" htmlFor="servico">
+              O que você vende neste projeto
+            </label>
+            <select
+              id="servico"
+              name="servico"
+              className="input"
+              value={servico}
+              onChange={(e) => setServico(e.target.value)}
+            >
+              {SERVICOS.map((s) => (
+                <option key={s.chave} value={s.chave}>
+                  {s.label} — {s.resumo}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <span className="label">
+              Sinais que qualificam um lead
+              <span className="ml-1 font-normal normal-case tracking-normal text-slate-500">
+                · marque os que interessam
+              </span>
+            </span>
+            <div className="grid max-h-52 gap-1.5 overflow-y-auto rounded-lg border border-line bg-ink-900/60 p-2 sm:grid-cols-2">
+              {criteriosSugeridos(servico).map((c) => {
+                const jaTinha = editando?.criterios?.some(
+                  (x) => x.chave === c.chave
+                );
+                const padrao = editando ? !!jaTinha : true;
+                return (
+                  <label
+                    key={c.chave}
+                    className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-slate-300 hover:bg-ink-700"
+                  >
+                    <input
+                      type="checkbox"
+                      name={`criterio:${c.chave}`}
+                      defaultChecked={padrao}
+                      className="h-4 w-4 shrink-0 accent-brand"
+                    />
+                    <span className="leading-snug">{c.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label className="label" htmlFor="criterios_extras">
+              Outros sinais (um por linha)
+            </label>
+            <textarea
+              id="criterios_extras"
+              name="criterios_extras"
+              rows={2}
+              className="input resize-y"
+              placeholder={"Cardápio sem foto\nNão aceita Pix"}
+              defaultValue={(editando?.criterios ?? [])
+                .filter(
+                  (c) =>
+                    !criteriosSugeridos(editando?.servico).some(
+                      (x) => x.chave === c.chave
+                    )
+                )
+                .map((c) => c.label)
+                .join("\n")}
+            />
+          </div>
+
+          <p className="text-xs leading-relaxed text-slate-500">
+            Os sinais viram filtro no quadro e alimentam a variável{" "}
+            <code className="rounded bg-ink-900 px-1 py-0.5 text-brand-soft">
+              {"{motivo}"}
+            </code>{" "}
+            da mensagem. A região vira o padrão de{" "}
             <code className="rounded bg-ink-900 px-1 py-0.5 text-brand-soft">
               {"{bairro}"}
             </code>{" "}

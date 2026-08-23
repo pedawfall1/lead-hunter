@@ -2,22 +2,25 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  ajustarLeadDb,
   atualizarLeadDb,
-  atualizarStatusDb,
+  criarInteracaoDb,
   criarLeadDb,
   excluirLeadDb,
   inserirLeadsDb,
-  marcarContatadoDb,
+  listarInteracoes,
   type DadosLead,
 } from "@/lib/db";
+import { cadenciaSugerida, somarDias } from "@/lib/agenda";
 import { mensagemDeErro } from "@/lib/erros";
 import { ehStatus } from "@/lib/status";
-import type { ActionResult, Lead, LeadStatus } from "@/lib/types";
+import type { ActionResult, Lead, LeadStatus, Sinais } from "@/lib/types";
 import type { LinhaCsv } from "@/lib/csv";
 
 function revalidar(projetoId: string) {
   revalidatePath(`/projetos/${projetoId}`);
   revalidatePath("/projetos");
+  revalidatePath("/hoje");
   revalidatePath("/");
 }
 
@@ -26,19 +29,29 @@ function limpar(v: FormDataEntryValue | null): string | null {
   return s || null;
 }
 
+/** Checkboxes `sinal:<chave>` viram o objeto de sinais. */
+function lerSinais(formData: FormData): Sinais {
+  const sinais: Sinais = {};
+  for (const [chave, valor] of formData.entries()) {
+    if (!chave.startsWith("sinal:")) continue;
+    if (valor === "on" || valor === "true") sinais[chave.slice(6)] = true;
+  }
+  return sinais;
+}
+
 function ler(formData: FormData): DadosLead {
   const statusBruto = String(formData.get("status") ?? "novo");
   const instagram = limpar(formData.get("instagram"));
-  const temSite = formData.get("tem_site");
 
   return {
     nome: String(formData.get("nome") ?? "").trim(),
     telefone: limpar(formData.get("telefone")),
     endereco: limpar(formData.get("endereco")),
-    tem_site: temSite === "on" || temSite === "true",
     instagram: instagram ? instagram.replace(/^@/, "") : null,
+    sinais: lerSinais(formData),
     status: ehStatus(statusBruto) ? statusBruto : "novo",
     nota: limpar(formData.get("nota")),
+    proximo_contato: limpar(formData.get("proximo_contato")),
   };
 }
 
@@ -79,30 +92,60 @@ export async function atualizarStatus(
   id: string,
   projetoId: string,
   status: LeadStatus
-): Promise<ActionResult> {
+): Promise<ActionResult<Lead>> {
   if (!ehStatus(status)) return { ok: false, erro: "Status inválido." };
 
   try {
-    await atualizarStatusDb(id, status);
+    const lead = await ajustarLeadDb(id, { status });
     revalidar(projetoId);
-    return { ok: true };
+    return { ok: true, data: lead };
+  } catch (e) {
+    return { ok: false, erro: mensagemDeErro(e) };
+  }
+}
+
+/** Reagenda o retorno. `null` limpa a data. */
+export async function adiarLead(
+  id: string,
+  projetoId: string,
+  data: string | null
+): Promise<ActionResult<Lead>> {
+  try {
+    const lead = await ajustarLeadDb(id, { proximo_contato: data });
+    revalidar(projetoId);
+    return { ok: true, data: lead };
   } catch (e) {
     return { ok: false, erro: mensagemDeErro(e) };
   }
 }
 
 /**
- * Marca como "contatado" apenas se o lead ainda estiver em "novo",
- * para nao regredir alguem que ja respondeu ou fechou.
+ * Chamado quando o WhatsApp é aberto: registra a interação, promove quem
+ * ainda estava em "novo" e já agenda o próximo toque conforme a cadência.
  */
-export async function marcarContatado(
+export async function registrarDisparo(
   id: string,
-  projetoId: string
-): Promise<ActionResult> {
+  projetoId: string,
+  dados: { texto: string; templateId: string | null; statusAtual: LeadStatus }
+): Promise<ActionResult<Lead>> {
   try {
-    await marcarContatadoDb(id);
+    await criarInteracaoDb(id, {
+      tipo: "whatsapp",
+      texto: dados.texto,
+      template_id: dados.templateId,
+    });
+
+    const anteriores = await listarInteracoes(id);
+    const tentativas = anteriores.filter((i) => i.tipo === "whatsapp").length;
+
+    const campos: { status?: LeadStatus; proximo_contato: string } = {
+      proximo_contato: somarDias(cadenciaSugerida(tentativas)),
+    };
+    if (dados.statusAtual === "novo") campos.status = "contatado";
+
+    const lead = await ajustarLeadDb(id, campos);
     revalidar(projetoId);
-    return { ok: true };
+    return { ok: true, data: lead };
   } catch (e) {
     return { ok: false, erro: mensagemDeErro(e) };
   }
@@ -135,8 +178,8 @@ export async function importarLeads(
       nome: l.nome.trim(),
       telefone: l.telefone?.trim() || null,
       endereco: l.endereco?.trim() || null,
-      tem_site: !!l.tem_site,
       instagram: l.instagram?.trim().replace(/^@/, "") || null,
+      sinais: l.sinais ?? {},
     }));
 
   try {

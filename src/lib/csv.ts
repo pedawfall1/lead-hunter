@@ -1,9 +1,11 @@
+import type { Criterio, Sinais } from "./types";
+
 export type LinhaCsv = {
   nome: string;
   telefone: string | null;
   endereco: string | null;
-  tem_site: boolean;
   instagram: string | null;
+  sinais: Sinais;
 };
 
 export type ResultadoCsv = {
@@ -13,13 +15,17 @@ export type ResultadoCsv = {
   colunasIgnoradas: string[];
 };
 
-const ALIASES: Record<keyof LinhaCsv, string[]> = {
+type CampoBase = "nome" | "telefone" | "endereco" | "instagram";
+
+const ALIASES: Record<CampoBase, string[]> = {
   nome: ["nome", "empresa", "nome da empresa", "razao social", "name", "title"],
   telefone: ["telefone", "fone", "celular", "whatsapp", "zap", "phone", "tel"],
   endereco: ["endereco", "address", "local", "localizacao", "rua"],
-  tem_site: ["tem_site", "tem site", "site", "website", "possui site", "url"],
   instagram: ["instagram", "insta", "ig", "arroba", "perfil"],
 };
+
+/** Coluna herdada da v1: tem_site=nao vira o sinal sem_site. */
+const ALIASES_TEM_SITE = ["tem_site", "tem site", "site", "website", "possui site", "url"];
 
 function normalizar(s: string): string {
   return s
@@ -105,23 +111,23 @@ function parseBooleano(valor: string): boolean {
   return false;
 }
 
-export function parseCsv(textoBruto: string): ResultadoCsv {
+/**
+ * @param criterios critérios do projeto — colunas com o mesmo nome (chave ou
+ *   rótulo) viram sinais do lead. Ex.: uma coluna "parado_30d" com sim/não.
+ */
+export function parseCsv(
+  textoBruto: string,
+  criterios: Criterio[] = []
+): ResultadoCsv {
   const erros: string[] = [];
   const texto = textoBruto.replace(/^\ufeff/, "").trim();
 
   if (!texto) {
-    return {
-      linhas: [],
-      erros: ["Arquivo vazio."],
-      colunasReconhecidas: [],
-      colunasIgnoradas: [],
-    };
+    return { linhas: [], erros: ["Arquivo vazio."], colunasReconhecidas: [], colunasIgnoradas: [] };
   }
 
   const delim = detectarDelimitador(texto.split("\n")[0] ?? "");
-  const bruto = tokenizar(texto, delim).filter((l) =>
-    l.some((c) => c.trim() !== "")
-  );
+  const bruto = tokenizar(texto, delim).filter((l) => l.some((c) => c.trim() !== ""));
 
   if (bruto.length < 2) {
     return {
@@ -133,22 +139,30 @@ export function parseCsv(textoBruto: string): ResultadoCsv {
   }
 
   const cabecalho = bruto[0].map(normalizar);
-
-  // indice de cada campo no cabecalho
-  const indices: Partial<Record<keyof LinhaCsv, number>> = {};
-  const reconhecidas: string[] = [];
   const usados = new Set<number>();
+  const reconhecidas: string[] = [];
 
-  (Object.keys(ALIASES) as (keyof LinhaCsv)[]).forEach((campo) => {
-    const idx = cabecalho.findIndex(
-      (h, i) => !usados.has(i) && ALIASES[campo].includes(h)
-    );
-    if (idx >= 0) {
-      indices[campo] = idx;
-      usados.add(idx);
-      reconhecidas.push(bruto[0][idx].trim());
-    }
+  const reservar = (nomes: string[]): number | undefined => {
+    const idx = cabecalho.findIndex((h, i) => !usados.has(i) && nomes.includes(h));
+    if (idx < 0) return undefined;
+    usados.add(idx);
+    reconhecidas.push(bruto[0][idx].trim());
+    return idx;
+  };
+
+  const indices: Partial<Record<CampoBase, number>> = {};
+  (Object.keys(ALIASES) as CampoBase[]).forEach((campo) => {
+    indices[campo] = reservar(ALIASES[campo]);
   });
+
+  const idxTemSite = reservar(ALIASES_TEM_SITE);
+
+  // colunas de sinal: casam pela chave ou pelo rótulo do critério
+  const colunasSinal: { idx: number; chave: string }[] = [];
+  for (const c of criterios) {
+    const idx = reservar([normalizar(c.chave), normalizar(c.label)]);
+    if (idx !== undefined) colunasSinal.push({ idx, chave: c.chave });
+  }
 
   const ignoradas = bruto[0]
     .map((h, i) => (usados.has(i) ? null : h.trim()))
@@ -158,44 +172,40 @@ export function parseCsv(textoBruto: string): ResultadoCsv {
     erros.push(
       'Não encontrei a coluna "nome" no cabeçalho. Colunas esperadas: nome, telefone, endereco, tem_site, instagram.'
     );
-    return {
-      linhas: [],
-      erros,
-      colunasReconhecidas: reconhecidas,
-      colunasIgnoradas: ignoradas,
-    };
+    return { linhas: [], erros, colunasReconhecidas: reconhecidas, colunasIgnoradas: ignoradas };
   }
 
-  const pegar = (linha: string[], campo: keyof LinhaCsv): string => {
-    const i = indices[campo];
-    if (i === undefined) return "";
-    return (linha[i] ?? "").trim();
-  };
+  const pegar = (linha: string[], i: number | undefined): string =>
+    i === undefined ? "" : (linha[i] ?? "").trim();
 
   const linhas: LinhaCsv[] = [];
 
   bruto.slice(1).forEach((l, i) => {
-    const nome = pegar(l, "nome");
+    const nome = pegar(l, indices.nome);
     if (!nome) {
       erros.push(`Linha ${i + 2}: sem nome, pulei.`);
       return;
     }
-    const instagram = pegar(l, "instagram");
+
+    const sinais: Sinais = {};
+    if (idxTemSite !== undefined && !parseBooleano(pegar(l, idxTemSite))) {
+      sinais.sem_site = true;
+    }
+    for (const { idx, chave } of colunasSinal) {
+      if (parseBooleano(pegar(l, idx))) sinais[chave] = true;
+    }
+
+    const instagram = pegar(l, indices.instagram);
     linhas.push({
       nome,
-      telefone: pegar(l, "telefone") || null,
-      endereco: pegar(l, "endereco") || null,
-      tem_site: parseBooleano(pegar(l, "tem_site")),
+      telefone: pegar(l, indices.telefone) || null,
+      endereco: pegar(l, indices.endereco) || null,
       instagram: instagram ? instagram.replace(/^@/, "") : null,
+      sinais,
     });
   });
 
-  return {
-    linhas,
-    erros,
-    colunasReconhecidas: reconhecidas,
-    colunasIgnoradas: ignoradas,
-  };
+  return { linhas, erros, colunasReconhecidas: reconhecidas, colunasIgnoradas: ignoradas };
 }
 
 export const CSV_EXEMPLO = `nome,telefone,endereco,tem_site,instagram

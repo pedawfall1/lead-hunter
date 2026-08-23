@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listarLeads, listarProjetos } from "@/lib/db";
+import { contarSinais } from "@/lib/servicos";
 import { CONTATADOS, RESPONDERAM } from "@/lib/status";
 import { porcento } from "@/lib/format";
 import type { LeadStatus } from "@/lib/types";
@@ -35,10 +36,12 @@ export default async function DashboardPage({
     fechou: 0,
     descartado: 0,
   };
-  let semSite = 0;
+  const criteriosPorProjeto = new Map(projetos.map((p) => [p.id, p.criterios]));
+  let qualificados = 0;
   for (const l of leads) {
     if (contagem[l.status] !== undefined) contagem[l.status] += 1;
-    if (!l.tem_site) semSite += 1;
+    const criterios = criteriosPorProjeto.get(l.projeto_id) ?? [];
+    if (contarSinais(l.sinais, criterios) > 0) qualificados += 1;
   }
 
   const total = leads.length;
@@ -91,9 +94,11 @@ export default async function DashboardPage({
               detalhe={`${contagem.novo} ainda sem contato`}
             />
             <CardMetrica
-              titulo="Leads sem site"
-              valor={String(semSite)}
-              detalhe={total ? `${porcento(semSite, total)}% da base` : "—"}
+              titulo="Leads qualificados"
+              valor={String(qualificados)}
+              detalhe={
+                total ? `${porcento(qualificados, total)}% da base` : "—"
+              }
               destaque="#fb923c"
             />
             <CardMetrica

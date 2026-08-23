@@ -34,8 +34,12 @@ Places API, ainda desabilitado de propósito.
 
 1. Crie um projeto em [supabase.com](https://supabase.com).
 2. Abra **SQL Editor → New query**, cole o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) e rode.
-   Isso cria `projetos`, `leads`, `templates_mensagem`, o enum de status, o trigger de
-   `atualizado_em`, as policies de RLS e dois templates de exemplo.
+   Isso cria `projetos`, `leads`, `interacoes`, `templates_mensagem`, os enums, o
+   trigger de `atualizado_em`, as policies de RLS e dois templates de exemplo.
+
+   **Já tinha a v1 no ar?** Não use o `schema.sql`: rode
+   [`supabase/migrations/001_servico_sinais_interacoes.sql`](supabase/migrations/001_servico_sinais_interacoes.sql),
+   que migra `tem_site` para o sinal `sem_site` sem perder dado.
 
 ### 2. Criar o usuário admin
 
@@ -73,13 +77,35 @@ As chaves estão em **Project Settings → API**:
 | Rota | O que faz |
 | --- | --- |
 | `/login` | Email + senha (Supabase Auth). O middleware protege todo o resto. |
-| `/` | Dashboard: total de leads, leads sem site, taxa de resposta, taxa de fechamento, gráfico por status e filtro por projeto. |
+| `/hoje` | Agenda de retornos: atrasados, hoje e próximos 7 dias, com WhatsApp direto e botões de adiar. |
+| `/` | Painel: total de leads, qualificados, taxa de resposta, taxa de fechamento, gráfico por status e filtro por projeto. |
 | `/projetos` | Lista de projetos com contagem de leads, criar / editar / excluir. |
-| `/projetos/[id]` | Kanban de leads do projeto, com drag and drop, busca, filtro "sem site", importação de CSV e cadastro manual. |
+| `/projetos/[id]` | Kanban de leads do projeto, com drag and drop, busca, filtro por sinal de qualificação, importação de CSV e cadastro manual. |
 | `/templates` | CRUD de templates com prévia da mensagem preenchida. |
+
+## Serviço e sinais de qualificação
+
+Cada projeto guarda **o que você vende** (`servico`) e a lista de **sinais que
+qualificam** um lead para aquilo (`criterios`). O lead marca quais sinais dispara
+(`sinais`). Isso é o que faz o app servir para site, tráfego, social mídia e
+aplicações — e não só para "quem não tem site".
+
+Os sinais aparecem como etiqueta no card, viram filtro no quadro e alimentam a
+variável `{motivo}` da mensagem. O catálogo de serviços e sinais está em
+[`src/lib/servicos.ts`](src/lib/servicos.ts); os critérios são **copiados** para
+dentro do projeto na criação, então dá pra editar por projeto sem mexer no código.
+
+## Histórico e agenda
+
+Cada lead tem uma linha do tempo de interações (WhatsApp, ligação, visita,
+e-mail, nota). O botão de WhatsApp registra sozinho, promove quem estava em
+"Novo" para "Contatado" e agenda o próximo retorno pela cadência
+(3 → 7 → 14 → 30 dias, conforme o número de toques). Os retornos aparecem em
+`/hoje` com um contador no menu.
 
 ### Métricas do dashboard
 
+- **Leads qualificados** = leads que disparam ao menos um critério do projeto
 - **Taxa de resposta** = (respondeu + negociando + fechou) ÷ (contatado + respondeu + negociando + fechou)
 - **Taxa de fechamento** = fechou ÷ total de leads
 
@@ -111,6 +137,10 @@ abre o WhatsApp com o texto pronto e **você** dá o último clique de enviar.
 - `{nome}` usa o nome do lead sem sufixos de razão social (Ltda, ME, EPP...).
 - `{bairro}` sai do endereço do lead (segundo trecho, ex.: `Rua Brasil, 120 - Centro` → `Centro`);
   se o endereço não tiver bairro, cai na **região do projeto**.
+- `{servico}` é o serviço do projeto ("social mídia", "tráfego pago"...).
+- `{motivo}` é o primeiro sinal ativo virado frase: `sem_site` → "não encontrei o
+  site de vocês", `parado_30d` → "o Instagram de vocês está parado faz um tempo".
+  É o que faz o mesmo template servir para qualquer serviço.
 - Ao abrir o WhatsApp, um lead que estava em **Novo** vira **Contatado** sozinho.
   Quem já respondeu/negociou/fechou não regride.
 
@@ -138,11 +168,15 @@ src/
     projetos/  templates/  dashboard/  ui/
   lib/
     supabase/                 # clients de server e middleware
-    demo/dados.ts             # base ficticia do modo demo
+    demo/dados.ts             # base fictícia do modo demo
     db.ts                     # camada de dados: demo ou Supabase
+    servicos.ts               # catálogo de serviços e sinais de qualificação
+    agenda.ts                 # cadência e baldes de retorno
     config.ts  csv.ts  format.ts  status.ts  types.ts
 middleware.ts                 # renova a sessão e bloqueia rotas privadas
-supabase/schema.sql
+supabase/
+  schema.sql                  # instalação nova
+  migrations/001_*.sql        # quem já tinha a v1 roda só esta
 ```
 
 ## Multi-usuário no futuro
@@ -153,5 +187,7 @@ rode o bloco comentado no fim de `supabase/schema.sql` — a aplicação não pr
 
 ## Próximos passos (quando estiver no PC)
 
-1. Plugar a Google Places API no botão "Buscar no Google Maps".
-2. Avaliar envio semi-automático via Evolution API, com limite diário por número.
+1. Plugar a Google Places API no botão "Buscar no Google Maps" — ela devolve
+   `website`, `rating` e `user_ratings_total`, que já preenchem os sinais sozinhos.
+2. Fila de disparo do dia, valor por lead e desempenho por template.
+3. Avaliar envio semi-automático via Evolution API, com limite diário por número.

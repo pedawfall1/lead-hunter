@@ -4,14 +4,17 @@ import { useMemo, useState, useTransition } from "react";
 import Modal from "@/components/ui/Modal";
 import { CSV_EXEMPLO, parseCsv } from "@/lib/csv";
 import { importarLeads } from "@/app/actions/leads";
-import { IconCheck, IconNoSite, IconUpload } from "@/components/ui/icons";
+import { IconCheck, IconUpload } from "@/components/ui/icons";
+import type { Criterio } from "@/lib/types";
 
 export default function ModalImportarCsv({
   projetoId,
+  criterios,
   aoFechar,
   aoImportar,
 }: {
   projetoId: string;
+  criterios: Criterio[];
   aoFechar: () => void;
   aoImportar: (quantidade: number) => void;
 }) {
@@ -20,7 +23,10 @@ export default function ModalImportarCsv({
   const [erro, setErro] = useState<string | null>(null);
   const [pendente, iniciar] = useTransition();
 
-  const resultado = useMemo(() => (texto.trim() ? parseCsv(texto) : null), [texto]);
+  const resultado = useMemo(
+    () => (texto.trim() ? parseCsv(texto, criterios) : null),
+    [texto, criterios]
+  );
   const linhas = resultado?.linhas ?? [];
 
   async function lerArquivo(e: React.ChangeEvent<HTMLInputElement>) {
@@ -135,7 +141,7 @@ export default function ModalImportarCsv({
                   <IconCheck className="h-4 w-4 text-st-fechou" />
                   {linhas.length} {linhas.length === 1 ? "lead" : "leads"} prontos
                   <span className="text-slate-500">
-                    ({linhas.filter((l) => !l.tem_site).length} sem site)
+                    ({linhas.filter((l) => Object.keys(l.sinais).length).length} já qualificados)
                   </span>
                 </p>
 
@@ -146,7 +152,7 @@ export default function ModalImportarCsv({
                         <th className="px-3 py-2 font-medium">Nome</th>
                         <th className="px-3 py-2 font-medium">Telefone</th>
                         <th className="px-3 py-2 font-medium">Endereço</th>
-                        <th className="px-3 py-2 font-medium">Site</th>
+                        <th className="px-3 py-2 font-medium">Sinais</th>
                         <th className="px-3 py-2 font-medium">Instagram</th>
                       </tr>
                     </thead>
@@ -163,12 +169,12 @@ export default function ModalImportarCsv({
                             {l.endereco ?? "—"}
                           </td>
                           <td className="px-3 py-2">
-                            {l.tem_site ? (
-                              "sim"
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-brand-soft">
-                                <IconNoSite className="h-3.5 w-3.5" /> não
+                            {Object.keys(l.sinais).length ? (
+                              <span className="text-brand-soft">
+                                {Object.keys(l.sinais).length}
                               </span>
+                            ) : (
+                              <span className="text-slate-600">—</span>
                             )}
                           </td>
                           <td className="max-w-[8rem] truncate px-3 py-2">
@@ -205,8 +211,10 @@ export default function ModalImportarCsv({
           </pre>
           <p className="mt-1 text-[11px] text-slate-500">
             Aceita separador vírgula ou ponto e vírgula. Em tem_site valem
-            sim/não, true/false, 1/0 — ou a própria URL do site. Todos os leads
-            entram como &ldquo;Novo&rdquo;.
+            sim/não, true/false, 1/0 — ou a própria URL do site; quando for
+            &ldquo;não&rdquo;, o lead já entra com o sinal <em>Não tem site</em>.
+            Colunas com o nome de um critério do projeto viram sinais também.
+            Todos os leads entram como &ldquo;Novo&rdquo;.
           </p>
         </details>
       </div>

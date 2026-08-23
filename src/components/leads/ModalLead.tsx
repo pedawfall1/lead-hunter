@@ -10,6 +10,8 @@ import {
   IconWhatsapp,
 } from "@/components/ui/icons";
 import { STATUS_META, STATUS_ORDER } from "@/lib/status";
+import { acharServico, motivoDoLead, rotulosDosSinais } from "@/lib/servicos";
+import { rotuloPrazo, somarDias } from "@/lib/agenda";
 import {
   dataCurta,
   extrairBairro,
@@ -21,32 +23,48 @@ import {
   telefoneWhatsapp,
 } from "@/lib/format";
 import {
+  adiarLead,
   atualizarLead,
   excluirLead,
-  marcarContatado,
+  registrarDisparo,
 } from "@/app/actions/leads";
-import type { Lead, Projeto, Template } from "@/lib/types";
+import type { Interacao, Lead, Projeto, Template } from "@/lib/types";
+import { EditorSinais, TagsSinais } from "./Sinais";
+import Timeline from "./Timeline";
+
+type Aba = "detalhes" | "historico" | "whatsapp";
 
 type Props = {
   lead: Lead;
   projeto: Projeto;
   templates: Template[];
-  abaInicial: "detalhes" | "whatsapp";
+  interacoes: Interacao[];
+  abaInicial: Aba;
   aoFechar: () => void;
   aoAtualizar: (lead: Lead) => void;
   aoExcluir: (id: string) => void;
+  aoMudarInteracoes: (leadId: string, lista: Interacao[]) => void;
 };
+
+const ATALHOS: [string, number][] = [
+  ["amanhã", 1],
+  ["+3 dias", 3],
+  ["+1 semana", 7],
+  ["+15 dias", 15],
+];
 
 export default function ModalLead({
   lead,
   projeto,
   templates,
+  interacoes,
   abaInicial,
   aoFechar,
   aoAtualizar,
   aoExcluir,
+  aoMudarInteracoes,
 }: Props) {
-  const [aba, setAba] = useState<"detalhes" | "whatsapp">(abaInicial);
+  const [aba, setAba] = useState<Aba>(abaInicial);
   const [pendente, iniciar] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
   const [salvo, setSalvo] = useState(false);
@@ -59,10 +77,16 @@ export default function ModalLead({
     () => extrairBairro(lead.endereco, projeto.regiao),
     [lead.endereco, projeto.regiao]
   );
+  const servicoLabel = acharServico(projeto.servico)?.label ?? "";
+  const motivo = useMemo(
+    () => motivoDoLead(lead.sinais, projeto.criterios),
+    [lead.sinais, projeto.criterios]
+  );
+  const sinaisAtivos = rotulosDosSinais(lead.sinais, projeto.criterios);
+  const tentativas = interacoes.filter((i) => i.tipo === "whatsapp").length;
 
   const templateAtual = templates.find((t) => t.id === templateId) ?? null;
 
-  // Recalcula a previa sempre que o template ou o lead mudarem.
   useEffect(() => {
     if (!templateAtual) {
       setMensagem("");
@@ -72,9 +96,11 @@ export default function ModalLead({
       preencherTemplate(templateAtual.texto, {
         nome: nomeCurto(lead.nome),
         bairro,
+        servico: servicoLabel.toLowerCase(),
+        motivo,
       })
     );
-  }, [templateAtual, lead.nome, bairro]);
+  }, [templateAtual, lead.nome, bairro, servicoLabel, motivo]);
 
   const numero = telefoneWhatsapp(lead.telefone);
   const link = numero ? linkWhatsapp(lead.telefone, mensagem) : "";
@@ -108,13 +134,46 @@ export default function ModalLead({
     });
   }
 
-  function aoAbrirWhatsapp() {
-    if (lead.status !== "novo") return;
-    // otimista: o card ja vai para "Contatado"
-    aoAtualizar({ ...lead, status: "contatado" });
+  function reagendar(dias: number | null) {
     iniciar(async () => {
-      const r = await marcarContatado(lead.id, lead.projeto_id);
-      if (!r.ok) setErro(r.erro);
+      const r = await adiarLead(
+        lead.id,
+        lead.projeto_id,
+        dias === null ? null : somarDias(dias)
+      );
+      if (!r.ok) {
+        setErro(r.erro);
+        return;
+      }
+      if (r.data) aoAtualizar(r.data);
+    });
+  }
+
+  function aoAbrirWhatsapp() {
+    const texto = mensagem;
+    const statusAtual = lead.status;
+    iniciar(async () => {
+      const r = await registrarDisparo(lead.id, lead.projeto_id, {
+        texto,
+        templateId: templateId || null,
+        statusAtual,
+      });
+      if (!r.ok) {
+        setErro(r.erro);
+        return;
+      }
+      if (r.data) aoAtualizar(r.data);
+      aoMudarInteracoes(lead.id, [
+        {
+          id: `tmp-${Date.now()}`,
+          lead_id: lead.id,
+          tipo: "whatsapp",
+          texto,
+          template_id: templateId || null,
+          criado_em: new Date().toISOString(),
+        },
+        ...interacoes,
+      ]);
     });
   }
 
@@ -137,14 +196,19 @@ export default function ModalLead({
       titulo={lead.nome}
       subtitulo={`${projeto.nome} · atualizado em ${dataCurta(lead.atualizado_em)}`}
     >
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <span className={`chip ${meta.chip}`}>
           <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
           {meta.label}
         </span>
-        {!lead.tem_site && (
-          <span className="chip border-brand/30 bg-brand/10 text-brand-soft">
-            sem site
+        {lead.proximo_contato && (
+          <span className="chip border-line bg-ink-700 text-slate-300">
+            retorno {rotuloPrazo(lead.proximo_contato)}
+          </span>
+        )}
+        {tentativas > 0 && (
+          <span className="chip border-line bg-ink-700 text-slate-400">
+            {tentativas} {tentativas === 1 ? "toque" : "toques"}
           </span>
         )}
         {lead.instagram && (
@@ -160,21 +224,26 @@ export default function ModalLead({
         )}
       </div>
 
+      {sinaisAtivos.length > 0 && (
+        <div className="mb-4">
+          <TagsSinais rotulos={sinaisAtivos} max={8} />
+        </div>
+      )}
+
       <div className="mb-4 flex gap-1 rounded-lg bg-ink-900 p-1">
         {(
           [
             ["detalhes", "Detalhes"],
+            ["historico", `Histórico${interacoes.length ? ` (${interacoes.length})` : ""}`],
             ["whatsapp", "WhatsApp"],
-          ] as const
+          ] as [Aba, string][]
         ).map(([id, label]) => (
           <button
             key={id}
             type="button"
             onClick={() => setAba(id)}
-            className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              aba === id
-                ? "bg-ink-700 text-white"
-                : "text-slate-400 hover:text-slate-200"
+            className={`flex-1 rounded-md px-2 py-1.5 text-[13px] font-medium transition-colors ${
+              aba === id ? "bg-ink-700 text-white" : "text-slate-400 hover:text-slate-200"
             }`}
           >
             {label}
@@ -188,26 +257,16 @@ export default function ModalLead({
         </p>
       )}
 
-      {aba === "detalhes" ? (
+      {aba === "detalhes" && (
         <form onSubmit={salvar} className="space-y-4">
           <div>
-            <label className="label" htmlFor="nome">
-              Nome
-            </label>
-            <input
-              id="nome"
-              name="nome"
-              className="input"
-              required
-              defaultValue={lead.nome}
-            />
+            <label className="label" htmlFor="nome">Nome</label>
+            <input id="nome" name="nome" className="input" required defaultValue={lead.nome} />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="label" htmlFor="telefone">
-                Telefone
-              </label>
+              <label className="label" htmlFor="telefone">Telefone</label>
               <input
                 id="telefone"
                 name="telefone"
@@ -218,9 +277,7 @@ export default function ModalLead({
               />
             </div>
             <div>
-              <label className="label" htmlFor="instagram">
-                Instagram
-              </label>
+              <label className="label" htmlFor="instagram">Instagram</label>
               <input
                 id="instagram"
                 name="instagram"
@@ -232,9 +289,7 @@ export default function ModalLead({
           </div>
 
           <div>
-            <label className="label" htmlFor="endereco">
-              Endereço
-            </label>
+            <label className="label" htmlFor="endereco">Endereço</label>
             <input
               id="endereco"
               name="endereco"
@@ -244,63 +299,58 @@ export default function ModalLead({
             />
             {bairro && (
               <p className="mt-1 text-xs text-slate-500">
-                {"{bairro}"} ={" "}
-                <span className="text-brand-soft">{bairro}</span>
+                {"{bairro}"} = <span className="text-brand-soft">{bairro}</span>
               </p>
             )}
           </div>
 
+          <div>
+            <span className="label">
+              Sinais de qualificação
+              {servicoLabel && (
+                <span className="ml-1 font-normal normal-case tracking-normal text-slate-500">
+                  · {servicoLabel}
+                </span>
+              )}
+            </span>
+            <EditorSinais criterios={projeto.criterios} valor={lead.sinais} />
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="label" htmlFor="status">
-                Status
-              </label>
-              <select
-                id="status"
-                name="status"
-                className="input"
-                defaultValue={lead.status}
-              >
+              <label className="label" htmlFor="status">Status</label>
+              <select id="status" name="status" className="input" defaultValue={lead.status}>
                 {STATUS_ORDER.map((s) => (
-                  <option key={s} value={s}>
-                    {STATUS_META[s].label}
-                  </option>
+                  <option key={s} value={s}>{STATUS_META[s].label}</option>
                 ))}
               </select>
             </div>
-
-            <label className="flex cursor-pointer items-center gap-3 self-end rounded-lg border border-line bg-ink-900 px-3 py-2.5">
+            <div>
+              <label className="label" htmlFor="proximo_contato">Próximo contato</label>
               <input
-                type="checkbox"
-                name="tem_site"
-                defaultChecked={lead.tem_site}
-                className="h-4 w-4 accent-brand"
+                id="proximo_contato"
+                name="proximo_contato"
+                type="date"
+                className="input"
+                defaultValue={lead.proximo_contato ?? ""}
               />
-              <span className="text-sm text-slate-300">Tem site</span>
-            </label>
+            </div>
           </div>
 
           <div>
-            <label className="label" htmlFor="nota">
-              Nota
-            </label>
+            <label className="label" htmlFor="nota">Nota fixa</label>
             <textarea
               id="nota"
               name="nota"
-              rows={4}
+              rows={3}
               className="input resize-y"
               defaultValue={lead.nota ?? ""}
-              placeholder="O que rolou na conversa, objeções, quando dar follow-up..."
+              placeholder="O que precisa lembrar sempre que abrir este lead."
             />
           </div>
 
           <div className="flex items-center justify-between gap-2 pt-1">
-            <button
-              type="button"
-              onClick={remover}
-              className="btn-danger"
-              disabled={pendente}
-            >
+            <button type="button" onClick={remover} className="btn-danger" disabled={pendente}>
               <IconTrash className="h-4 w-4" />
               Excluir
             </button>
@@ -317,7 +367,47 @@ export default function ModalLead({
             </div>
           </div>
         </form>
-      ) : (
+      )}
+
+      {aba === "historico" && (
+        <div className="space-y-4">
+          <div>
+            <span className="label">Reagendar retorno</span>
+            <div className="flex flex-wrap gap-1.5">
+              {ATALHOS.map(([label, dias]) => (
+                <button
+                  key={label}
+                  type="button"
+                  className="chip border-line bg-ink-700 text-slate-300 hover:bg-ink-600"
+                  onClick={() => reagendar(dias)}
+                  disabled={pendente}
+                >
+                  {label}
+                </button>
+              ))}
+              {lead.proximo_contato && (
+                <button
+                  type="button"
+                  className="chip border-line bg-ink-800 text-slate-500 hover:text-slate-300"
+                  onClick={() => reagendar(null)}
+                  disabled={pendente}
+                >
+                  limpar
+                </button>
+              )}
+            </div>
+          </div>
+
+          <Timeline
+            leadId={lead.id}
+            projetoId={lead.projeto_id}
+            interacoes={interacoes}
+            aoMudar={(lista) => aoMudarInteracoes(lead.id, lista)}
+          />
+        </div>
+      )}
+
+      {aba === "whatsapp" && (
         <div className="space-y-4">
           {templates.length === 0 ? (
             <p className="rounded-lg border border-line bg-ink-900 px-3 py-4 text-sm text-slate-400">
@@ -327,9 +417,7 @@ export default function ModalLead({
             </p>
           ) : (
             <div>
-              <label className="label" htmlFor="template">
-                Template
-              </label>
+              <label className="label" htmlFor="template">Template</label>
               <select
                 id="template"
                 className="input"
@@ -337,9 +425,7 @@ export default function ModalLead({
                 onChange={(e) => setTemplateId(e.target.value)}
               >
                 {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.nome}
-                  </option>
+                  <option key={t.id} value={t.id}>{t.nome}</option>
                 ))}
               </select>
             </div>
@@ -355,13 +441,9 @@ export default function ModalLead({
                 disabled={!mensagem}
               >
                 {copiado ? (
-                  <>
-                    <IconCheck className="h-3.5 w-3.5" /> copiado
-                  </>
+                  <><IconCheck className="h-3.5 w-3.5" /> copiado</>
                 ) : (
-                  <>
-                    <IconCopy className="h-3.5 w-3.5" /> copiar
-                  </>
+                  <><IconCopy className="h-3.5 w-3.5" /> copiar</>
                 )}
               </button>
             </div>
@@ -372,26 +454,22 @@ export default function ModalLead({
               onChange={(e) => setMensagem(e.target.value)}
               placeholder="Escreva a mensagem ou escolha um template."
             />
-            <p className="mt-1 text-xs text-slate-500">
-              Dá pra ajustar o texto antes de enviar. Variáveis preenchidas:{" "}
-              <span className="text-slate-400">{nomeCurto(lead.nome)}</span>
-              {bairro && (
-                <>
-                  {" · "}
-                  <span className="text-slate-400">{bairro}</span>
-                </>
-              )}
-            </p>
+            <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
+              <span>nome: <span className="text-slate-400">{nomeCurto(lead.nome)}</span></span>
+              {bairro && <span>bairro: <span className="text-slate-400">{bairro}</span></span>}
+              {servicoLabel && <span>serviço: <span className="text-slate-400">{servicoLabel.toLowerCase()}</span></span>}
+              {motivo && <span>motivo: <span className="text-slate-400">{motivo}</span></span>}
+            </div>
           </div>
 
           <div className="rounded-lg border border-line bg-ink-900 p-3">
-            <p className="text-xs text-slate-400">
+            <p className="text-xs leading-relaxed text-slate-400">
               Abre o WhatsApp com a mensagem pronta para{" "}
               <span className="tabular-nums text-slate-200">
                 {formatarTelefone(lead.telefone) || "—"}
               </span>
-              . O envio continua sendo manual (um clique seu no WhatsApp), sem
-              risco de bloqueio do número.
+              . O envio continua manual, sem risco de bloqueio do número. Ao abrir,
+              o contato fica registrado no histórico e o próximo retorno é agendado.
             </p>
           </div>
 
@@ -408,15 +486,7 @@ export default function ModalLead({
             </a>
           ) : (
             <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
-              Esse lead não tem um telefone válido. Adicione o número na aba
-              Detalhes.
-            </p>
-          )}
-
-          {lead.status === "novo" && numero && (
-            <p className="text-center text-xs text-slate-500">
-              Ao abrir o WhatsApp, o lead vai automaticamente para{" "}
-              <span className="text-st-contatado">Contatado</span>.
+              Esse lead não tem um telefone válido. Adicione o número na aba Detalhes.
             </p>
           )}
         </div>

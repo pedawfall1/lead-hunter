@@ -62,19 +62,41 @@ export function extrairBairro(
   return candidato.replace(/^\d+\s+/, "").trim();
 }
 
+export type VariaveisTemplate = {
+  nome?: string | null;
+  bairro?: string | null;
+  /** o que este projeto vende: "Social mídia", "Tráfego pago"... */
+  servico?: string | null;
+  /** a frase do sinal que qualificou o lead */
+  motivo?: string | null;
+};
+
+export const VARIAVEIS: { chave: keyof VariaveisTemplate; ajuda: string }[] = [
+  { chave: "nome", ajuda: "nome do lead, sem Ltda/ME" },
+  { chave: "bairro", ajuda: "bairro do endereço, ou a região do projeto" },
+  { chave: "servico", ajuda: "o serviço que o projeto vende" },
+  { chave: "motivo", ajuda: "o sinal que qualificou o lead, em frase" },
+];
+
 /**
- * Substitui as variaveis {nome} e {bairro} do template.
- * Variaveis desconhecidas ficam como estao (para nao apagar texto por engano).
+ * Substitui as variáveis do template.
+ * Variável sem valor fica como está, para não deixar buraco na mensagem —
+ * assim você percebe na prévia que faltou preencher algo.
  */
 export function preencherTemplate(
   texto: string,
-  vars: { nome?: string | null; bairro?: string | null }
+  vars: VariaveisTemplate
 ): string {
-  return texto.replace(/\{\s*(nome|bairro)\s*\}/gi, (m, chave: string) => {
-    const k = chave.toLowerCase() as "nome" | "bairro";
-    const valor = (vars[k] ?? "").toString().trim();
-    return valor || m;
-  });
+  return texto.replace(
+    /\{\s*(nome|bairro|servico|serviço|motivo)\s*\}/gi,
+    (m, chave: string) => {
+      const k = chave
+        .toLowerCase()
+        .replace("ç", "c") as keyof VariaveisTemplate;
+      const valor = (vars[k] ?? "").toString().trim();
+      return valor || m;
+    }
+  );
 }
 
 /** Nome curto para a saudacao: "Padaria do Joao Ltda ME" -> "Padaria do Joao". */

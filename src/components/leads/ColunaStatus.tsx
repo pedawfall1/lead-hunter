@@ -2,16 +2,20 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { STATUS_META } from "@/lib/status";
-import type { Lead, LeadStatus } from "@/lib/types";
+import type { Criterio, Lead, LeadStatus } from "@/lib/types";
 import CartaoLead from "./CartaoLead";
 
 export default function ColunaStatus({
   status,
   leads,
+  criterios,
+  tentativas,
   aoAbrir,
 }: {
   status: LeadStatus;
   leads: Lead[];
+  criterios: Criterio[];
+  tentativas: Record<string, number>;
   aoAbrir: (lead: Lead, aba?: "detalhes" | "whatsapp") => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
@@ -40,7 +44,13 @@ export default function ColunaStatus({
           }`}
       >
         {leads.map((lead) => (
-          <CartaoLead key={lead.id} lead={lead} aoAbrir={aoAbrir} />
+          <CartaoLead
+            key={lead.id}
+            lead={lead}
+            criterios={criterios}
+            tentativas={tentativas[lead.id] ?? 0}
+            aoAbrir={aoAbrir}
+          />
         ))}
 
         {leads.length === 0 && (

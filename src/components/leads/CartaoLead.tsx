@@ -2,17 +2,35 @@
 
 import { useDraggable } from "@dnd-kit/core";
 import { formatarTelefone } from "@/lib/format";
-import type { Lead } from "@/lib/types";
-import { IconNoSite, IconWhatsapp } from "@/components/ui/icons";
+import { rotulosDosSinais } from "@/lib/servicos";
+import { balde, rotuloPrazo } from "@/lib/agenda";
+import type { Criterio, Lead } from "@/lib/types";
+import { IconWhatsapp } from "@/components/ui/icons";
+import { TagsSinais } from "./Sinais";
 
 type Props = {
   lead: Lead;
+  criterios: Criterio[];
+  tentativas?: number;
   aoAbrir?: (lead: Lead, aba?: "detalhes" | "whatsapp") => void;
-  /** usado no DragOverlay: nao registra o draggable */
+  /** usado no DragOverlay: não registra o draggable */
   overlay?: boolean;
 };
 
-export default function CartaoLead({ lead, aoAbrir, overlay }: Props) {
+const CORES_PRAZO: Record<string, string> = {
+  atrasado: "border-st-descartado/40 bg-st-descartado/10 text-st-descartado",
+  hoje: "border-st-negociando/40 bg-st-negociando/10 text-st-negociando",
+  semana: "border-line bg-ink-800 text-slate-400",
+  depois: "border-line bg-ink-800 text-slate-500",
+};
+
+export default function CartaoLead({
+  lead,
+  criterios,
+  tentativas = 0,
+  aoAbrir,
+  overlay,
+}: Props) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: lead.id,
     data: { lead },
@@ -20,6 +38,8 @@ export default function CartaoLead({ lead, aoAbrir, overlay }: Props) {
   });
 
   const telefone = formatarTelefone(lead.telefone);
+  const sinais = rotulosDosSinais(lead.sinais, criterios);
+  const prazo = balde(lead.proximo_contato);
 
   return (
     <div
@@ -38,19 +58,13 @@ export default function CartaoLead({ lead, aoAbrir, overlay }: Props) {
                   ${isDragging ? "opacity-30" : ""}
                   ${overlay ? "rotate-2 border-brand/50 shadow-card" : ""}`}
     >
-      <div className="flex items-start gap-2">
-        <p className="min-w-0 flex-1 text-sm font-medium leading-snug text-slate-100">
-          {lead.nome}
-        </p>
-        {!lead.tem_site && (
-          <span
-            title="Sem site"
-            className="mt-0.5 shrink-0 rounded-md bg-brand/15 p-1 text-brand-soft"
-          >
-            <IconNoSite className="h-3.5 w-3.5" />
-          </span>
-        )}
-      </div>
+      <p className="text-sm font-medium leading-snug text-slate-100">{lead.nome}</p>
+
+      {sinais.length > 0 && (
+        <div className="mt-2">
+          <TagsSinais rotulos={sinais} max={2} compacto />
+        </div>
+      )}
 
       <div className="mt-2 flex items-center justify-between gap-2">
         <span className="truncate text-xs tabular-nums text-slate-400">
@@ -72,6 +86,23 @@ export default function CartaoLead({ lead, aoAbrir, overlay }: Props) {
           </button>
         )}
       </div>
+
+      {(prazo || tentativas > 0) && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {prazo && (
+            <span
+              className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${CORES_PRAZO[prazo]}`}
+            >
+              {rotuloPrazo(lead.proximo_contato)}
+            </span>
+          )}
+          {tentativas > 0 && (
+            <span className="text-[10px] text-slate-500">
+              {tentativas} {tentativas === 1 ? "toque" : "toques"}
+            </span>
+          )}
+        </div>
+      )}
 
       {lead.nota && (
         <p className="mt-2 line-clamp-2 border-t border-line pt-2 text-[11px] leading-snug text-slate-500">

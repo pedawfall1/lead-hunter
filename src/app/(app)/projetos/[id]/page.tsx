@@ -1,10 +1,15 @@
 import { notFound } from "next/navigation";
-import { listarLeads, listarTemplates, obterProjeto } from "@/lib/db";
+import {
+  interacoesPorLead,
+  listarLeads,
+  listarTemplates,
+  obterProjeto,
+} from "@/lib/db";
 import QuadroLeads from "@/components/leads/QuadroLeads";
 
 export const dynamic = "force-dynamic";
 
-// Evita mandar um id invalido para uma coluna uuid: cai em 404, nao em erro.
+// Evita mandar um id inválido para uma coluna uuid: cai em 404, não em erro.
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function ProjetoPage({
@@ -22,7 +27,14 @@ export default async function ProjetoPage({
     listarTemplates(),
   ]);
 
+  const interacoes = await interacoesPorLead(leads.map((l) => l.id));
+
   return (
-    <QuadroLeads projeto={projeto} leadsIniciais={leads} templates={templates} />
+    <QuadroLeads
+      projeto={projeto}
+      leadsIniciais={leads}
+      templates={templates}
+      interacoesIniciais={interacoes}
+    />
   );
 }

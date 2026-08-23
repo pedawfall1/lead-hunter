@@ -9,11 +9,22 @@ export const STATUS = [
 
 export type LeadStatus = (typeof STATUS)[number];
 
+/** Um sinal de qualificação: o motivo pelo qual esse lead precisa do que você vende. */
+export type Criterio = {
+  chave: string;
+  label: string;
+};
+
+/** Quais critérios o lead dispara. Só guardamos os verdadeiros. */
+export type Sinais = Record<string, boolean>;
+
 export type Projeto = {
   id: string;
   nome: string;
   nicho: string | null;
   regiao: string | null;
+  servico: string | null;
+  criterios: Criterio[];
   criado_em: string;
 };
 
@@ -25,12 +36,32 @@ export type Lead = {
   nome: string;
   telefone: string | null;
   endereco: string | null;
-  tem_site: boolean;
   instagram: string | null;
+  sinais: Sinais;
   status: LeadStatus;
   nota: string | null;
+  proximo_contato: string | null;
   criado_em: string;
   atualizado_em: string;
+};
+
+export const TIPOS_INTERACAO = [
+  "whatsapp",
+  "ligacao",
+  "visita",
+  "email",
+  "nota",
+] as const;
+
+export type TipoInteracao = (typeof TIPOS_INTERACAO)[number];
+
+export type Interacao = {
+  id: string;
+  lead_id: string;
+  tipo: TipoInteracao;
+  texto: string | null;
+  template_id: string | null;
+  criado_em: string;
 };
 
 export type Template = {
@@ -40,7 +71,7 @@ export type Template = {
   criado_em: string;
 };
 
-/** Retorno padrao das server actions. */
+/** Retorno padrão das server actions. */
 export type ActionResult<T = undefined> =
   | { ok: true; data?: T }
   | { ok: false; erro: string };

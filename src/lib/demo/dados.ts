@@ -1,14 +1,24 @@
-import type { Lead, LeadStatus, Projeto, Template } from "@/lib/types";
+import { criteriosSugeridos } from "@/lib/servicos";
+import type {
+  Criterio,
+  Interacao,
+  Lead,
+  LeadStatus,
+  Projeto,
+  Template,
+  TipoInteracao,
+} from "@/lib/types";
 
 /**
- * Banco de mentira do modo demo: vive na memoria do processo.
+ * Banco de mentira do modo demo: vive na memória do processo.
  * Guardado no globalThis para sobreviver ao hot reload do `next dev`.
- * Em serverless, um cold start volta tudo ao estado inicial — e proposital,
- * o demo nao guarda nada de verdade.
+ * Em serverless, um cold start volta tudo ao estado inicial — é proposital,
+ * o demo não guarda nada de verdade.
  */
 type Estado = {
   projetos: Projeto[];
   leads: Lead[];
+  interacoes: Interacao[];
   templates: Template[];
 };
 
@@ -24,115 +34,213 @@ export function novoId(): string {
   });
 }
 
+export function agora(): string {
+  return new Date().toISOString();
+}
+
 function diasAtras(n: number): string {
   return new Date(Date.now() - n * 86_400_000).toISOString();
 }
 
-type Semente = [
-  nome: string,
-  telefone: string | null,
-  endereco: string | null,
-  temSite: boolean,
-  instagram: string | null,
-  status: LeadStatus,
-  nota: string | null,
-];
+function dataEm(dias: number): string {
+  const d = new Date(Date.now() + dias * 86_400_000);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+type Semente = {
+  nome: string;
+  tel: string;
+  end: string;
+  ig?: string;
+  sinais: string[];
+  status: LeadStatus;
+  nota?: string;
+  /** dias a partir de hoje; negativo = atrasado */
+  retorno?: number;
+  historico?: [TipoInteracao, string, number][];
+};
 
 const ADVOGADOS: Semente[] = [
-  ["Advocacia Silva & Ramos", "49999880011", "Rua Brasil, 120 - Centro, Videira - SC", false, "advocaciasilvaramos", "novo", null],
-  ["Dra. Marina Kohler", "49999880022", "Av. Manoel Roque, 88 - Centro, Videira - SC", false, null, "novo", null],
-  ["Escritório Bertoldi", "49999880033", "Rua São Francisco, 45 - Universitário, Videira - SC", true, "bertoldiadv", "novo", null],
-  ["Zanella Advogados", "49999880044", "Rua XV de Novembro, 300 - Centro, Videira - SC", false, null, "contatado", "Mandei o primeiro contato terça de manhã."],
-  ["Advocacia Trentin", "49999880055", "Rua das Palmeiras, 12 - Bela Vista, Videira - SC", false, "trentinadv", "contatado", null],
-  ["Dr. Anderson Fachin", "49999880066", "Av. Brasil, 902 - Centro, Videira - SC", false, null, "respondeu", "Pediu pra mandar valores por WhatsApp."],
-  ["Cunha & Associados", "49999880077", "Rua Governador Jorge Lacerda, 77 - Centro, Videira - SC", true, "cunhaassoc", "respondeu", "Já tem site mas odeia. Quer refazer."],
-  ["Advocacia Bortoluzzi", "49999880088", "Rua Ipiranga, 210 - Dos Estados, Videira - SC", false, null, "negociando", "Proposta de R$ 1.800 enviada. Retorno na sexta."],
-  ["Dra. Helena Prass", "49999880099", "Rua Curitiba, 55 - Centro, Videira - SC", false, "helenaprass.adv", "fechou", "Fechou site + gestão de Instagram. Começa dia 5."],
-  ["Menegatti Advocacia", "49999881010", "Rua Anita Garibaldi, 640 - Centro, Videira - SC", true, null, "descartado", "Já tem agência. Voltar em 6 meses."],
+  { nome: "Advocacia Silva & Ramos", tel: "49999880011", end: "Rua Brasil, 120 - Centro, Videira - SC", ig: "advocaciasilvaramos",
+    sinais: ["sem_site", "sem_google_negocio"], status: "novo" },
+  { nome: "Dra. Marina Kohler", tel: "49999880022", end: "Av. Manoel Roque, 88 - Centro, Videira - SC",
+    sinais: ["sem_site", "so_linktree"], status: "novo" },
+  { nome: "Escritório Bertoldi", tel: "49999880033", end: "Rua São Francisco, 45 - Universitário, Videira - SC", ig: "bertoldiadv",
+    sinais: ["site_desatualizado", "site_sem_whats"], status: "novo" },
+  { nome: "Zanella Advogados", tel: "49999880044", end: "Rua XV de Novembro, 300 - Centro, Videira - SC",
+    sinais: ["sem_site", "poucas_avaliacoes"], status: "contatado",
+    nota: "Mandei o primeiro contato terça de manhã.", retorno: -2,
+    historico: [["whatsapp", "Primeira abordagem enviada.", 5]] },
+  { nome: "Advocacia Trentin", tel: "49999880055", end: "Rua das Palmeiras, 12 - Bela Vista, Videira - SC", ig: "trentinadv",
+    sinais: ["sem_site", "site_nao_mobile"], status: "contatado", retorno: 0,
+    historico: [["whatsapp", "Primeira abordagem enviada.", 3]] },
+  { nome: "Dr. Anderson Fachin", tel: "49999880066", end: "Av. Brasil, 902 - Centro, Videira - SC",
+    sinais: ["sem_site"], status: "respondeu", nota: "Pediu pra mandar valores por WhatsApp.", retorno: 1,
+    historico: [["whatsapp", "Primeira abordagem enviada.", 6], ["ligacao", "Atendeu, pediu proposta por escrito.", 2]] },
+  { nome: "Cunha & Associados", tel: "49999880077", end: "Rua Governador Jorge Lacerda, 77 - Centro, Videira - SC", ig: "cunhaassoc",
+    sinais: ["site_desatualizado", "site_nao_mobile", "nota_baixa"], status: "respondeu",
+    nota: "Já tem site mas odeia. Quer refazer.", retorno: 3,
+    historico: [["whatsapp", "Mandei exemplos de sites do nicho.", 4]] },
+  { nome: "Advocacia Bortoluzzi", tel: "49999880088", end: "Rua Ipiranga, 210 - Dos Estados, Videira - SC",
+    sinais: ["sem_site"], status: "negociando", nota: "Proposta de R$ 1.800 enviada. Retorno na sexta.", retorno: 2,
+    historico: [["whatsapp", "Primeira abordagem.", 12], ["visita", "Fui no escritório, conversei com o sócio.", 6], ["email", "Proposta enviada.", 3]] },
+  { nome: "Dra. Helena Prass", tel: "49999880099", end: "Rua Curitiba, 55 - Centro, Videira - SC", ig: "helenaprass.adv",
+    sinais: ["sem_site"], status: "fechou", nota: "Fechou site + gestão de Instagram. Começa dia 5.",
+    historico: [["whatsapp", "Primeira abordagem.", 15], ["ligacao", "Fechou por telefone.", 5]] },
+  { nome: "Menegatti Advocacia", tel: "49999881010", end: "Rua Anita Garibaldi, 640 - Centro, Videira - SC",
+    sinais: [], status: "descartado", nota: "Já tem agência. Voltar em 6 meses." },
 ];
 
 const PETSHOPS: Semente[] = [
-  ["Pet Vida", "49998770011", "Rua Coronel Passos Maia, 410 - Centro, Caçador - SC", false, "petvidacacador", "novo", null],
-  ["Mundo Animal", "49998770022", "Av. Barão do Rio Branco, 1200 - Bom Sucesso, Caçador - SC", false, null, "novo", null],
-  ["Cão & Cia", "49998770033", "Rua Santa Catarina, 88 - Berger, Caçador - SC", false, "caoeciapet", "novo", null],
-  ["Patas Felizes", "49998770044", "Rua Frei Rogério, 305 - Centro, Caçador - SC", true, null, "contatado", null],
-  ["Espaço Pet Nine", "49998770055", "Rua Getúlio Vargas, 76 - Martello, Caçador - SC", false, "espacopetnine", "respondeu", "Quer ver exemplos de outros petshops."],
-  ["AgroPet Bom Amigo", "49998770066", "Rua Duque de Caxias, 991 - Centro, Caçador - SC", false, null, "fechou", "Fechou pacote básico."],
+  { nome: "Pet Vida", tel: "49998770011", end: "Rua Coronel Passos Maia, 410 - Centro, Caçador - SC", ig: "petvidacacador",
+    sinais: ["parado_30d", "sem_padrao_visual"], status: "novo" },
+  { nome: "Mundo Animal", tel: "49998770022", end: "Av. Barão do Rio Branco, 1200 - Bom Sucesso, Caçador - SC",
+    sinais: ["sem_instagram", "sem_google_negocio"], status: "novo" },
+  { nome: "Cão & Cia", tel: "49998770033", end: "Rua Santa Catarina, 88 - Berger, Caçador - SC", ig: "caoeciapet",
+    sinais: ["poucos_seguidores", "nao_responde_direct"], status: "novo" },
+  { nome: "Patas Felizes", tel: "49998770044", end: "Rua Frei Rogério, 305 - Centro, Caçador - SC",
+    sinais: ["parado_30d"], status: "contatado", retorno: -1,
+    historico: [["whatsapp", "Primeira abordagem enviada.", 4]] },
+  { nome: "Espaço Pet Nine", tel: "49998770055", end: "Rua Getúlio Vargas, 76 - Martello, Caçador - SC", ig: "espacopetnine",
+    sinais: ["sem_padrao_visual", "poucos_seguidores"], status: "respondeu",
+    nota: "Quer ver exemplos de outros petshops.", retorno: 1,
+    historico: [["whatsapp", "Mandei portfólio de feed.", 2]] },
+  { nome: "AgroPet Bom Amigo", tel: "49998770066", end: "Rua Duque de Caxias, 991 - Centro, Caçador - SC",
+    sinais: ["parado_30d"], status: "fechou", nota: "Fechou pacote básico de social.",
+    historico: [["whatsapp", "Primeira abordagem.", 20], ["visita", "Fechou na loja.", 8]] },
 ];
 
 const RESTAURANTES: Semente[] = [
-  ["Cantina da Nona", "49997660011", "Rua Nereu Ramos, 220 - Centro, Fraiburgo - SC", false, "cantinadanona", "novo", null],
-  ["Sabor da Serra", "49997660022", "Av. Videira, 1450 - Jardim Universitário, Fraiburgo - SC", false, null, "novo", null],
-  ["Restaurante do Alemão", "49997660033", "Rua das Macieiras, 33 - Centro, Fraiburgo - SC", false, null, "contatado", "Falei com o filho do dono."],
-  ["Pizzaria Bella Massa", "49997660044", "Rua São José, 610 - Fraiburgo - SC", true, "bellamassafbg", "descartado", "Rede, decisão vem de Chapecó."],
+  { nome: "Cantina da Nona", tel: "49997660011", end: "Rua Nereu Ramos, 220 - Centro, Fraiburgo - SC", ig: "cantinadanona",
+    sinais: ["nao_anuncia", "sem_pagina_captura"], status: "novo" },
+  { nome: "Sabor da Serra", tel: "49997660022", end: "Av. Videira, 1450 - Jardim Universitário, Fraiburgo - SC",
+    sinais: ["nao_anuncia", "concorrente_anuncia", "sem_pixel"], status: "novo" },
+  { nome: "Restaurante do Alemão", tel: "49997660033", end: "Rua das Macieiras, 33 - Centro, Fraiburgo - SC",
+    sinais: ["anuncio_amador"], status: "contatado", nota: "Falei com o filho do dono.", retorno: 4,
+    historico: [["whatsapp", "Primeira abordagem enviada.", 1]] },
+  { nome: "Pizzaria Bella Massa", tel: "49997660044", end: "Rua São José, 610 - Fraiburgo - SC", ig: "bellamassafbg",
+    sinais: [], status: "descartado", nota: "Rede, decisão vem de Chapecó." },
 ];
 
-function montarLeads(projetoId: string, sementes: Semente[], base: number): Lead[] {
-  return sementes.map(([nome, telefone, endereco, temSite, instagram, status, nota], i) => ({
+const CLINICAS: Semente[] = [
+  { nome: "Clínica Vida Plena", tel: "49996550011", end: "Rua Curitiba, 300 - Centro, Videira - SC", ig: "clinicavidaplena",
+    sinais: ["sem_agendamento", "controle_no_papel"], status: "novo" },
+  { nome: "Odonto Sorriso", tel: "49996550022", end: "Av. Brasil, 455 - Centro, Videira - SC",
+    sinais: ["sem_agendamento", "processo_manual"], status: "novo" },
+  { nome: "Fisio Movimento", tel: "49996550033", end: "Rua Ipiranga, 88 - Dos Estados, Videira - SC", ig: "fisiomovimentovda",
+    sinais: ["controle_no_papel", "sem_integracao"], status: "contatado", retorno: -3,
+    nota: "Mostrei o painel de agendamento. Ficou de falar com a sócia.",
+    historico: [["visita", "Apresentei a ideia na recepção.", 7], ["whatsapp", "Mandei o link da demo.", 5]] },
+];
+
+function montar(
+  projetoId: string,
+  sementes: Semente[],
+  base: number,
+  interacoes: Interacao[]
+): Lead[] {
+  return sementes.map((s, i) => {
+    const id = novoId();
+    const criadoEm = diasAtras(base - i * 0.1);
+
+    (s.historico ?? []).forEach(([tipo, texto, dias]) => {
+      interacoes.push({
+        id: novoId(),
+        lead_id: id,
+        tipo,
+        texto,
+        template_id: null,
+        criado_em: diasAtras(dias),
+      });
+    });
+
+    return {
+      id,
+      projeto_id: projetoId,
+      nome: s.nome,
+      telefone: s.tel,
+      endereco: s.end,
+      instagram: s.ig ?? null,
+      sinais: Object.fromEntries(s.sinais.map((c) => [c, true])),
+      status: s.status,
+      nota: s.nota ?? null,
+      proximo_contato: s.retorno === undefined ? null : dataEm(s.retorno),
+      criado_em: criadoEm,
+      atualizado_em: diasAtras(Math.max(0, base - i * 0.1 - 2)),
+    };
+  });
+}
+
+function projeto(
+  nome: string,
+  nicho: string,
+  regiao: string,
+  servico: string,
+  dias: number,
+  chaves: string[]
+): Projeto {
+  const catalogo = criteriosSugeridos(servico);
+  const criterios: Criterio[] = chaves.map(
+    (c) => catalogo.find((x) => x.chave === c) ?? { chave: c, label: c }
+  );
+  return {
     id: novoId(),
-    projeto_id: projetoId,
     nome,
-    telefone,
-    endereco,
-    tem_site: temSite,
-    instagram,
-    status,
-    nota,
-    criado_em: diasAtras(base - i * 0.1),
-    atualizado_em: diasAtras(Math.max(0, base - i * 0.1 - 2)),
-  }));
+    nicho,
+    regiao,
+    servico,
+    criterios,
+    criado_em: diasAtras(dias),
+  };
 }
 
 function semear(): Estado {
-  const advogados: Projeto = {
-    id: novoId(),
-    nome: "Advogados - Videira",
-    nicho: "Advocacia",
-    regiao: "Videira - SC",
-    criado_em: diasAtras(24),
-  };
-  const petshops: Projeto = {
-    id: novoId(),
-    nome: "Petshops - Caçador",
-    nicho: "Petshop",
-    regiao: "Caçador - SC",
-    criado_em: diasAtras(11),
-  };
-  const restaurantes: Projeto = {
-    id: novoId(),
-    nome: "Restaurantes - Fraiburgo",
-    nicho: "Alimentacao",
-    regiao: "Fraiburgo - SC",
-    criado_em: diasAtras(3),
-  };
+  const advogados = projeto("Advogados - Videira", "Advocacia", "Videira - SC", "site", 24, [
+    "sem_site", "site_desatualizado", "site_sem_whats", "site_nao_mobile", "so_linktree", "sem_google_negocio", "poucas_avaliacoes", "nota_baixa",
+  ]);
+  const petshops = projeto("Petshops - Caçador", "Petshop", "Caçador - SC", "social", 11, [
+    "sem_instagram", "parado_30d", "poucos_seguidores", "sem_padrao_visual", "nao_responde_direct", "sem_google_negocio",
+  ]);
+  const restaurantes = projeto("Restaurantes - Fraiburgo", "Alimentação", "Fraiburgo - SC", "trafego", 5, [
+    "nao_anuncia", "concorrente_anuncia", "sem_pagina_captura", "sem_pixel", "anuncio_amador",
+  ]);
+  const clinicas = projeto("Clínicas - Videira", "Saúde", "Videira - SC", "aplicacoes", 2, [
+    "controle_no_papel", "sem_agendamento", "processo_manual", "sem_integracao",
+  ]);
+
+  const interacoes: Interacao[] = [];
+  const leads = [
+    ...montar(advogados.id, ADVOGADOS, 20, interacoes),
+    ...montar(petshops.id, PETSHOPS, 9, interacoes),
+    ...montar(restaurantes.id, RESTAURANTES, 4, interacoes),
+    ...montar(clinicas.id, CLINICAS, 2, interacoes),
+  ];
 
   return {
-    projetos: [restaurantes, petshops, advogados],
-    leads: [
-      ...montarLeads(advogados.id, ADVOGADOS, 20),
-      ...montarLeads(petshops.id, PETSHOPS, 9),
-      ...montarLeads(restaurantes.id, RESTAURANTES, 2),
-    ],
+    projetos: [clinicas, restaurantes, petshops, advogados],
+    leads,
+    interacoes,
     templates: [
       {
         id: novoId(),
         nome: "Primeira abordagem",
         texto:
-          "Oi {nome}, tudo bem? Vi que vocês atendem aqui no {bairro} e reparei que não encontrei o site de vocês. Trabalho ajudando negócios da região a aparecer no Google. Posso te mostrar rapidinho como ficaria?",
+          "Oi {nome}, tudo bem? Vi que vocês atendem aqui no {bairro} e reparei que {motivo}. Trabalho com {servico} aqui na região. Posso te mostrar rapidinho como ficaria?",
         criado_em: diasAtras(24),
       },
       {
         id: novoId(),
         nome: "Follow-up 3 dias",
         texto:
-          "Oi {nome}, passando aqui de novo. Chegou a ver minha mensagem sobre a divulgação de vocês no {bairro}? Se fizer sentido eu te mando uma prévia sem compromisso.",
+          "Oi {nome}, passando aqui de novo. Chegou a ver minha mensagem sobre {servico}? Se fizer sentido eu te mando uma prévia sem compromisso.",
         criado_em: diasAtras(18),
       },
       {
         id: novoId(),
-        nome: "Quem já tem site",
+        nome: "Última tentativa",
         texto:
-          "Oi {nome}! Achei vocês pesquisando por serviços no {bairro}. O site de vocês existe, mas não aparece nas primeiras posições do Google. Quer que eu mande um diagnóstico rápido, de graça?",
+          "Oi {nome}, não quero insistir à toa. Se agora não for o momento, sem problema — me avisa que eu tiro da lista. Se quiser, deixo a prévia pronta e te mando.",
         criado_em: diasAtras(6),
       },
     ],
@@ -142,8 +250,4 @@ function semear(): Estado {
 export function estado(): Estado {
   if (!global_.__leadHunterDemo) global_.__leadHunterDemo = semear();
   return global_.__leadHunterDemo;
-}
-
-export function agora(): string {
-  return new Date().toISOString();
 }

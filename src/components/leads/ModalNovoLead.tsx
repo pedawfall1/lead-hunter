@@ -4,14 +4,17 @@ import { useState, useTransition } from "react";
 import Modal from "@/components/ui/Modal";
 import { criarLead } from "@/app/actions/leads";
 import { STATUS_META, STATUS_ORDER } from "@/lib/status";
-import type { Lead } from "@/lib/types";
+import type { Criterio, Lead } from "@/lib/types";
+import { EditorSinais } from "./Sinais";
 
 export default function ModalNovoLead({
   projetoId,
+  criterios,
   aoFechar,
   aoCriado,
 }: {
   projetoId: string;
+  criterios: Criterio[];
   aoFechar: () => void;
   aoCriado: (lead: Lead) => void;
 }) {
@@ -100,6 +103,11 @@ export default function ModalNovoLead({
           />
         </div>
 
+        <div>
+          <span className="label">Sinais de qualificação</span>
+          <EditorSinais criterios={criterios} valor={{}} />
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="label" htmlFor="novo-status">
@@ -119,10 +127,17 @@ export default function ModalNovoLead({
             </select>
           </div>
 
-          <label className="flex cursor-pointer items-center gap-3 self-end rounded-lg border border-line bg-ink-900 px-3 py-2.5">
-            <input type="checkbox" name="tem_site" className="h-4 w-4 accent-brand" />
-            <span className="text-sm text-slate-300">Tem site</span>
-          </label>
+          <div>
+            <label className="label" htmlFor="novo-retorno">
+              Próximo contato
+            </label>
+            <input
+              id="novo-retorno"
+              name="proximo_contato"
+              type="date"
+              className="input"
+            />
+          </div>
         </div>
 
         <div>

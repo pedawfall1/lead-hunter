@@ -17,12 +17,12 @@ import {
 import { atualizarStatus } from "@/app/actions/leads";
 import { STATUS_ORDER, ehStatus } from "@/lib/status";
 import { soDigitos } from "@/lib/format";
-import type { Lead, LeadStatus, Projeto, Template } from "@/lib/types";
+import { acharServico, contarSinais } from "@/lib/servicos";
+import type { Interacao, Lead, LeadStatus, Projeto, Template } from "@/lib/types";
 import Tooltip from "@/components/ui/Tooltip";
 import {
   IconChevron,
   IconMap,
-  IconNoSite,
   IconPlus,
   IconSearch,
   IconUpload,
@@ -44,29 +44,32 @@ export default function QuadroLeads({
   projeto,
   leadsIniciais,
   templates,
+  interacoesIniciais,
 }: {
   projeto: Projeto;
   leadsIniciais: Lead[];
   templates: Template[];
+  interacoesIniciais: Record<string, Interacao[]>;
 }) {
   const router = useRouter();
   const [, iniciar] = useTransition();
 
   const [leads, setLeads] = useState<Lead[]>(leadsIniciais);
+  const [interacoes, setInteracoes] = useState(interacoesIniciais);
   const [busca, setBusca] = useState("");
-  const [soSemSite, setSoSemSite] = useState(false);
+  const [sinaisFiltro, setSinaisFiltro] = useState<string[]>([]);
 
   const [selecionado, setSelecionado] = useState<{
     id: string;
-    aba: "detalhes" | "whatsapp";
+    aba: "detalhes" | "historico" | "whatsapp";
   } | null>(null);
   const [modalNovo, setModalNovo] = useState(false);
   const [modalCsv, setModalCsv] = useState(false);
   const [arrastando, setArrastando] = useState<Lead | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
 
-  // Mantem o quadro em sincronia quando o servidor revalida.
   useEffect(() => setLeads(leadsIniciais), [leadsIniciais]);
+  useEffect(() => setInteracoes(interacoesIniciais), [interacoesIniciais]);
 
   useEffect(() => {
     if (!aviso) return;
@@ -76,9 +79,7 @@ export default function QuadroLeads({
 
   const sensores = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 180, tolerance: 8 },
-    })
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } })
   );
 
   const filtrados = useMemo(() => {
@@ -86,33 +87,40 @@ export default function QuadroLeads({
     const digitos = soDigitos(busca);
 
     return leads.filter((l) => {
-      if (soSemSite && l.tem_site) return false;
+      // filtro de sinais: mostra quem tem qualquer um dos marcados
+      if (sinaisFiltro.length && !sinaisFiltro.some((c) => l.sinais?.[c])) {
+        return false;
+      }
       if (!termo) return true;
 
-      const alvo = normalizar(
-        `${l.nome} ${l.instagram ?? ""} ${l.endereco ?? ""}`
-      );
+      const alvo = normalizar(`${l.nome} ${l.instagram ?? ""} ${l.endereco ?? ""}`);
       if (alvo.includes(termo)) return true;
-      if (digitos.length >= 3 && soDigitos(l.telefone).includes(digitos))
-        return true;
+      if (digitos.length >= 3 && soDigitos(l.telefone).includes(digitos)) return true;
       return false;
     });
-  }, [leads, busca, soSemSite]);
+  }, [leads, busca, sinaisFiltro]);
 
   const porStatus = useMemo(() => {
     const mapa: Record<LeadStatus, Lead[]> = {
-      novo: [],
-      contatado: [],
-      respondeu: [],
-      negociando: [],
-      fechou: [],
-      descartado: [],
+      novo: [], contatado: [], respondeu: [], negociando: [], fechou: [], descartado: [],
     };
     for (const l of filtrados) mapa[l.status]?.push(l);
     return mapa;
   }, [filtrados]);
 
-  const semSite = leads.filter((l) => !l.tem_site).length;
+  const tentativas = useMemo(() => {
+    const mapa: Record<string, number> = {};
+    for (const [id, lista] of Object.entries(interacoes)) {
+      mapa[id] = lista.filter((i) => i.tipo === "whatsapp").length;
+    }
+    return mapa;
+  }, [interacoes]);
+
+  const qualificados = leads.filter(
+    (l) => contarSinais(l.sinais, projeto.criterios) > 0
+  ).length;
+  const servico = acharServico(projeto.servico);
+
   const leadSelecionado = selecionado
     ? leads.find((l) => l.id === selecionado.id) ?? null
     : null;
@@ -121,9 +129,14 @@ export default function QuadroLeads({
     setSelecionado({ id: lead.id, aba });
   }
 
+  function alternarSinal(chave: string) {
+    setSinaisFiltro((atual) =>
+      atual.includes(chave) ? atual.filter((c) => c !== chave) : [...atual, chave]
+    );
+  }
+
   function aoIniciarArraste(e: DragStartEvent) {
-    const lead = leads.find((l) => l.id === e.active.id);
-    setArrastando(lead ?? null);
+    setArrastando(leads.find((l) => l.id === e.active.id) ?? null);
   }
 
   function aoTerminarArraste(e: DragEndEvent) {
@@ -138,9 +151,7 @@ export default function QuadroLeads({
     if (!lead || lead.status === destino) return;
 
     const anterior = lead.status;
-    setLeads((ls) =>
-      ls.map((l) => (l.id === lead.id ? { ...l, status: destino } : l))
-    );
+    setLeads((ls) => ls.map((l) => (l.id === lead.id ? { ...l, status: destino } : l)));
 
     iniciar(async () => {
       const r = await atualizarStatus(lead.id, projeto.id, destino);
@@ -155,7 +166,7 @@ export default function QuadroLeads({
 
   return (
     <div className="space-y-4">
-      {/* ---------- cabecalho ---------- */}
+      {/* ---------- cabeçalho ---------- */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <Link
@@ -169,11 +180,11 @@ export default function QuadroLeads({
             {projeto.nome}
           </h1>
           <p className="mt-0.5 text-sm text-slate-400">
-            {[projeto.nicho, projeto.regiao].filter(Boolean).join(" · ") ||
-              "sem nicho / região"}
+            {[servico?.label, projeto.nicho, projeto.regiao].filter(Boolean).join(" · ") ||
+              "sem serviço definido"}
             {" · "}
             {leads.length} {leads.length === 1 ? "lead" : "leads"}
-            {semSite > 0 && ` · ${semSite} sem site`}
+            {qualificados > 0 && ` · ${qualificados} qualificados`}
           </p>
         </div>
 
@@ -201,8 +212,8 @@ export default function QuadroLeads({
       </div>
 
       {/* ---------- filtros ---------- */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-1 sm:max-w-xs">
+      <div className="space-y-2">
+        <div className="relative sm:max-w-xs">
           <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <input
             className="input pl-9"
@@ -213,31 +224,43 @@ export default function QuadroLeads({
           />
         </div>
 
-        <button
-          onClick={() => setSoSemSite((v) => !v)}
-          className={`chip transition-colors ${
-            soSemSite
-              ? "border-brand/50 bg-brand/15 text-brand-soft"
-              : "border-line bg-ink-800 text-slate-400 hover:text-slate-200"
-          }`}
-        >
-          <IconNoSite className="h-3.5 w-3.5" />
-          Sem site
-        </button>
+        {projeto.criterios.length > 0 && (
+          <div className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0">
+            {projeto.criterios.map((c) => {
+              const ativo = sinaisFiltro.includes(c.chave);
+              const quantos = leads.filter((l) => l.sinais?.[c.chave]).length;
+              if (!quantos && !ativo) return null;
+              return (
+                <button
+                  key={c.chave}
+                  onClick={() => alternarSinal(c.chave)}
+                  className={`chip shrink-0 whitespace-nowrap transition-colors ${
+                    ativo
+                      ? "border-brand/50 bg-brand/15 text-brand-soft"
+                      : "border-line bg-ink-800 text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  {c.label}
+                  <span className="text-[10px] opacity-70">{quantos}</span>
+                </button>
+              );
+            })}
 
-        {(busca || soSemSite) && (
-          <span className="text-xs text-slate-500">
-            {filtrados.length} de {leads.length}
-            <button
-              onClick={() => {
-                setBusca("");
-                setSoSemSite(false);
-              }}
-              className="ml-2 text-slate-400 underline underline-offset-2 hover:text-slate-200"
-            >
-              limpar
-            </button>
-          </span>
+            {(busca || sinaisFiltro.length > 0) && (
+              <span className="ml-1 shrink-0 whitespace-nowrap text-xs text-slate-500">
+                {filtrados.length} de {leads.length}
+                <button
+                  onClick={() => {
+                    setBusca("");
+                    setSinaisFiltro([]);
+                  }}
+                  className="ml-2 text-slate-400 underline underline-offset-2 hover:text-slate-200"
+                >
+                  limpar
+                </button>
+              </span>
+            )}
+          </div>
         )}
       </div>
 
@@ -249,8 +272,7 @@ export default function QuadroLeads({
             Nenhum lead nesse projeto
           </h2>
           <p className="max-w-sm text-sm text-slate-400">
-            Importe uma lista em CSV ou cadastre na mão enquanto prospecta na
-            rua.
+            Importe uma lista em CSV ou cadastre na mão enquanto prospecta na rua.
           </p>
           <div className="mt-2 flex flex-wrap justify-center gap-2">
             <button className="btn-primary" onClick={() => setModalNovo(true)}>
@@ -277,20 +299,24 @@ export default function QuadroLeads({
                 key={s}
                 status={s}
                 leads={porStatus[s]}
+                criterios={projeto.criterios}
+                tentativas={tentativas}
                 aoAbrir={abrirLead}
               />
             ))}
           </div>
 
           <DragOverlay dropAnimation={null}>
-            {arrastando ? <CartaoLead lead={arrastando} overlay /> : null}
+            {arrastando ? (
+              <CartaoLead lead={arrastando} criterios={projeto.criterios} overlay />
+            ) : null}
           </DragOverlay>
         </DndContext>
       )}
 
       <p className="text-center text-xs text-slate-600 sm:text-left">
-        Arraste os cards entre as colunas para mudar o status. No celular,
-        segure o card por um instante antes de arrastar.
+        Arraste os cards entre as colunas para mudar o status. No celular, segure
+        o card por um instante antes de arrastar.
       </p>
 
       {/* ---------- modais ---------- */}
@@ -299,20 +325,23 @@ export default function QuadroLeads({
           lead={leadSelecionado}
           projeto={projeto}
           templates={templates}
+          interacoes={interacoes[leadSelecionado.id] ?? []}
           abaInicial={selecionado.aba}
           aoFechar={() => setSelecionado(null)}
           aoAtualizar={(atualizado) =>
-            setLeads((ls) =>
-              ls.map((l) => (l.id === atualizado.id ? atualizado : l))
-            )
+            setLeads((ls) => ls.map((l) => (l.id === atualizado.id ? atualizado : l)))
           }
           aoExcluir={(id) => setLeads((ls) => ls.filter((l) => l.id !== id))}
+          aoMudarInteracoes={(leadId, lista) =>
+            setInteracoes((m) => ({ ...m, [leadId]: lista }))
+          }
         />
       )}
 
       {modalNovo && (
         <ModalNovoLead
           projetoId={projeto.id}
+          criterios={projeto.criterios}
           aoFechar={() => setModalNovo(false)}
           aoCriado={(lead) => setLeads((ls) => [lead, ...ls])}
         />
@@ -321,6 +350,7 @@ export default function QuadroLeads({
       {modalCsv && (
         <ModalImportarCsv
           projetoId={projeto.id}
+          criterios={projeto.criterios}
           aoFechar={() => setModalCsv(false)}
           aoImportar={(qtd) => {
             setAviso(`${qtd} ${qtd === 1 ? "lead importado" : "leads importados"}.`);

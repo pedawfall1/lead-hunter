@@ -9,10 +9,12 @@ import {
   IconFolder,
   IconLogout,
   IconMessage,
+  IconSino,
 } from "./ui/icons";
 
 const LINKS = [
-  { href: "/", label: "Dashboard", Icone: IconDashboard, exato: true },
+  { href: "/hoje", label: "Hoje", Icone: IconSino, exato: false },
+  { href: "/", label: "Painel", Icone: IconDashboard, exato: true },
   { href: "/projetos", label: "Projetos", Icone: IconFolder, exato: false },
   { href: "/templates", label: "Templates", Icone: IconMessage, exato: false },
 ];
@@ -56,7 +58,22 @@ function BotaoSair({ compacto }: { compacto?: boolean }) {
   );
 }
 
-export default function Nav({ email }: { email: string | null }) {
+function Badge({ n }: { n: number }) {
+  if (n <= 0) return null;
+  return (
+    <span className="ml-auto rounded-full bg-brand px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-ink-950">
+      {n > 99 ? "99+" : n}
+    </span>
+  );
+}
+
+export default function Nav({
+  email,
+  pendentes = 0,
+}: {
+  email: string | null;
+  pendentes?: number;
+}) {
   const pathname = usePathname() ?? "/";
 
   return (
@@ -80,6 +97,7 @@ export default function Nav({ email }: { email: string | null }) {
               >
                 <Icone className="h-4 w-4" />
                 {label}
+                {href === "/hoje" && <Badge n={pendentes} />}
               </Link>
             );
           })}
@@ -102,18 +120,23 @@ export default function Nav({ email }: { email: string | null }) {
       </header>
 
       {/* ---------- Barra inferior (mobile) ---------- */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-line bg-ink-900/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-line bg-ink-900/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
         {LINKS.map(({ href, label, Icone, exato }) => {
           const on = ativo(pathname, href, exato);
           return (
             <Link
               key={href}
               href={href}
-              className={`flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${
+              className={`relative flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${
                 on ? "text-brand-soft" : "text-slate-500"
               }`}
             >
               <Icone className="h-5 w-5" />
+              {href === "/hoje" && pendentes > 0 && (
+                <span className="absolute right-[22%] top-1.5 min-w-[16px] rounded-full bg-brand px-1 text-[9px] font-semibold leading-4 text-ink-950">
+                  {pendentes > 9 ? "9+" : pendentes}
+                </span>
+              )}
               {label}
             </Link>
           );
