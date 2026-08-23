@@ -2,7 +2,13 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { COOKIE_DEMO, DEMO } from "@/lib/config";
 
-const ROTAS_PUBLICAS = ["/login"];
+const ROTAS_PUBLICAS = [
+  "/login",
+  // Webhook do n8n: chega de fora, sem cookie de sessão, e se autentica
+  // pelo header x-lh-token dentro da própria rota. Sem esta linha o
+  // middleware devolve 307 para /login e o n8n nunca entrega evento.
+  "/api/n8n",
+];
 
 function ehPublica(pathname: string) {
   return ROTAS_PUBLICAS.some((r) => pathname.startsWith(r));

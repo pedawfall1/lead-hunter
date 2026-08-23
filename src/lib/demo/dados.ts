@@ -149,8 +149,13 @@ function montar(
         id: novoId(),
         lead_id: id,
         tipo,
+        direcao: "saida",
         texto,
         template_id: null,
+        externo_id: null,
+        entregue_em: null,
+        lido_em: null,
+        erro: null,
         criado_em: diasAtras(dias),
       });
     });

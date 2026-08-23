@@ -59,8 +59,15 @@ export type Interacao = {
   id: string;
   lead_id: string;
   tipo: TipoInteracao;
+  /** "saida" = você mandou; "entrada" = o lead respondeu */
+  direcao: "saida" | "entrada";
   texto: string | null;
   template_id: string | null;
+  /** id da mensagem na Evolution, quando o disparo passa pelo n8n */
+  externo_id: string | null;
+  entregue_em: string | null;
+  lido_em: string | null;
+  erro: string | null;
   criado_em: string;
 };
 

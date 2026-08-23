@@ -144,6 +144,86 @@ abre o WhatsApp com o texto pronto e **você** dá o último clique de enviar.
 - Ao abrir o WhatsApp, um lead que estava em **Novo** vira **Contatado** sozinho.
   Quem já respondeu/negociou/fechou não regride.
 
+## Integração com n8n (opcional)
+
+O Lead Hunter decide **quem** abordar, **com que texto** e **quando**. Quem envia
+é o seu n8n, pela Evolution. Assim o timer, a fila e a conexão ficam onde já
+funcionam, e o app ganha de volta o dado que o `wa.me` nunca dá: entrega,
+leitura e resposta.
+
+Sem `N8N_WEBHOOK_URL` configurada o botão nem aparece e o app segue no `wa.me`.
+
+### Variáveis
+
+| Variável | Para quê |
+| --- | --- |
+| `N8N_WEBHOOK_URL` | webhook do seu fluxo que recebe o disparo |
+| `N8N_TOKEN` | vai no header `x-lh-token` quando o app chama o n8n |
+| `LH_WEBHOOK_TOKEN` | exigido no header `x-lh-token` quando o n8n chama de volta |
+| `SUPABASE_SERVICE_ROLE_KEY` | o callback chega sem sessão e grava pelo dono do lead |
+
+Nenhuma tem `NEXT_PUBLIC_`: são segredos e ficam só no servidor. A
+`service_role` ignora RLS — ela é usada apenas em `src/app/api/n8n/route.ts`.
+
+### O que o app manda para o n8n
+
+`POST` no `N8N_WEBHOOK_URL`, header `x-lh-token`:
+
+```json
+{
+  "interacao_id": "5addd9cd-...",
+  "lead_id": "1f728c5e-...",
+  "projeto_id": "acce6fc9-...",
+  "telefone": "5549998770033",
+  "nome": "Cão & Cia",
+  "mensagem": "Oi Cão & Cia, tudo bem? Vi que vocês atendem aqui no Berger...",
+  "template_id": "42f61df4-...",
+  "projeto": "Petshops - Caçador",
+  "servico": "Social mídia"
+}
+```
+
+O `telefone` já vem normalizado (DDI + DDD + número, só dígitos) e a `mensagem`
+já vem com as variáveis preenchidas e a variação sorteada — o n8n não precisa
+montar nada, só enviar.
+
+Guarde o `interacao_id`: é por ele que os eventos voltam para a linha certa do
+histórico. Se o fluxo responder `{"externo_id": "..."}`, o app guarda o id da
+Evolution também.
+
+### O que o n8n devolve
+
+`POST` em `https://seu-app/api/n8n`, header `x-lh-token: LH_WEBHOOK_TOKEN`:
+
+```json
+{ "evento": "resposta", "interacao_id": "5addd9cd-...", "texto": "opa, me manda" }
+```
+
+| Evento | O que o app faz |
+| --- | --- |
+| `entregue` | marca a hora de entrega na interação |
+| `lido` | marca a hora de leitura (aparece ✓✓ no histórico) |
+| `resposta` | registra a fala do lead, muda o status para **respondeu** e joga o lead para hoje |
+| `falha` | anota o erro na interação, sem mexer no status |
+| `bloqueado` | põe o número no **não perturbe** e descarta o lead |
+
+Para achar o lead ele tenta, nessa ordem: `interacao_id`, `externo_id`,
+`telefone`. Lead não encontrado devolve `200` de propósito, para o n8n não ficar
+retentando à toa.
+
+Confira a configuração sem disparar nada:
+
+```bash
+curl https://seu-app/api/n8n
+```
+
+### Lista de não perturbe
+
+Quem manda "para", "não quero" ou bloqueia entra na tabela `lh_nao_perturbe`,
+que vale para **todos os projetos**. Antes de enfileirar qualquer disparo o app
+consulta essa lista e recusa o envio. Mande o evento `bloqueado` do n8n quando
+detectar esse tipo de resposta.
+
 ## Google Maps
 
 O botão **Buscar no Google Maps** na tela de leads está desabilitado, com tooltip
@@ -163,6 +243,7 @@ src/
       templates/page.tsx
     actions/                  # server actions (auth, projetos, leads, templates)
     login/
+    api/n8n/route.ts          # callback do n8n (entregue, lido, resposta...)
   components/
     leads/                    # kanban, cards, modais, importação
     projetos/  templates/  dashboard/  ui/
@@ -172,6 +253,8 @@ src/
     db.ts                     # camada de dados: demo ou Supabase
     servicos.ts               # catálogo de serviços e sinais de qualificação
     agenda.ts                 # cadência e baldes de retorno
+    n8n.ts                    # contrato de ida e volta com o n8n
+    supabase/admin.ts         # service_role, só para o webhook
     config.ts  csv.ts  format.ts  status.ts  types.ts
 middleware.ts                 # renova a sessão e bloqueia rotas privadas
 supabase/

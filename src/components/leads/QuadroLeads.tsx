@@ -45,11 +45,13 @@ export default function QuadroLeads({
   leadsIniciais,
   templates,
   interacoesIniciais,
+  n8nAtivo,
 }: {
   projeto: Projeto;
   leadsIniciais: Lead[];
   templates: Template[];
   interacoesIniciais: Record<string, Interacao[]>;
+  n8nAtivo: boolean;
 }) {
   const router = useRouter();
   const [, iniciar] = useTransition();
@@ -326,6 +328,7 @@ export default function QuadroLeads({
           projeto={projeto}
           templates={templates}
           interacoes={interacoes[leadSelecionado.id] ?? []}
+          n8nAtivo={n8nAtivo}
           abaInicial={selecionado.aba}
           aoFechar={() => setSelecionado(null)}
           aoAtualizar={(atualizado) =>

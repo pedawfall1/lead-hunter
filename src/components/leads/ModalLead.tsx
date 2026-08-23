@@ -30,6 +30,7 @@ import {
   excluirLead,
   registrarDisparo,
 } from "@/app/actions/leads";
+import { dispararPeloN8n } from "@/app/actions/disparo";
 import type { Interacao, Lead, Projeto, Template } from "@/lib/types";
 import { EditorSinais, TagsSinais } from "./Sinais";
 import Timeline from "./Timeline";
@@ -41,6 +42,8 @@ type Props = {
   projeto: Projeto;
   templates: Template[];
   interacoes: Interacao[];
+  /** o n8n está configurado no servidor? habilita o disparo automático */
+  n8nAtivo?: boolean;
   abaInicial: Aba;
   aoFechar: () => void;
   aoAtualizar: (lead: Lead) => void;
@@ -60,6 +63,7 @@ export default function ModalLead({
   projeto,
   templates,
   interacoes,
+  n8nAtivo,
   abaInicial,
   aoFechar,
   aoAtualizar,
@@ -174,12 +178,61 @@ export default function ModalLead({
           id: `tmp-${Date.now()}`,
           lead_id: lead.id,
           tipo: "whatsapp",
+          direcao: "saida",
           texto,
           template_id: templateId || null,
+          externo_id: null,
+          entregue_em: null,
+          lido_em: null,
+          erro: null,
           criado_em: new Date().toISOString(),
         },
         ...interacoes,
       ]);
+    });
+  }
+
+  function dispararAutomatico() {
+    setErro(null);
+    const texto = mensagem;
+    iniciar(async () => {
+      const r = await dispararPeloN8n(
+        {
+          id: lead.id,
+          projeto_id: lead.projeto_id,
+          nome: lead.nome,
+          telefone: lead.telefone,
+          status: lead.status,
+        },
+        {
+          mensagem: texto,
+          templateId: templateId || null,
+          projeto: projeto.nome,
+          servico: servicoLabel || null,
+        }
+      );
+      if (!r.ok) {
+        setErro(r.erro);
+        return;
+      }
+      if (r.data) aoAtualizar(r.data);
+      aoMudarInteracoes(lead.id, [
+        {
+          id: `tmp-${Date.now()}`,
+          lead_id: lead.id,
+          tipo: "whatsapp",
+          direcao: "saida",
+          texto,
+          template_id: templateId || null,
+          externo_id: null,
+          entregue_em: null,
+          lido_em: null,
+          erro: null,
+          criado_em: new Date().toISOString(),
+        },
+        ...interacoes,
+      ]);
+      setAba("historico");
     });
   }
 
@@ -490,16 +543,35 @@ export default function ModalLead({
           </div>
 
           {numero ? (
-            <a
-              href={link}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={aoAbrirWhatsapp}
-              className={`btn-wa w-full ${!mensagem ? "pointer-events-none opacity-45" : ""}`}
-            >
-              <IconWhatsapp className="h-4 w-4" />
-              Enviar WhatsApp
-            </a>
+            <div className="space-y-2">
+              <a
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={aoAbrirWhatsapp}
+                className={`btn-wa w-full ${!mensagem ? "pointer-events-none opacity-45" : ""}`}
+              >
+                <IconWhatsapp className="h-4 w-4" />
+                Abrir no WhatsApp
+              </a>
+
+              {n8nAtivo && (
+                <>
+                  <button
+                    type="button"
+                    onClick={dispararAutomatico}
+                    disabled={pendente || !mensagem}
+                    className="btn-ghost w-full"
+                  >
+                    {pendente ? "Enfileirando..." : "⚡ Disparar pelo n8n"}
+                  </button>
+                  <p className="text-center text-[11px] leading-relaxed text-slate-500">
+                    Vai para a fila do n8n, que envia pela Evolution no ritmo
+                    dele. Entrega, leitura e resposta voltam para o histórico.
+                  </p>
+                </>
+              )}
+            </div>
           ) : (
             <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
               Esse lead não tem um telefone válido. Adicione o número na aba Detalhes.

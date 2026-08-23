@@ -6,6 +6,7 @@ import {
   obterProjeto,
 } from "@/lib/db";
 import QuadroLeads from "@/components/leads/QuadroLeads";
+import { n8nConfigurado } from "@/lib/n8n";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,7 @@ export default async function ProjetoPage({
       leadsIniciais={leads}
       templates={templates}
       interacoesIniciais={interacoes}
+      n8nAtivo={n8nConfigurado()}
     />
   );
 }

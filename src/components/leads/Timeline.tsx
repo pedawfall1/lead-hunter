@@ -110,12 +110,17 @@ export default function Timeline({
         <ol className="space-y-0">
           {interacoes.map((i, idx) => {
             const meta = ROTULOS[i.tipo];
+            const entrada = i.direcao === "entrada";
             return (
               <li key={i.id} className="group relative flex gap-3 pb-4">
                 <div className="flex flex-col items-center">
                   <span
                     className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px]"
-                    style={{ backgroundColor: `${meta.cor}22`, color: meta.cor }}
+                    style={
+                      entrada
+                        ? { backgroundColor: "#34d39922", color: "#34d399" }
+                        : { backgroundColor: `${meta.cor}22`, color: meta.cor }
+                    }
                   >
                     {i.tipo === "whatsapp" ? (
                       <IconWhatsapp className="h-3.5 w-3.5" />
@@ -129,10 +134,27 @@ export default function Timeline({
                 </div>
 
                 <div className="min-w-0 flex-1 pt-0.5">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xs font-medium" style={{ color: meta.cor }}>
-                      {meta.label}
+                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <span
+                      className="text-xs font-medium"
+                      style={{ color: entrada ? "#34d399" : meta.cor }}
+                    >
+                      {entrada ? "Resposta do lead" : meta.label}
                     </span>
+                    {!entrada && i.lido_em && (
+                      <span className="text-[10px] text-st-contatado">✓✓ lido</span>
+                    )}
+                    {!entrada && !i.lido_em && i.entregue_em && (
+                      <span className="text-[10px] text-slate-500">✓ entregue</span>
+                    )}
+                    {i.erro && (
+                      <span
+                        className="text-[10px] text-st-descartado"
+                        title={i.erro}
+                      >
+                        falhou
+                      </span>
+                    )}
                     <span className="text-[11px] text-slate-500">{quando(i.criado_em)}</span>
                     <button
                       type="button"
@@ -145,7 +167,13 @@ export default function Timeline({
                     </button>
                   </div>
                   {i.texto && (
-                    <p className="mt-0.5 whitespace-pre-wrap break-words text-[13px] leading-snug text-slate-300">
+                    <p
+                      className={`mt-1 whitespace-pre-wrap break-words text-[13px] leading-snug ${
+                        entrada
+                          ? "rounded-lg rounded-tl-none bg-[#005c4b] px-3 py-2 text-slate-50"
+                          : "text-slate-300"
+                      }`}
+                    >
                       {i.texto}
                     </p>
                   )}

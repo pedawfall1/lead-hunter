@@ -358,6 +358,11 @@ export async function criarInteracaoDb(
       id: novoId(),
       lead_id: leadId,
       ...dados,
+      direcao: "saida",
+      externo_id: null,
+      entregue_em: null,
+      lido_em: null,
+      erro: null,
       criado_em: agora(),
     };
     estado().interacoes.unshift(interacao);
@@ -371,6 +376,27 @@ export async function criarInteracaoDb(
     .single();
   checar(error);
   return data as Interacao;
+}
+
+/**
+ * Atualiza uma interação no contexto do usuário logado.
+ * Diferente de marcarEntregaDb, que roda no webhook e usa o cliente admin.
+ */
+export async function atualizarInteracaoDb(
+  id: string,
+  campos: Partial<Pick<Interacao, "externo_id" | "entregue_em" | "lido_em" | "erro">>
+): Promise<void> {
+  if (DEMO) {
+    const i = estado().interacoes.find((x) => x.id === id);
+    if (i) Object.assign(i, campos);
+    return;
+  }
+
+  const { error } = await createClient()
+    .from(T.interacoes)
+    .update(campos)
+    .eq("id", id);
+  checar(error);
 }
 
 export async function excluirInteracaoDb(id: string): Promise<void> {
@@ -448,4 +474,168 @@ export async function excluirTemplateDb(id: string): Promise<void> {
     .delete()
     .eq("id", id);
   checar(error);
+}
+
+/* --------------------------- webhook do n8n ---------------------------- */
+/*
+ * Estas funções rodam sem sessão de usuário (o n8n chama direto), então
+ * usam o cliente admin e resolvem o dono a partir do próprio lead.
+ * Não existe caminho demo aqui: sem banco não há webhook.
+ */
+
+export type Alvo = {
+  interacaoId: string | null;
+  leadId: string;
+  projetoId: string;
+  userId: string;
+  telefone: string | null;
+  status: LeadStatus;
+};
+
+/** Acha o lead a partir do que o n8n mandou: interação, id externo ou telefone. */
+export async function acharAlvo(ref: {
+  interacaoId?: string;
+  externoId?: string;
+  telefone?: string;
+}): Promise<Alvo | null> {
+  const { createAdminClient } = await import("./supabase/admin");
+  const admin = createAdminClient();
+
+  let interacaoId: string | null = null;
+  let leadId: string | null = null;
+
+  if (ref.interacaoId) {
+    const { data } = await admin
+      .from(T.interacoes)
+      .select("id, lead_id")
+      .eq("id", ref.interacaoId)
+      .maybeSingle();
+    if (data) {
+      interacaoId = data.id as string;
+      leadId = data.lead_id as string;
+    }
+  }
+
+  if (!leadId && ref.externoId) {
+    const { data } = await admin
+      .from(T.interacoes)
+      .select("id, lead_id")
+      .eq("externo_id", ref.externoId)
+      .maybeSingle();
+    if (data) {
+      interacaoId = data.id as string;
+      leadId = data.lead_id as string;
+    }
+  }
+
+  if (!leadId && ref.telefone) {
+    // Compara só os dígitos: o número pode ter vindo com ou sem DDI.
+    const cauda = ref.telefone.slice(-8);
+    const { data } = await admin
+      .from(T.leads)
+      .select("id")
+      .like("telefone", `%${cauda}%`)
+      .order("atualizado_em", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (data) leadId = data.id as string;
+  }
+
+  if (!leadId) return null;
+
+  const { data: lead } = await admin
+    .from(T.leads)
+    .select("id, projeto_id, telefone, status")
+    .eq("id", leadId)
+    .maybeSingle();
+  if (!lead) return null;
+
+  const { data: projeto } = await admin
+    .from(T.projetos)
+    .select("user_id")
+    .eq("id", lead.projeto_id as string)
+    .maybeSingle();
+  if (!projeto) return null;
+
+  return {
+    interacaoId,
+    leadId: lead.id as string,
+    projetoId: lead.projeto_id as string,
+    userId: projeto.user_id as string,
+    telefone: (lead.telefone as string | null) ?? null,
+    status: lead.status as LeadStatus,
+  };
+}
+
+export async function marcarEntregaDb(
+  interacaoId: string,
+  campos: { entregue_em?: string; lido_em?: string; erro?: string; externo_id?: string }
+): Promise<void> {
+  const { createAdminClient } = await import("./supabase/admin");
+  const { error } = await createAdminClient()
+    .from(T.interacoes)
+    .update(campos)
+    .eq("id", interacaoId);
+  checar(error);
+}
+
+export async function registrarRespostaDb(
+  alvo: Alvo,
+  texto: string,
+  em: string
+): Promise<void> {
+  const { createAdminClient } = await import("./supabase/admin");
+  const admin = createAdminClient();
+
+  const { error: erroInteracao } = await admin.from(T.interacoes).insert({
+    lead_id: alvo.leadId,
+    tipo: "whatsapp",
+    direcao: "entrada",
+    texto,
+    criado_em: em,
+  });
+  checar(erroInteracao);
+
+  // Quem já estava negociando ou fechou não regride para "respondeu".
+  const promove = alvo.status === "novo" || alvo.status === "contatado";
+  const { error } = await admin
+    .from(T.leads)
+    .update({
+      ...(promove ? { status: "respondeu" as LeadStatus } : {}),
+      // resposta pede retorno seu hoje: sobe no topo da tela Hoje
+      proximo_contato: em.slice(0, 10),
+    })
+    .eq("id", alvo.leadId);
+  checar(error);
+}
+
+export async function adicionarNaoPerturbeDb(
+  userId: string,
+  telefone: string,
+  motivo: string
+): Promise<void> {
+  const { createAdminClient } = await import("./supabase/admin");
+  const { error } = await createAdminClient()
+    .from("lh_nao_perturbe")
+    .upsert({ user_id: userId, telefone, motivo }, { onConflict: "user_id,telefone" });
+  checar(error);
+}
+
+export async function descartarLeadDb(leadId: string, nota: string): Promise<void> {
+  const { createAdminClient } = await import("./supabase/admin");
+  const { error } = await createAdminClient()
+    .from(T.leads)
+    .update({ status: "descartado" as LeadStatus, proximo_contato: null, nota })
+    .eq("id", leadId);
+  checar(error);
+}
+
+/** Telefones que pediram para não receber (checado antes de disparar). */
+export async function listarNaoPerturbe(): Promise<string[]> {
+  if (DEMO) return [];
+  const { data, error } = await createClient()
+    .from("lh_nao_perturbe")
+    .select("telefone");
+  checar(error);
+  return ((data ?? []) as { telefone: string }[]).map((l) => l.telefone);
 }
