@@ -145,7 +145,7 @@ export async function atualizarLeadDb(
 ): Promise<Lead> {
   if (DEMO) {
     const lead = estado().leads.find((l) => l.id === id);
-    if (!lead) throw new Error("Lead nao encontrado.");
+    if (!lead) throw new Error("Lead não encontrado.");
     Object.assign(lead, dados, { atualizado_em: agora() });
     return { ...lead };
   }
@@ -295,7 +295,7 @@ export async function atualizarTemplateDb(
 ): Promise<Template> {
   if (DEMO) {
     const t = estado().templates.find((x) => x.id === id);
-    if (!t) throw new Error("Template nao encontrado.");
+    if (!t) throw new Error("Template não encontrado.");
     Object.assign(t, dados);
     return { ...t };
   }

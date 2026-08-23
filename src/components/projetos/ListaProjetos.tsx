@@ -79,7 +79,7 @@ export default function ListaProjetos({
 
   function remover(p: Projeto) {
     const ok = window.confirm(
-      `Excluir o projeto "${p.nome}"? Todos os leads dele serao apagados. Essa acao nao tem volta.`
+      `Excluir o projeto "${p.nome}"? Todos os leads dele serão apagados. Essa ação não tem volta.`
     );
     if (!ok) return;
     iniciar(async () => {
@@ -114,7 +114,7 @@ export default function ListaProjetos({
             Nenhum projeto ainda
           </h2>
           <p className="max-w-sm text-sm text-slate-400">
-            Crie um projeto por nicho + regiao. Ex.: &ldquo;Advogados -
+            Crie um projeto por nicho + região. Ex.: &ldquo;Advogados -
             Videira&rdquo;, &ldquo;Petshops - Caçador&rdquo;.
           </p>
           <button className="btn-primary mt-2" onClick={abrirNovo}>
@@ -138,7 +138,7 @@ export default function ListaProjetos({
 
                 <p className="mt-1 truncate text-xs text-slate-400">
                   {[p.nicho, p.regiao].filter(Boolean).join(" · ") ||
-                    "sem nicho / regiao"}
+                    "sem nicho / região"}
                 </p>
 
                 <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -223,7 +223,7 @@ export default function ListaProjetos({
             </div>
             <div>
               <label className="label" htmlFor="regiao">
-                Regiao
+                Região
               </label>
               <input
                 id="regiao"
@@ -236,11 +236,11 @@ export default function ListaProjetos({
           </div>
 
           <p className="text-xs text-slate-500">
-            A regiao vira o valor padrao da variavel{" "}
+            A região vira o valor padrão da variável{" "}
             <code className="rounded bg-ink-900 px-1 py-0.5 text-brand-soft">
               {"{bairro}"}
             </code>{" "}
-            quando o endereco do lead nao tiver bairro.
+            quando o endereço do lead não tiver bairro.
           </p>
 
           {erro && (

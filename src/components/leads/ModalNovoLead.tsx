@@ -90,7 +90,7 @@ export default function ModalNovoLead({
 
         <div>
           <label className="label" htmlFor="novo-endereco">
-            Endereco
+            Endereço
           </label>
           <input
             id="novo-endereco"
@@ -134,7 +134,7 @@ export default function ModalNovoLead({
             name="nota"
             rows={3}
             className="input resize-y"
-            placeholder="Onde achei, horario bom pra ligar..."
+            placeholder="Onde achei, horário bom pra ligar..."
           />
         </div>
 
@@ -146,7 +146,7 @@ export default function ModalNovoLead({
 
         {ultimo && !erro && (
           <p className="rounded-lg border border-st-fechou/30 bg-st-fechou/10 px-3 py-2 text-sm text-st-fechou">
-            &ldquo;{ultimo}&rdquo; adicionado. Pode cadastrar o proximo.
+            &ldquo;{ultimo}&rdquo; adicionado. Pode cadastrar o próximo.
           </p>
         )}
 

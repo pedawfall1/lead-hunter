@@ -26,7 +26,7 @@ export async function criarProjeto(
   formData: FormData
 ): Promise<ActionResult<{ id: string }>> {
   const dados = ler(formData);
-  if (!dados.nome) return { ok: false, erro: "O nome do projeto e obrigatorio." };
+  if (!dados.nome) return { ok: false, erro: "O nome do projeto é obrigatório." };
 
   try {
     const projeto = await criarProjetoDb(dados);
@@ -42,7 +42,7 @@ export async function atualizarProjeto(
   formData: FormData
 ): Promise<ActionResult> {
   const dados = ler(formData);
-  if (!dados.nome) return { ok: false, erro: "O nome do projeto e obrigatorio." };
+  if (!dados.nome) return { ok: false, erro: "O nome do projeto é obrigatório." };
 
   try {
     await atualizarProjetoDb(id, dados);

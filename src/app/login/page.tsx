@@ -22,16 +22,16 @@ export default function LoginPage({
             Lead Hunter
           </h1>
           <p className="mt-1 text-sm text-slate-400">
-            Prospeccao de clientes, sem planilha bagunçada.
+            Prospecção de clientes, sem planilha bagunçada.
           </p>
         </div>
 
         {DEMO && (
           <div className="mb-4 rounded-lg border border-brand/30 bg-brand/10 px-3 py-2.5 text-xs leading-relaxed text-brand-soft">
-            <span className="font-semibold">Modo demonstracao.</span>{" "}
+            <span className="font-semibold">Modo demonstração.</span>{" "}
             <span className="text-slate-300">
               Sem Supabase configurado — entre com qualquer email para dar uma
-              volta com dados ficticios.
+              volta com dados fictícios.
             </span>
           </div>
         )}
@@ -42,8 +42,8 @@ export default function LoginPage({
 
         <p className="mt-6 text-center text-xs text-slate-500">
           {DEMO
-            ? "Nada digitado aqui sai desta maquina."
-            : "Acesso restrito. Crie o usuario admin no painel do Supabase."}
+            ? "Nada digitado aqui sai desta máquina."
+            : "Acesso restrito. Crie o usuário admin no painel do Supabase."}
         </p>
       </div>
     </main>

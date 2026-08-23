@@ -74,7 +74,7 @@ export default async function DashboardPage({
             Comece criando um projeto
           </h2>
           <p className="max-w-sm text-sm text-slate-400">
-            Um projeto agrupa os leads de um nicho e uma regiao. Ex.:
+            Um projeto agrupa os leads de um nicho e uma região. Ex.:
             &ldquo;Advogados - Videira&rdquo;.
           </p>
           <Link href="/projetos" className="btn-primary mt-2">

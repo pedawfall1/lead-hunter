@@ -92,12 +92,12 @@ create policy "auth full access" on public.templates_mensagem
 -- ---------- seed opcional de templates ----------
 insert into public.templates_mensagem (nome, texto)
 select 'Primeira abordagem',
-       'Oi {nome}, tudo bem? Vi que voces atendem aqui no {bairro} e reparei que nao encontrei o site de voces. Trabalho ajudando negocios da regiao a aparecer no Google. Posso te mostrar rapidinho como ficaria?'
+       'Oi {nome}, tudo bem? Vi que vocês atendem aqui no {bairro} e reparei que não encontrei o site de vocês. Trabalho ajudando negócios da região a aparecer no Google. Posso te mostrar rapidinho como ficaria?'
 where not exists (select 1 from public.templates_mensagem);
 
 insert into public.templates_mensagem (nome, texto)
 select 'Follow-up 3 dias',
-       'Oi {nome}, passando aqui de novo. Chegou a ver minha mensagem sobre a divulgacao de voces no {bairro}? Se fizer sentido eu te mando uma previa sem compromisso.'
+       'Oi {nome}, passando aqui de novo. Chegou a ver minha mensagem sobre a divulgação de vocês no {bairro}? Se fizer sentido eu te mando uma prévia sem compromisso.'
 where not exists (select 1 from public.templates_mensagem where nome = 'Follow-up 3 dias');
 
 -- =====================================================================

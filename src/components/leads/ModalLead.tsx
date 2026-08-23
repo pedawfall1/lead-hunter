@@ -124,7 +124,7 @@ export default function ModalLead({
       setCopiado(true);
       setTimeout(() => setCopiado(false), 1600);
     } catch {
-      setErro("Nao consegui copiar. Selecione o texto manualmente.");
+      setErro("Não consegui copiar. Selecione o texto manualmente.");
     }
   }
 
@@ -233,7 +233,7 @@ export default function ModalLead({
 
           <div>
             <label className="label" htmlFor="endereco">
-              Endereco
+              Endereço
             </label>
             <input
               id="endereco"
@@ -290,7 +290,7 @@ export default function ModalLead({
               rows={4}
               className="input resize-y"
               defaultValue={lead.nota ?? ""}
-              placeholder="O que rolou na conversa, objecoes, quando dar follow-up..."
+              placeholder="O que rolou na conversa, objeções, quando dar follow-up..."
             />
           </div>
 
@@ -321,7 +321,7 @@ export default function ModalLead({
         <div className="space-y-4">
           {templates.length === 0 ? (
             <p className="rounded-lg border border-line bg-ink-900 px-3 py-4 text-sm text-slate-400">
-              Voce ainda nao tem templates. Crie um em{" "}
+              Você ainda não tem templates. Crie um em{" "}
               <span className="text-brand-soft">Templates</span> para montar a
               mensagem automaticamente.
             </p>
@@ -373,7 +373,7 @@ export default function ModalLead({
               placeholder="Escreva a mensagem ou escolha um template."
             />
             <p className="mt-1 text-xs text-slate-500">
-              Da pra ajustar o texto antes de enviar. Variaveis preenchidas:{" "}
+              Dá pra ajustar o texto antes de enviar. Variáveis preenchidas:{" "}
               <span className="text-slate-400">{nomeCurto(lead.nome)}</span>
               {bairro && (
                 <>
@@ -391,7 +391,7 @@ export default function ModalLead({
                 {formatarTelefone(lead.telefone) || "—"}
               </span>
               . O envio continua sendo manual (um clique seu no WhatsApp), sem
-              risco de bloqueio do numero.
+              risco de bloqueio do número.
             </p>
           </div>
 
@@ -408,7 +408,7 @@ export default function ModalLead({
             </a>
           ) : (
             <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
-              Esse lead nao tem um telefone valido. Adicione o numero na aba
+              Esse lead não tem um telefone válido. Adicione o número na aba
               Detalhes.
             </p>
           )}

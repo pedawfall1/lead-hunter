@@ -47,7 +47,7 @@ export async function criarLead(
   formData: FormData
 ): Promise<ActionResult<Lead>> {
   const dados = ler(formData);
-  if (!dados.nome) return { ok: false, erro: "O nome do lead e obrigatorio." };
+  if (!dados.nome) return { ok: false, erro: "O nome do lead é obrigatório." };
 
   try {
     const lead = await criarLeadDb(projetoId, dados);
@@ -64,7 +64,7 @@ export async function atualizarLead(
   formData: FormData
 ): Promise<ActionResult<Lead>> {
   const dados = ler(formData);
-  if (!dados.nome) return { ok: false, erro: "O nome do lead e obrigatorio." };
+  if (!dados.nome) return { ok: false, erro: "O nome do lead é obrigatório." };
 
   try {
     const lead = await atualizarLeadDb(id, dados);
@@ -80,7 +80,7 @@ export async function atualizarStatus(
   projetoId: string,
   status: LeadStatus
 ): Promise<ActionResult> {
-  if (!ehStatus(status)) return { ok: false, erro: "Status invalido." };
+  if (!ehStatus(status)) return { ok: false, erro: "Status inválido." };
 
   try {
     await atualizarStatusDb(id, status);
@@ -127,7 +127,7 @@ export async function importarLeads(
 ): Promise<ActionResult<{ inseridos: number }>> {
   if (!linhas.length) return { ok: false, erro: "Nada para importar." };
   if (linhas.length > 2000)
-    return { ok: false, erro: "Maximo de 2000 leads por importacao." };
+    return { ok: false, erro: "Máximo de 2000 leads por importação." };
 
   const registros = linhas
     .filter((l) => l.nome?.trim())

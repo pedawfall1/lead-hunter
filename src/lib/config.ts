@@ -1,5 +1,5 @@
 /**
- * Modo demonstracao.
+ * Modo demonstração.
  *
  * Liga sozinho quando as chaves do Supabase nao existem — assim da pra rodar
  * `npm run dev` sem configurar nada e clicar em tudo com dados de mentira.

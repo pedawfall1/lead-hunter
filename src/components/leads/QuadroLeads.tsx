@@ -148,7 +148,7 @@ export default function QuadroLeads({
         setLeads((ls) =>
           ls.map((l) => (l.id === lead.id ? { ...l, status: anterior } : l))
         );
-        setAviso(`Nao consegui mover o lead: ${r.erro}`);
+        setAviso(`Não consegui mover o lead: ${r.erro}`);
       }
     });
   }
@@ -170,7 +170,7 @@ export default function QuadroLeads({
           </h1>
           <p className="mt-0.5 text-sm text-slate-400">
             {[projeto.nicho, projeto.regiao].filter(Boolean).join(" · ") ||
-              "sem nicho / regiao"}
+              "sem nicho / região"}
             {" · "}
             {leads.length} {leads.length === 1 ? "lead" : "leads"}
             {semSite > 0 && ` · ${semSite} sem site`}
@@ -249,7 +249,7 @@ export default function QuadroLeads({
             Nenhum lead nesse projeto
           </h2>
           <p className="max-w-sm text-sm text-slate-400">
-            Importe uma lista em CSV ou cadastre na mao enquanto prospecta na
+            Importe uma lista em CSV ou cadastre na mão enquanto prospecta na
             rua.
           </p>
           <div className="mt-2 flex flex-wrap justify-center gap-2">

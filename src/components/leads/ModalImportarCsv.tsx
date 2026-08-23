@@ -32,7 +32,7 @@ export default function ModalImportarCsv({
       setTexto(conteudo);
       setNomeArquivo(arquivo.name);
     } catch {
-      setErro("Nao consegui ler o arquivo.");
+      setErro("Não consegui ler o arquivo.");
     }
   }
 
@@ -95,7 +95,7 @@ export default function ModalImportarCsv({
 
         <div>
           <label className="label" htmlFor="csv">
-            ...ou cole o conteudo aqui
+            ...ou cole o conteúdo aqui
           </label>
           <textarea
             id="csv"
@@ -145,7 +145,7 @@ export default function ModalImportarCsv({
                       <tr>
                         <th className="px-3 py-2 font-medium">Nome</th>
                         <th className="px-3 py-2 font-medium">Telefone</th>
-                        <th className="px-3 py-2 font-medium">Endereco</th>
+                        <th className="px-3 py-2 font-medium">Endereço</th>
                         <th className="px-3 py-2 font-medium">Site</th>
                         <th className="px-3 py-2 font-medium">Instagram</th>
                       </tr>
@@ -167,7 +167,7 @@ export default function ModalImportarCsv({
                               "sim"
                             ) : (
                               <span className="inline-flex items-center gap-1 text-brand-soft">
-                                <IconNoSite className="h-3.5 w-3.5" /> nao
+                                <IconNoSite className="h-3.5 w-3.5" /> não
                               </span>
                             )}
                           </td>
@@ -205,7 +205,7 @@ export default function ModalImportarCsv({
           </pre>
           <p className="mt-1 text-[11px] text-slate-500">
             Aceita separador vírgula ou ponto e vírgula. Em tem_site valem
-            sim/nao, true/false, 1/0 — ou a propria URL do site. Todos os leads
+            sim/não, true/false, 1/0 — ou a própria URL do site. Todos os leads
             entram como &ldquo;Novo&rdquo;.
           </p>
         </details>

@@ -41,30 +41,30 @@ type Semente = [
 const ADVOGADOS: Semente[] = [
   ["Advocacia Silva & Ramos", "49999880011", "Rua Brasil, 120 - Centro, Videira - SC", false, "advocaciasilvaramos", "novo", null],
   ["Dra. Marina Kohler", "49999880022", "Av. Manoel Roque, 88 - Centro, Videira - SC", false, null, "novo", null],
-  ["Escritorio Bertoldi", "49999880033", "Rua Sao Francisco, 45 - Universitario, Videira - SC", true, "bertoldiadv", "novo", null],
-  ["Zanella Advogados", "49999880044", "Rua XV de Novembro, 300 - Centro, Videira - SC", false, null, "contatado", "Mandei o primeiro contato terca de manha."],
+  ["Escritório Bertoldi", "49999880033", "Rua São Francisco, 45 - Universitário, Videira - SC", true, "bertoldiadv", "novo", null],
+  ["Zanella Advogados", "49999880044", "Rua XV de Novembro, 300 - Centro, Videira - SC", false, null, "contatado", "Mandei o primeiro contato terça de manhã."],
   ["Advocacia Trentin", "49999880055", "Rua das Palmeiras, 12 - Bela Vista, Videira - SC", false, "trentinadv", "contatado", null],
   ["Dr. Anderson Fachin", "49999880066", "Av. Brasil, 902 - Centro, Videira - SC", false, null, "respondeu", "Pediu pra mandar valores por WhatsApp."],
-  ["Cunha & Associados", "49999880077", "Rua Governador Jorge Lacerda, 77 - Centro, Videira - SC", true, "cunhaassoc", "respondeu", "Ja tem site mas odeia. Quer refazer."],
+  ["Cunha & Associados", "49999880077", "Rua Governador Jorge Lacerda, 77 - Centro, Videira - SC", true, "cunhaassoc", "respondeu", "Já tem site mas odeia. Quer refazer."],
   ["Advocacia Bortoluzzi", "49999880088", "Rua Ipiranga, 210 - Dos Estados, Videira - SC", false, null, "negociando", "Proposta de R$ 1.800 enviada. Retorno na sexta."],
-  ["Dra. Helena Prass", "49999880099", "Rua Curitiba, 55 - Centro, Videira - SC", false, "helenaprass.adv", "fechou", "Fechou site + gestao de Instagram. Comeca dia 5."],
-  ["Menegatti Advocacia", "49999881010", "Rua Anita Garibaldi, 640 - Centro, Videira - SC", true, null, "descartado", "Ja tem agencia. Voltar em 6 meses."],
+  ["Dra. Helena Prass", "49999880099", "Rua Curitiba, 55 - Centro, Videira - SC", false, "helenaprass.adv", "fechou", "Fechou site + gestão de Instagram. Começa dia 5."],
+  ["Menegatti Advocacia", "49999881010", "Rua Anita Garibaldi, 640 - Centro, Videira - SC", true, null, "descartado", "Já tem agência. Voltar em 6 meses."],
 ];
 
 const PETSHOPS: Semente[] = [
-  ["Pet Vida", "49998770011", "Rua Coronel Passos Maia, 410 - Centro, Cacador - SC", false, "petvidacacador", "novo", null],
-  ["Mundo Animal", "49998770022", "Av. Barao do Rio Branco, 1200 - Bom Sucesso, Cacador - SC", false, null, "novo", null],
-  ["Cao & Cia", "49998770033", "Rua Santa Catarina, 88 - Berger, Cacador - SC", false, "caoeciapet", "novo", null],
-  ["Patas Felizes", "49998770044", "Rua Frei Rogerio, 305 - Centro, Cacador - SC", true, null, "contatado", null],
-  ["Espaco Pet Nine", "49998770055", "Rua Getulio Vargas, 76 - Martello, Cacador - SC", false, "espacopetnine", "respondeu", "Quer ver exemplos de outros petshops."],
-  ["AgroPet Bom Amigo", "49998770066", "Rua Duque de Caxias, 991 - Centro, Cacador - SC", false, null, "fechou", "Fechou pacote basico."],
+  ["Pet Vida", "49998770011", "Rua Coronel Passos Maia, 410 - Centro, Caçador - SC", false, "petvidacacador", "novo", null],
+  ["Mundo Animal", "49998770022", "Av. Barão do Rio Branco, 1200 - Bom Sucesso, Caçador - SC", false, null, "novo", null],
+  ["Cão & Cia", "49998770033", "Rua Santa Catarina, 88 - Berger, Caçador - SC", false, "caoeciapet", "novo", null],
+  ["Patas Felizes", "49998770044", "Rua Frei Rogério, 305 - Centro, Caçador - SC", true, null, "contatado", null],
+  ["Espaço Pet Nine", "49998770055", "Rua Getúlio Vargas, 76 - Martello, Caçador - SC", false, "espacopetnine", "respondeu", "Quer ver exemplos de outros petshops."],
+  ["AgroPet Bom Amigo", "49998770066", "Rua Duque de Caxias, 991 - Centro, Caçador - SC", false, null, "fechou", "Fechou pacote básico."],
 ];
 
 const RESTAURANTES: Semente[] = [
   ["Cantina da Nona", "49997660011", "Rua Nereu Ramos, 220 - Centro, Fraiburgo - SC", false, "cantinadanona", "novo", null],
-  ["Sabor da Serra", "49997660022", "Av. Videira, 1450 - Jardim Universitario, Fraiburgo - SC", false, null, "novo", null],
-  ["Restaurante do Alemao", "49997660033", "Rua das Macieiras, 33 - Centro, Fraiburgo - SC", false, null, "contatado", "Falei com o filho do dono."],
-  ["Pizzaria Bella Massa", "49997660044", "Rua Sao Jose, 610 - Fraiburgo - SC", true, "bellamassafbg", "descartado", "Rede, decisao vem de Chapeco."],
+  ["Sabor da Serra", "49997660022", "Av. Videira, 1450 - Jardim Universitário, Fraiburgo - SC", false, null, "novo", null],
+  ["Restaurante do Alemão", "49997660033", "Rua das Macieiras, 33 - Centro, Fraiburgo - SC", false, null, "contatado", "Falei com o filho do dono."],
+  ["Pizzaria Bella Massa", "49997660044", "Rua São José, 610 - Fraiburgo - SC", true, "bellamassafbg", "descartado", "Rede, decisão vem de Chapecó."],
 ];
 
 function montarLeads(projetoId: string, sementes: Semente[], base: number): Lead[] {
@@ -93,9 +93,9 @@ function semear(): Estado {
   };
   const petshops: Projeto = {
     id: novoId(),
-    nome: "Petshops - Cacador",
+    nome: "Petshops - Caçador",
     nicho: "Petshop",
-    regiao: "Cacador - SC",
+    regiao: "Caçador - SC",
     criado_em: diasAtras(11),
   };
   const restaurantes: Projeto = {
@@ -118,21 +118,21 @@ function semear(): Estado {
         id: novoId(),
         nome: "Primeira abordagem",
         texto:
-          "Oi {nome}, tudo bem? Vi que voces atendem aqui no {bairro} e reparei que nao encontrei o site de voces. Trabalho ajudando negocios da regiao a aparecer no Google. Posso te mostrar rapidinho como ficaria?",
+          "Oi {nome}, tudo bem? Vi que vocês atendem aqui no {bairro} e reparei que não encontrei o site de vocês. Trabalho ajudando negócios da região a aparecer no Google. Posso te mostrar rapidinho como ficaria?",
         criado_em: diasAtras(24),
       },
       {
         id: novoId(),
         nome: "Follow-up 3 dias",
         texto:
-          "Oi {nome}, passando aqui de novo. Chegou a ver minha mensagem sobre a divulgacao de voces no {bairro}? Se fizer sentido eu te mando uma previa sem compromisso.",
+          "Oi {nome}, passando aqui de novo. Chegou a ver minha mensagem sobre a divulgação de vocês no {bairro}? Se fizer sentido eu te mando uma prévia sem compromisso.",
         criado_em: diasAtras(18),
       },
       {
         id: novoId(),
-        nome: "Quem ja tem site",
+        nome: "Quem já tem site",
         texto:
-          "Oi {nome}! Achei voces pesquisando por servicos no {bairro}. O site de voces existe, mas nao aparece nas primeiras posicoes do Google. Quer que eu mande um diagnostico rapido, de graca?",
+          "Oi {nome}! Achei vocês pesquisando por serviços no {bairro}. O site de vocês existe, mas não aparece nas primeiras posições do Google. Quer que eu mande um diagnóstico rápido, de graça?",
         criado_em: diasAtras(6),
       },
     ],

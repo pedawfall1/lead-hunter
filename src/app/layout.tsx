@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Lead Hunter",
-  description: "Prospeccao de clientes para agencias de marketing.",
+  description: "Prospecção de clientes para agências de marketing.",
 };
 
 export const viewport: Viewport = {

@@ -147,7 +147,7 @@ export default function GerenciadorTemplates({
           </h2>
           <p className="max-w-sm text-sm text-slate-400">
             Escreva a sua abordagem uma vez e reaproveite em todos os leads, com
-            nome e bairro ja preenchidos.
+            nome e bairro já preenchidos.
           </p>
           <button className="btn-primary mt-2" onClick={abrirNovo}>
             <IconPlus className="h-4 w-4" />
@@ -187,7 +187,7 @@ export default function GerenciadorTemplates({
                     <button
                       onClick={() => copiar(t)}
                       className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-ink-600 hover:text-slate-200"
-                      aria-label="Copiar previa"
+                      aria-label="Copiar prévia"
                     >
                       {copiado === t.id ? (
                         <IconCheck className="h-4 w-4 text-st-fechou" />
@@ -272,7 +272,7 @@ export default function GerenciadorTemplates({
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
               required
-              placeholder="Oi {nome}, tudo bem? Vi que voces atendem aqui no {bairro}..."
+              placeholder="Oi {nome}, tudo bem? Vi que vocês atendem aqui no {bairro}..."
             />
             <p className="mt-1 text-right text-xs text-slate-500">
               {texto.length} caracteres
@@ -283,7 +283,7 @@ export default function GerenciadorTemplates({
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-400">
                 <IconWhatsapp className="h-3.5 w-3.5 text-[#25D366]" />
-                Previa
+                Prévia
               </span>
               <div className="ml-auto flex gap-2">
                 <input
@@ -309,7 +309,7 @@ export default function GerenciadorTemplates({
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-50">
                 {preview || (
                   <span className="text-slate-300/60">
-                    A previa aparece aqui.
+                    A prévia aparece aqui.
                   </span>
                 )}
               </p>

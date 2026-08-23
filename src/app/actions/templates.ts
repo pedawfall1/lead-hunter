@@ -17,8 +17,8 @@ function ler(formData: FormData) {
 }
 
 function validar({ nome, texto }: { nome: string; texto: string }) {
-  if (!nome) return "De um nome ao template.";
-  if (!texto) return "A mensagem nao pode ficar vazia.";
+  if (!nome) return "Dê um nome ao template.";
+  if (!texto) return "A mensagem não pode ficar vazia.";
   return null;
 }
 

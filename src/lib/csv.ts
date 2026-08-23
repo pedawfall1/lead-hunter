@@ -126,7 +126,7 @@ export function parseCsv(textoBruto: string): ResultadoCsv {
   if (bruto.length < 2) {
     return {
       linhas: [],
-      erros: ["O arquivo precisa de uma linha de cabecalho e ao menos um lead."],
+      erros: ["O arquivo precisa de uma linha de cabeçalho e ao menos um lead."],
       colunasReconhecidas: [],
       colunasIgnoradas: [],
     };
@@ -156,7 +156,7 @@ export function parseCsv(textoBruto: string): ResultadoCsv {
 
   if (indices.nome === undefined) {
     erros.push(
-      'Nao encontrei a coluna "nome" no cabecalho. Colunas esperadas: nome, telefone, endereco, tem_site, instagram.'
+      'Não encontrei a coluna "nome" no cabeçalho. Colunas esperadas: nome, telefone, endereco, tem_site, instagram.'
     );
     return {
       linhas: [],
@@ -200,5 +200,5 @@ export function parseCsv(textoBruto: string): ResultadoCsv {
 
 export const CSV_EXEMPLO = `nome,telefone,endereco,tem_site,instagram
 Advocacia Silva,49999887766,"Rua Brasil, 120 - Centro, Videira - SC",nao,@advocaciasilva
-Barbearia do Ze,4933441122,"Av. Manoel Roque, 45 - Bairro Universitario, Videira - SC",sim,
+Barbearia do Zé,4933441122,"Av. Manoel Roque, 45 - Bairro Universitário, Videira - SC",sim,
 `;
