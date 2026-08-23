@@ -18,6 +18,18 @@ import type {
  * Erros do banco viram exceção e caem no error.tsx da área logada.
  */
 
+/**
+ * Prefixo lh_ porque o projeto Supabase e compartilhado com outros sistemas
+ * (mesma convencao das tabelas mc_ que ja existem la). Trocar de banco e so
+ * mexer aqui.
+ */
+const T = {
+  projetos: "lh_projetos",
+  leads: "lh_leads",
+  interacoes: "lh_interacoes",
+  templates: "lh_templates_mensagem",
+} as const;
+
 function checar(error: { message: string } | null) {
   if (error) throw new Error(error.message);
 }
@@ -35,7 +47,7 @@ export async function listarProjetos(): Promise<Projeto[]> {
   if (DEMO) return [...estado().projetos].sort(porCriacaoDesc);
 
   const { data, error } = await createClient()
-    .from("projetos")
+    .from(T.projetos)
     .select(COLUNAS_PROJETO)
     .order("criado_em", { ascending: false });
   checar(error);
@@ -46,7 +58,7 @@ export async function obterProjeto(id: string): Promise<Projeto | null> {
   if (DEMO) return estado().projetos.find((p) => p.id === id) ?? null;
 
   const { data, error } = await createClient()
-    .from("projetos")
+    .from(T.projetos)
     .select(COLUNAS_PROJETO)
     .eq("id", id)
     .maybeSingle();
@@ -70,7 +82,7 @@ export async function criarProjetoDb(dados: DadosProjeto): Promise<Projeto> {
   }
 
   const { data, error } = await createClient()
-    .from("projetos")
+    .from(T.projetos)
     .insert(dados)
     .select(COLUNAS_PROJETO)
     .single();
@@ -88,7 +100,7 @@ export async function atualizarProjetoDb(
     return;
   }
 
-  const { error } = await createClient().from("projetos").update(dados).eq("id", id);
+  const { error } = await createClient().from(T.projetos).update(dados).eq("id", id);
   checar(error);
 }
 
@@ -102,7 +114,7 @@ export async function excluirProjetoDb(id: string): Promise<void> {
     return;
   }
 
-  const { error } = await createClient().from("projetos").delete().eq("id", id);
+  const { error } = await createClient().from(T.projetos).delete().eq("id", id);
   checar(error);
 }
 
@@ -118,7 +130,7 @@ export async function listarLeads(projetoId?: string): Promise<Lead[]> {
       .sort(porCriacaoDesc);
   }
 
-  let query = createClient().from("leads").select(COLUNAS_LEAD);
+  let query = createClient().from(T.leads).select(COLUNAS_LEAD);
   if (projetoId) query = query.eq("projeto_id", projetoId);
 
   const { data, error } = await query.order("criado_em", { ascending: false });
@@ -137,7 +149,7 @@ export async function listarAgendados(): Promise<Lead[]> {
   }
 
   const { data, error } = await createClient()
-    .from("leads")
+    .from(T.leads)
     .select(COLUNAS_LEAD)
     .not("proximo_contato", "is", null)
     .neq("status", "descartado")
@@ -174,7 +186,7 @@ export async function criarLeadDb(
   }
 
   const { data, error } = await createClient()
-    .from("leads")
+    .from(T.leads)
     .insert({ projeto_id: projetoId, ...dados })
     .select(COLUNAS_LEAD)
     .single();
@@ -194,7 +206,7 @@ export async function atualizarLeadDb(
   }
 
   const { data, error } = await createClient()
-    .from("leads")
+    .from(T.leads)
     .update(dados)
     .eq("id", id)
     .select(COLUNAS_LEAD)
@@ -216,7 +228,7 @@ export async function ajustarLeadDb(
   }
 
   const { data, error } = await createClient()
-    .from("leads")
+    .from(T.leads)
     .update(campos)
     .eq("id", id)
     .select(COLUNAS_LEAD)
@@ -233,7 +245,7 @@ export async function excluirLeadDb(id: string): Promise<void> {
     return;
   }
 
-  const { error } = await createClient().from("leads").delete().eq("id", id);
+  const { error } = await createClient().from(T.leads).delete().eq("id", id);
   checar(error);
 }
 
@@ -275,7 +287,7 @@ export async function inserirLeadsDb(
   for (let i = 0; i < registros.length; i += 250) {
     const lote = registros.slice(i, i + 250);
     const { error, count } = await supabase
-      .from("leads")
+      .from(T.leads)
       .insert(lote, { count: "exact" });
     if (error)
       throw new Error(
@@ -296,7 +308,7 @@ export async function listarInteracoes(leadId: string): Promise<Interacao[]> {
   }
 
   const { data, error } = await createClient()
-    .from("interacoes")
+    .from(T.interacoes)
     .select("*")
     .eq("lead_id", leadId)
     .order("criado_em", { ascending: false });
@@ -318,7 +330,7 @@ export async function interacoesPorLead(
       .sort(porCriacaoDesc);
   } else {
     const { data, error } = await createClient()
-      .from("interacoes")
+      .from(T.interacoes)
       .select("*")
       .in("lead_id", leadIds)
       .order("criado_em", { ascending: false });
@@ -353,7 +365,7 @@ export async function criarInteracaoDb(
   }
 
   const { data, error } = await createClient()
-    .from("interacoes")
+    .from(T.interacoes)
     .insert({ lead_id: leadId, ...dados })
     .select("*")
     .single();
@@ -368,7 +380,7 @@ export async function excluirInteracaoDb(id: string): Promise<void> {
     return;
   }
 
-  const { error } = await createClient().from("interacoes").delete().eq("id", id);
+  const { error } = await createClient().from(T.interacoes).delete().eq("id", id);
   checar(error);
 }
 
@@ -378,7 +390,7 @@ export async function listarTemplates(): Promise<Template[]> {
   if (DEMO) return [...estado().templates].sort(porCriacaoAsc);
 
   const { data, error } = await createClient()
-    .from("templates_mensagem")
+    .from(T.templates)
     .select("*")
     .order("criado_em", { ascending: true });
   checar(error);
@@ -395,7 +407,7 @@ export async function criarTemplateDb(dados: DadosTemplate): Promise<Template> {
   }
 
   const { data, error } = await createClient()
-    .from("templates_mensagem")
+    .from(T.templates)
     .insert(dados)
     .select("*")
     .single();
@@ -415,7 +427,7 @@ export async function atualizarTemplateDb(
   }
 
   const { data, error } = await createClient()
-    .from("templates_mensagem")
+    .from(T.templates)
     .update(dados)
     .eq("id", id)
     .select("*")
@@ -432,7 +444,7 @@ export async function excluirTemplateDb(id: string): Promise<void> {
   }
 
   const { error } = await createClient()
-    .from("templates_mensagem")
+    .from(T.templates)
     .delete()
     .eq("id", id);
   checar(error);

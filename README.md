@@ -34,12 +34,12 @@ Places API, ainda desabilitado de propósito.
 
 1. Crie um projeto em [supabase.com](https://supabase.com).
 2. Abra **SQL Editor → New query**, cole o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) e rode.
-   Isso cria `projetos`, `leads`, `interacoes`, `templates_mensagem`, os enums, o
-   trigger de `atualizado_em`, as policies de RLS e dois templates de exemplo.
+   Isso cria `lh_projetos`, `lh_leads`, `lh_interacoes`, `lh_templates_mensagem`,
+   os enums, o trigger de `atualizado_em` e as policies de RLS.
 
-   **Já tinha a v1 no ar?** Não use o `schema.sql`: rode
-   [`supabase/migrations/001_servico_sinais_interacoes.sql`](supabase/migrations/001_servico_sinais_interacoes.sql),
-   que migra `tem_site` para o sinal `sem_site` sem perder dado.
+   As tabelas usam o prefixo `lh_` porque o projeto Supabase em uso é
+   compartilhado com outros sistemas. Para mudar o prefixo, altere o objeto `T`
+   no topo de [`src/lib/db.ts`](src/lib/db.ts) — é o único lugar que nomeia tabela.
 
 ### 2. Criar o usuário admin
 
@@ -176,14 +176,18 @@ src/
 middleware.ts                 # renova a sessão e bloqueia rotas privadas
 supabase/
   schema.sql                  # instalação nova
-  migrations/001_*.sql        # quem já tinha a v1 roda só esta
+  migrations/001_*.sql        # a mesma criação, como registro do que foi aplicado
 ```
 
-## Multi-usuário no futuro
+## Isolamento por conta
 
-As tabelas `projetos` e `templates_mensagem` já têm `user_id` com default `auth.uid()`.
-Hoje as policies liberam tudo para qualquer usuário autenticado. Para isolar por conta,
-rode o bloco comentado no fim de `supabase/schema.sql` — a aplicação não precisa mudar.
+O RLS já é por dono: cada linha pertence a quem a criou (`user_id = auth.uid()`),
+e `lh_leads` / `lh_interacoes` herdam o dono via projeto. Isso importa porque o
+projeto Supabase é compartilhado — sem essas policies, um usuário de outro
+sistema do mesmo projeto leria os leads.
+
+Efeito colateral bom: multi-usuário já funciona. Adicionar uma segunda conta é
+criar o usuário no painel do Supabase; nada muda no código.
 
 ## Próximos passos (quando estiver no PC)
 
