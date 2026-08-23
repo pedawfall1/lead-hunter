@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/ui/Modal";
 import {
@@ -16,7 +16,11 @@ import {
   criarTemplate,
   excluirTemplate,
 } from "@/app/actions/templates";
-import { preencherTemplate } from "@/lib/format";
+import {
+  contarVariacoes,
+  preencherTemplate,
+  sortearVariacao,
+} from "@/lib/format";
 import type { Template } from "@/lib/types";
 
 const EXEMPLO = { nome: "Advocacia Silva", bairro: "Centro" };
@@ -38,6 +42,7 @@ export default function GerenciadorTemplates({
   const [nome, setNome] = useState("");
   const [texto, setTexto] = useState("");
   const [exemplo, setExemplo] = useState(EXEMPLO);
+  const [semente, setSemente] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   function abrirNovo() {
@@ -56,7 +61,7 @@ export default function GerenciadorTemplates({
     setAberto(true);
   }
 
-  function inserirVariavel(v: "{nome}" | "{bairro}") {
+  function inserirVariavel(v: string) {
     const el = textareaRef.current;
     if (!el) {
       setTexto((t) => t + v);
@@ -111,7 +116,13 @@ export default function GerenciadorTemplates({
     }
   }
 
-  const preview = preencherTemplate(texto, exemplo);
+  const variacoes = contarVariacoes(texto);
+  // semente entra na dependencia so para forcar novo sorteio no clique
+  const preview = useMemo(
+    () => preencherTemplate(sortearVariacao(texto), exemplo),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [texto, exemplo, semente]
+  );
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
@@ -262,6 +273,14 @@ export default function GerenciadorTemplates({
                 >
                   + {"{bairro}"}
                 </button>
+                <button
+                  type="button"
+                  className="btn-sub px-2 py-1 text-xs"
+                  onClick={() => inserirVariavel("{Oi|Olá|Bom dia}")}
+                  title="Grupo de alternativas: o app sorteia uma a cada envio"
+                >
+                  + variação
+                </button>
               </div>
             </div>
             <textarea
@@ -274,8 +293,13 @@ export default function GerenciadorTemplates({
               required
               placeholder="Oi {nome}, tudo bem? Vi que vocês atendem aqui no {bairro}..."
             />
-            <p className="mt-1 text-right text-xs text-slate-500">
-              {texto.length} caracteres
+            <p className="mt-1 flex justify-between text-xs text-slate-500">
+              <span>
+                {variacoes > 1
+                  ? `${variacoes} mensagens diferentes — sorteia uma a cada envio`
+                  : "Use {a|b|c} para variar o texto e não repetir mensagem"}
+              </span>
+              <span>{texto.length} caracteres</span>
             </p>
           </div>
 
@@ -285,6 +309,15 @@ export default function GerenciadorTemplates({
                 <IconWhatsapp className="h-3.5 w-3.5 text-[#25D366]" />
                 Prévia
               </span>
+              {variacoes > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setSemente((n) => n + 1)}
+                  className="btn-sub px-2 py-0.5 text-[11px]"
+                >
+                  🎲 {variacoes} variações
+                </button>
+              )}
               <div className="ml-auto flex gap-2">
                 <input
                   className="input w-28 px-2 py-1 text-xs"

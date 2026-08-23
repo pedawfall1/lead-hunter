@@ -20,6 +20,8 @@ import {
   linkWhatsapp,
   nomeCurto,
   preencherTemplate,
+  sortearVariacao,
+  contarVariacoes,
   telefoneWhatsapp,
 } from "@/lib/format";
 import {
@@ -72,6 +74,8 @@ export default function ModalLead({
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
   const [mensagem, setMensagem] = useState("");
   const [copiado, setCopiado] = useState(false);
+  // muda para sortear outra variacao do mesmo template
+  const [semente, setSemente] = useState(0);
 
   const bairro = useMemo(
     () => extrairBairro(lead.endereco, projeto.regiao),
@@ -86,6 +90,7 @@ export default function ModalLead({
   const tentativas = interacoes.filter((i) => i.tipo === "whatsapp").length;
 
   const templateAtual = templates.find((t) => t.id === templateId) ?? null;
+  const variacoes = templateAtual ? contarVariacoes(templateAtual.texto) : 1;
 
   useEffect(() => {
     if (!templateAtual) {
@@ -93,14 +98,15 @@ export default function ModalLead({
       return;
     }
     setMensagem(
-      preencherTemplate(templateAtual.texto, {
+      preencherTemplate(sortearVariacao(templateAtual.texto), {
         nome: nomeCurto(lead.nome),
         bairro,
         servico: servicoLabel.toLowerCase(),
         motivo,
       })
     );
-  }, [templateAtual, lead.nome, bairro, servicoLabel, motivo]);
+    // `semente` entra de proposito: mexer nela sorteia outra variacao
+  }, [templateAtual, lead.nome, bairro, servicoLabel, motivo, semente]);
 
   const numero = telefoneWhatsapp(lead.telefone);
   const link = numero ? linkWhatsapp(lead.telefone, mensagem) : "";
@@ -432,8 +438,18 @@ export default function ModalLead({
           )}
 
           <div>
-            <div className="mb-1.5 flex items-end justify-between">
+            <div className="mb-1.5 flex items-end justify-between gap-2">
               <span className="label mb-0">Mensagem</span>
+              {variacoes > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setSemente((n) => n + 1)}
+                  className="btn-sub mr-auto px-2 py-1 text-xs"
+                  title={`${variacoes} variações possíveis`}
+                >
+                  🎲 sortear outra
+                </button>
+              )}
               <button
                 type="button"
                 onClick={copiar}

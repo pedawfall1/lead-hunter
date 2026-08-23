@@ -136,3 +136,33 @@ export function dataCurta(iso: string): string {
     return "";
   }
 }
+
+/* ----------------------------- variações ------------------------------ */
+
+/**
+ * Grupos de alternativa no template: {Oi|Olá|Bom dia}.
+ *
+ * Só conta como variação o grupo que tem barra dentro — {nome} e {bairro}
+ * continuam sendo variáveis e passam ilesos por aqui.
+ */
+const GRUPO_VARIACAO = /\{([^{}]*\|[^{}]*)\}/g;
+
+/** Sorteia uma versão do texto, resolvendo cada grupo de alternativa. */
+export function sortearVariacao(texto: string, sorteio = Math.random): string {
+  return texto.replace(GRUPO_VARIACAO, (_, grupo: string) => {
+    const opcoes = grupo.split("|").map((o) => o.trim());
+    return opcoes[Math.floor(sorteio() * opcoes.length)] ?? opcoes[0] ?? "";
+  });
+}
+
+/**
+ * Quantas mensagens diferentes este template consegue gerar.
+ * É o produto do número de opções de cada grupo.
+ */
+export function contarVariacoes(texto: string): number {
+  let total = 1;
+  for (const [, grupo] of texto.matchAll(GRUPO_VARIACAO)) {
+    total *= grupo.split("|").length;
+  }
+  return total;
+}
