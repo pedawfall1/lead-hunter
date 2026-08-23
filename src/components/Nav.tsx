@@ -5,16 +5,16 @@ import { useTransition } from "react";
 import { usePathname } from "next/navigation";
 import { sair } from "@/app/actions/auth";
 import {
-  IconDashboard,
   IconFolder,
   IconLogout,
   IconMessage,
+  IconRelatorio,
   IconSino,
 } from "./ui/icons";
 
 const LINKS = [
   { href: "/hoje", label: "Hoje", Icone: IconSino, exato: false },
-  { href: "/", label: "Painel", Icone: IconDashboard, exato: true },
+  { href: "/", label: "Painel", Icone: IconRelatorio, exato: true },
   { href: "/projetos", label: "Projetos", Icone: IconFolder, exato: false },
   { href: "/templates", label: "Templates", Icone: IconMessage, exato: false },
 ];

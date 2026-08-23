@@ -23,15 +23,6 @@ function Svg({
   );
 }
 
-export const IconDashboard = (p: P) => (
-  <Svg {...p}>
-    <rect x="3" y="3" width="7" height="9" rx="1.5" />
-    <rect x="14" y="3" width="7" height="5" rx="1.5" />
-    <rect x="14" y="12" width="7" height="9" rx="1.5" />
-    <rect x="3" y="16" width="7" height="5" rx="1.5" />
-  </Svg>
-);
-
 export const IconFolder = (p: P) => (
   <Svg {...p}>
     <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.5h7A1.5 1.5 0 0 1 19 10v7.5A1.5 1.5 0 0 1 17.5 19h-13A1.5 1.5 0 0 1 3 17.5Z" />
@@ -169,5 +160,11 @@ export const IconSino = (p: P) => (
   <Svg {...p}>
     <path d="M18 9a6 6 0 1 0-12 0c0 5-2 6-2 6h16s-2-1-2-6Z" />
     <path d="M13.7 19a2 2 0 0 1-3.4 0" />
+  </Svg>
+);
+
+export const IconRelatorio = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
   </Svg>
 );

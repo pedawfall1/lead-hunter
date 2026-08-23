@@ -78,7 +78,7 @@ As chaves estão em **Project Settings → API**:
 | --- | --- |
 | `/login` | Email + senha (Supabase Auth). O middleware protege todo o resto. |
 | `/hoje` | Agenda de retornos: atrasados, hoje e próximos 7 dias, com WhatsApp direto e botões de adiar. |
-| `/` | Painel: total de leads, qualificados, taxa de resposta, taxa de fechamento, gráfico por status e filtro por projeto. |
+| `/` | Painel: funil de conversão, atividade no tempo, taxa de resposta por nicho e por template, mapa de ritmo e sinais mais frequentes. Filtro por período e projeto. |
 | `/projetos` | Lista de projetos com contagem de leads, criar / editar / excluir. |
 | `/projetos/[id]` | Kanban de leads do projeto, com drag and drop, busca, filtro por sinal de qualificação, importação de CSV e cadastro manual. |
 | `/templates` | CRUD de templates com prévia da mensagem preenchida. |
@@ -103,14 +103,26 @@ e-mail, nota). O botão de WhatsApp registra sozinho, promove quem estava em
 (3 → 7 → 14 → 30 dias, conforme o número de toques). Os retornos aparecem em
 `/hoje` com um contador no menu.
 
-### Métricas do dashboard
+### Métricas do painel
 
 - **Leads qualificados** = leads que disparam ao menos um critério do projeto
 - **Taxa de resposta** = (respondeu + negociando + fechou) ÷ (contatado + respondeu + negociando + fechou)
 - **Taxa de fechamento** = fechou ÷ total de leads
+- **Funil** é cumulativo: quem está em "fechou" também contou em todas as etapas anteriores
+- **Desempenho por template** conta **por lead**, não por mensagem: dos leads que
+  receberam aquele texto, quantos responderam. Atribuir só ao último disparo antes
+  da resposta parece justo mas mede cadência, não texto — quem sempre faz follow-up
+  deixaria o template de abertura eternamente em 0%.
+- **Ritmo de prospecção** sempre mostra 12 semanas, ignorando o filtro de período
 
 `descartado` fica fora do denominador da taxa de resposta: um lead pode ser descartado
 antes de qualquer contato.
+
+As cores dos gráficos foram validadas para daltonismo sobre a superfície escura
+(`#111823`): o par laranja/azul da série temporal tem ΔE 23,4 em protanopia e 34,4
+em tritanopia. Categorias nominais (projeto, template) usam **uma cor só** — colorir
+por valor gastaria o canal de identidade repetindo o que o comprimento da barra
+já diz.
 
 ## Importação de CSV
 
@@ -245,6 +257,7 @@ src/
     login/
     api/n8n/route.ts          # callback do n8n (entregue, lido, resposta...)
   components/
+    relatorios/               # funil, série temporal, ranking, mapa de ritmo
     leads/                    # kanban, cards, modais, importação
     projetos/  templates/  dashboard/  ui/
   lib/
@@ -253,6 +266,7 @@ src/
     db.ts                     # camada de dados: demo ou Supabase
     servicos.ts               # catálogo de serviços e sinais de qualificação
     agenda.ts                 # cadência e baldes de retorno
+    relatorios.ts             # cálculo do painel, sem ida extra ao banco
     n8n.ts                    # contrato de ida e volta com o n8n
     supabase/admin.ts         # service_role, só para o webhook
     config.ts  csv.ts  format.ts  status.ts  types.ts
