@@ -639,3 +639,61 @@ export async function listarNaoPerturbe(): Promise<string[]> {
   checar(error);
   return ((data ?? []) as { telefone: string }[]).map((l) => l.telefone);
 }
+
+/* ------------------------------ navegação ------------------------------ */
+
+export type ProjetoNav = {
+  id: string;
+  nome: string;
+  servico: string | null;
+  total: number;
+  /** leads com retorno vencido — o que faz o projeto pedir atenção */
+  atrasados: number;
+};
+
+/**
+ * Resumo que a barra lateral precisa: projetos com contagem e atrasos.
+ * Uma consulta enxuta (só projeto_id e proximo_contato) que roda em toda
+ * navegação, então não puxa o lead inteiro.
+ */
+export async function resumoNav(): Promise<ProjetoNav[]> {
+  const projetos = await listarProjetos();
+  if (!projetos.length) return [];
+
+  const hoje = new Date().toISOString().slice(0, 10);
+  const contagem = new Map<string, { total: number; atrasados: number }>();
+
+  const registrar = (projetoId: string, proximo: string | null) => {
+    const atual = contagem.get(projetoId) ?? { total: 0, atrasados: 0 };
+    atual.total += 1;
+    if (proximo && proximo.slice(0, 10) < hoje) atual.atrasados += 1;
+    contagem.set(projetoId, atual);
+  };
+
+  // Conta todos os leads, inclusive descartados: e o mesmo numero que o
+  // card do projeto mostra, e dois valores diferentes para a mesma coisa
+  // na mesma tela parecem bug. A urgencia quem carrega e o ponto de atraso.
+  if (DEMO) {
+    for (const l of estado().leads) {
+      registrar(l.projeto_id, l.proximo_contato);
+    }
+  } else {
+    const { data, error } = await createClient()
+      .from(T.leads)
+      .select("projeto_id, proximo_contato");
+    checar(error);
+    for (const l of (data ?? []) as {
+      projeto_id: string;
+      proximo_contato: string | null;
+    }[]) {
+      registrar(l.projeto_id, l.proximo_contato);
+    }
+  }
+
+  return projetos.map((p) => ({
+    id: p.id,
+    nome: p.nome,
+    servico: p.servico,
+    ...(contagem.get(p.id) ?? { total: 0, atrasados: 0 }),
+  }));
+}

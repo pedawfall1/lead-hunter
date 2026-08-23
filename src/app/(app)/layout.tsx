@@ -1,6 +1,6 @@
 import { usuarioAtual } from "@/lib/auth";
 import { DEMO } from "@/lib/config";
-import { listarAgendados } from "@/lib/db";
+import { listarAgendados, resumoNav } from "@/lib/db";
 import { pendentesHoje } from "@/lib/agenda";
 import Nav from "@/components/Nav";
 
@@ -11,18 +11,28 @@ export default async function AppLayout({
 }) {
   const usuario = await usuarioAtual();
 
-  // contador do "Hoje": atrasados + vencendo hoje
+  // contador do "Hoje" e a lista de projetos da barra lateral
   let pendentes = 0;
+  let projetos: Awaited<ReturnType<typeof resumoNav>> = [];
   try {
-    pendentes = pendentesHoje(await listarAgendados());
+    const [agendados, resumo] = await Promise.all([
+      listarAgendados(),
+      resumoNav(),
+    ]);
+    pendentes = pendentesHoje(agendados);
+    projetos = resumo;
   } catch {
     // se o banco falhar, o menu não precisa quebrar junto
   }
 
   return (
     <div className="min-h-screen">
-      <Nav email={usuario?.email ?? null} pendentes={pendentes} />
-      <main className="px-4 pb-24 pt-4 md:ml-60 md:px-8 md:pb-10 md:pt-8">
+      <Nav
+        email={usuario?.email ?? null}
+        pendentes={pendentes}
+        projetos={projetos}
+      />
+      <main className="px-4 pb-24 pt-4 md:ml-64 md:px-8 md:pb-10 md:pt-8">
         {DEMO && (
           <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-brand/30 bg-brand/10 px-3 py-2 text-xs text-brand-soft">
             <span className="font-semibold">Modo demonstração</span>
