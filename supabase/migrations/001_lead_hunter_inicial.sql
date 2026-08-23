@@ -93,6 +93,7 @@ create index if not exists lh_projetos_user_id_idx      on public.lh_projetos (u
 create or replace function public.lh_set_atualizado_em()
 returns trigger
 language plpgsql
+set search_path = ''
 as $$
 begin
   new.atualizado_em = now();
