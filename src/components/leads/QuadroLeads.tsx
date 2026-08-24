@@ -32,6 +32,7 @@ import ColunaStatus from "./ColunaStatus";
 import ModalLead from "./ModalLead";
 import ModalNovoLead from "./ModalNovoLead";
 import ModalImportarCsv from "./ModalImportarCsv";
+import ModalBuscarMapa from "./ModalBuscarMapa";
 
 function normalizar(s: string) {
   return s
@@ -46,12 +47,14 @@ export default function QuadroLeads({
   templates,
   interacoesIniciais,
   n8nAtivo,
+  buscaAtiva,
 }: {
   projeto: Projeto;
   leadsIniciais: Lead[];
   templates: Template[];
   interacoesIniciais: Record<string, Interacao[]>;
   n8nAtivo: boolean;
+  buscaAtiva: boolean;
 }) {
   const router = useRouter();
   const [, iniciar] = useTransition();
@@ -67,6 +70,7 @@ export default function QuadroLeads({
   } | null>(null);
   const [modalNovo, setModalNovo] = useState(false);
   const [modalCsv, setModalCsv] = useState(false);
+  const [modalMapa, setModalMapa] = useState(false);
   const [arrastando, setArrastando] = useState<Lead | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
 
@@ -199,17 +203,23 @@ export default function QuadroLeads({
             <IconUpload className="h-4 w-4" />
             Importar CSV
           </button>
-          <Tooltip texto="Em breve">
-            <button
-              className="btn-ghost pointer-events-none"
-              disabled
-              aria-disabled="true"
-              title="Em breve"
-            >
+          {buscaAtiva ? (
+            <button className="btn-ghost" onClick={() => setModalMapa(true)}>
               <IconMap className="h-4 w-4" />
               Buscar no Google Maps
             </button>
-          </Tooltip>
+          ) : (
+            <Tooltip texto="Configure N8N_BUSCA_URL para ativar">
+              <button
+                className="btn-ghost pointer-events-none"
+                disabled
+                aria-disabled="true"
+              >
+                <IconMap className="h-4 w-4" />
+                Buscar no Google Maps
+              </button>
+            </Tooltip>
+          )}
         </div>
       </div>
 
@@ -348,6 +358,10 @@ export default function QuadroLeads({
           aoFechar={() => setModalNovo(false)}
           aoCriado={(lead) => setLeads((ls) => [lead, ...ls])}
         />
+      )}
+
+      {modalMapa && (
+        <ModalBuscarMapa projeto={projeto} aoFechar={() => setModalMapa(false)} />
       )}
 
       {modalCsv && (

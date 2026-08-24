@@ -697,3 +697,111 @@ export async function resumoNav(): Promise<ProjetoNav[]> {
     ...(contagem.get(p.id) ?? { total: 0, atrasados: 0 }),
   }));
 }
+
+/* --------------------- importação vinda do mapa ------------------------ */
+
+export type LeadDoMapa = {
+  nome: string;
+  telefone: string | null;
+  endereco: string | null;
+  instagram: string | null;
+  sinais: Sinais;
+  place_id: string | null;
+};
+
+export type ResultadoImportacao = {
+  inseridos: number;
+  duplicados: number;
+};
+
+/**
+ * Insere o que a busca no mapa achou, pulando quem já está no projeto.
+ *
+ * Roda pelo webhook (sem sessão), então usa o cliente admin e confere o
+ * dono pelo projeto antes de gravar qualquer coisa.
+ */
+export async function importarDoMapaDb(
+  projetoId: string,
+  lugares: LeadDoMapa[]
+): Promise<ResultadoImportacao> {
+  const { createAdminClient } = await import("./supabase/admin");
+  const { chaveTelefone } = await import("./mapas");
+  const admin = createAdminClient();
+
+  const { data: projeto } = await admin
+    .from(T.projetos)
+    .select("id")
+    .eq("id", projetoId)
+    .maybeSingle();
+  if (!projeto) throw new Error("Projeto não encontrado.");
+
+  const { data: existentes, error } = await admin
+    .from(T.leads)
+    .select("telefone, place_id")
+    .eq("projeto_id", projetoId);
+  checar(error);
+
+  const telefonesUsados = new Set<string>();
+  const placesUsados = new Set<string>();
+  for (const l of (existentes ?? []) as {
+    telefone: string | null;
+    place_id: string | null;
+  }[]) {
+    const k = chaveTelefone(l.telefone);
+    if (k) telefonesUsados.add(k);
+    if (l.place_id) placesUsados.add(l.place_id);
+  }
+
+  const novos: LeadDoMapa[] = [];
+  let duplicados = 0;
+
+  for (const lugar of lugares) {
+    const k = chaveTelefone(lugar.telefone);
+    const repetido =
+      (lugar.place_id && placesUsados.has(lugar.place_id)) || (k && telefonesUsados.has(k));
+
+    if (repetido) {
+      duplicados += 1;
+      continue;
+    }
+    if (lugar.place_id) placesUsados.add(lugar.place_id);
+    if (k) telefonesUsados.add(k);
+    novos.push(lugar);
+  }
+
+  let inseridos = 0;
+  for (let i = 0; i < novos.length; i += 250) {
+    const lote = novos.slice(i, i + 250).map((l) => ({
+      projeto_id: projetoId,
+      nome: l.nome,
+      telefone: l.telefone,
+      endereco: l.endereco,
+      instagram: l.instagram,
+      sinais: l.sinais,
+      place_id: l.place_id,
+      origem: "mapa",
+      status: "novo" as const,
+    }));
+    const { error: erroLote, count } = await admin
+      .from(T.leads)
+      .insert(lote, { count: "exact" });
+    if (erroLote)
+      throw new Error(
+        `${erroLote.message} (${inseridos} leads inseridos antes do erro)`
+      );
+    inseridos += count ?? lote.length;
+  }
+
+  return { inseridos, duplicados };
+}
+
+/** Critérios do projeto, para o webhook saber quais sinais pode marcar. */
+export async function criteriosDoProjeto(projetoId: string): Promise<Criterio[]> {
+  const { createAdminClient } = await import("./supabase/admin");
+  const { data } = await createAdminClient()
+    .from(T.projetos)
+    .select("criterios")
+    .eq("id", projetoId)
+    .maybeSingle();
+  return ((data?.criterios ?? []) as Criterio[]) ?? [];
+}

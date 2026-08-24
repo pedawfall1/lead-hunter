@@ -236,10 +236,63 @@ que vale para **todos os projetos**. Antes de enfileirar qualquer disparo o app
 consulta essa lista e recusa o envio. Mande o evento `bloqueado` do n8n quando
 detectar esse tipo de resposta.
 
-## Google Maps
+## Google Maps via Apify + n8n
 
-O botão **Buscar no Google Maps** na tela de leads está desabilitado, com tooltip
-"Em breve" — é o ponto de entrada da futura integração com a Google Places API.
+O botão **Buscar no Google Maps** dispara um segundo fluxo n8n, que roda o
+scraper (Apify ou outro) e devolve o resultado em `/api/importar`. A chave do
+Apify fica no n8n — o Lead Hunter nunca a vê.
+
+Sem `N8N_BUSCA_URL` o botão fica desabilitado, como estava antes.
+
+### Ida
+
+`POST` no `N8N_BUSCA_URL`, header `x-lh-token`:
+
+```json
+{
+  "projeto_id": "...",
+  "projeto": "Petshops - Caçador",
+  "termo": "petshop",
+  "local": "Caçador, SC",
+  "limite": 50
+}
+```
+
+### Volta
+
+`POST` em `https://seu-app/api/importar`, header `x-lh-token`:
+
+```json
+{ "projeto_id": "...", "lugares": [ /* itens do actor, como vieram */ ] }
+```
+
+Repasse o item do scraper **sem remapear**. Os apelidos de campo são resolvidos
+em [`src/lib/mapas.ts`](src/lib/mapas.ts) — ele aceita `title`/`name`/`nome`,
+`phoneUnformatted`/`phone`, `totalScore`/`rating`, `reviewsCount`/`userRatingsTotal`,
+`placeId`/`place_id`. A resposta traz `inseridos`, `duplicados` e `descartados`.
+
+### O que a busca preenche sozinha
+
+| Achado | Vira o sinal |
+| --- | --- |
+| sem `website` | `sem_site` |
+| sem `website` mas com Instagram | `so_linktree` |
+| sem Instagram | `sem_instagram` |
+| sem `placeId` | `sem_google_negocio` |
+| `imagesCount` igual a zero | `gmn_sem_foto` |
+| nota abaixo de 4 | `nota_baixa` |
+| menos de 10 avaliações | `poucas_avaliacoes` |
+
+Só é marcado o critério que o **projeto** usa: um projeto de site não ganha
+"sem Instagram" só porque o dado veio na resposta. Um link do próprio Google
+Maps no campo `website` não conta como ter site.
+
+### Duplicata
+
+Antes de gravar, o app compara `place_id` e os 8 últimos dígitos do telefone
+com quem já está no projeto. Rodar a mesma busca duas vezes não duplica, e o
+retorno diz quantos foram pulados. Há também um índice único
+`(projeto_id, place_id)` no banco, como última linha de defesa.
 
 ---
 
@@ -256,6 +309,7 @@ src/
     actions/                  # server actions (auth, projetos, leads, templates)
     login/
     api/n8n/route.ts          # callback do n8n (entregue, lido, resposta...)
+    api/importar/route.ts     # recebe o resultado da busca no mapa
   components/
     relatorios/               # funil, série temporal, ranking, mapa de ritmo
     leads/                    # kanban, cards, modais, importação
@@ -268,6 +322,7 @@ src/
     agenda.ts                 # cadência e baldes de retorno
     relatorios.ts             # cálculo do painel, sem ida extra ao banco
     n8n.ts                    # contrato de ida e volta com o n8n
+    mapas.ts                  # normaliza o resultado do scraper e infere sinais
     supabase/admin.ts         # service_role, só para o webhook
     config.ts  csv.ts  format.ts  status.ts  types.ts
 middleware.ts                 # renova a sessão e bloqueia rotas privadas
@@ -288,7 +343,6 @@ criar o usuário no painel do Supabase; nada muda no código.
 
 ## Próximos passos (quando estiver no PC)
 
-1. Plugar a Google Places API no botão "Buscar no Google Maps" — ela devolve
-   `website`, `rating` e `user_ratings_total`, que já preenchem os sinais sozinhos.
-2. Fila de disparo do dia, valor por lead e desempenho por template.
-3. Avaliar envio semi-automático via Evolution API, com limite diário por número.
+1. Fila de disparo do dia, com intervalo aleatório e janela de horário.
+2. Valor por lead, para o kanban virar previsão de faturamento.
+3. Lista de não perturbe na interface (a tabela já existe).
