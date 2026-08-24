@@ -236,40 +236,28 @@ que vale para **todos os projetos**. Antes de enfileirar qualquer disparo o app
 consulta essa lista e recusa o envio. Mande o evento `bloqueado` do n8n quando
 detectar esse tipo de resposta.
 
-## Google Maps via Apify + n8n
+## Google Maps via Apify
 
-O botão **Buscar no Google Maps** dispara um segundo fluxo n8n, que roda o
-scraper (Apify ou outro) e devolve o resultado em `/api/importar`. A chave do
-Apify fica no n8n — o Lead Hunter nunca a vê.
+O botão **Buscar no Google Maps** chama o Apify direto do servidor do app —
+não passa pelo n8n. A chave fica só no servidor.
 
-Sem `N8N_BUSCA_URL` o botão fica desabilitado, como estava antes.
-
-### Ida
-
-`POST` no `N8N_BUSCA_URL`, header `x-lh-token`:
-
-```json
-{
-  "projeto_id": "...",
-  "projeto": "Petshops - Caçador",
-  "termo": "petshop",
-  "local": "Caçador, SC",
-  "limite": 50
-}
+```
+APIFY_TOKEN=apify_api_...
+# APIFY_ACTOR=compass~crawler-google-places   (padrão)
 ```
 
-### Volta
+Sem `APIFY_TOKEN` o botão fica desabilitado.
 
-`POST` em `https://seu-app/api/importar`, header `x-lh-token`:
+### Por que em duas etapas
 
-```json
-{ "projeto_id": "...", "lugares": [ /* itens do actor, como vieram */ ] }
-```
+Raspagem leva de um a cinco minutos e função serverless morre antes disso. Por
+isso o app **inicia a corrida e guarda o `run_id`** na tabela `lh_buscas`; a
+tela vai conferindo de cinco em cinco segundos. Você pode fechar a janela, sair
+do projeto e voltar depois — a corrida continua no Apify e o quadro mostra um
+aviso de "buscando..." enquanto ela não termina.
 
-Repasse o item do scraper **sem remapear**. Os apelidos de campo são resolvidos
-em [`src/lib/mapas.ts`](src/lib/mapas.ts) — ele aceita `title`/`name`/`nome`,
-`phoneUnformatted`/`phone`, `totalScore`/`rating`, `reviewsCount`/`userRatingsTotal`,
-`placeId`/`place_id`. A resposta traz `inseridos`, `duplicados` e `descartados`.
+Quando o Apify conclui, o app baixa o dataset, normaliza, importa e fecha o
+registro. Conferir de novo depois disso é barato: não reimporta nada.
 
 ### O que a busca preenche sozinha
 
@@ -287,14 +275,25 @@ Só é marcado o critério que o **projeto** usa: um projeto de site não ganha
 "sem Instagram" só porque o dado veio na resposta. Um link do próprio Google
 Maps no campo `website` não conta como ter site.
 
+Trocar de actor é trocar `APIFY_ACTOR`. O normalizador em
+[`src/lib/mapas.ts`](src/lib/mapas.ts) aceita apelidos de campo
+(`title`/`name`, `phoneUnformatted`/`phone`, `totalScore`/`rating`,
+`reviewsCount`/`userRatingsTotal`), então a maioria dos scrapers de mapa
+funciona sem ajuste. A entrada do actor é montada em
+[`src/lib/apify.ts`](src/lib/apify.ts).
+
 ### Duplicata
 
 Antes de gravar, o app compara `place_id` e os 8 últimos dígitos do telefone
-com quem já está no projeto. Rodar a mesma busca duas vezes não duplica, e o
-retorno diz quantos foram pulados. Há também um índice único
+com quem já está no projeto. Rodar a mesma busca duas vezes não duplica, e a
+tela diz quantos foram pulados. Há também um índice único
 `(projeto_id, place_id)` no banco, como última linha de defesa.
 
----
+### Custo
+
+Os créditos do Apify são consumidos por resultado, então o campo **máximo de
+resultados** existe para você medir antes de soltar volume. O padrão é 50 e o
+teto é 300 por busca.
 
 ## Estrutura
 
@@ -309,7 +308,6 @@ src/
     actions/                  # server actions (auth, projetos, leads, templates)
     login/
     api/n8n/route.ts          # callback do n8n (entregue, lido, resposta...)
-    api/importar/route.ts     # recebe o resultado da busca no mapa
   components/
     relatorios/               # funil, série temporal, ranking, mapa de ritmo
     leads/                    # kanban, cards, modais, importação
@@ -323,6 +321,7 @@ src/
     relatorios.ts             # cálculo do painel, sem ida extra ao banco
     n8n.ts                    # contrato de ida e volta com o n8n
     mapas.ts                  # normaliza o resultado do scraper e infere sinais
+    apify.ts                  # inicia a corrida e busca o dataset
     supabase/admin.ts         # service_role, só para o webhook
     config.ts  csv.ts  format.ts  status.ts  types.ts
 middleware.ts                 # renova a sessão e bloqueia rotas privadas

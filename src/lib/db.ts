@@ -2,6 +2,7 @@ import { DEMO } from "./config";
 import { agora, estado, novoId } from "./demo/dados";
 import { createClient } from "./supabase/server";
 import type {
+  Busca,
   Criterio,
   Interacao,
   Lead,
@@ -698,9 +699,12 @@ export async function resumoNav(): Promise<ProjetoNav[]> {
   }));
 }
 
-/* --------------------- importação vinda do mapa ------------------------ */
+/* ------------------------ busca no mapa (Apify) ------------------------ */
 
-export type LeadDoMapa = {
+const COLUNAS_BUSCA =
+  "id, projeto_id, run_id, dataset_id, termo, local, limite, status, encontrados, inseridos, duplicados, erro, criado_em, concluido_em";
+
+export type LugarImportado = {
   nome: string;
   telefone: string | null;
   endereco: string | null;
@@ -709,80 +713,128 @@ export type LeadDoMapa = {
   place_id: string | null;
 };
 
-export type ResultadoImportacao = {
-  inseridos: number;
-  duplicados: number;
-};
+export async function criarBuscaDb(
+  projetoId: string,
+  dados: {
+    run_id: string;
+    dataset_id: string | null;
+    termo: string;
+    local: string;
+    limite: number;
+  }
+): Promise<Busca> {
+  const { data, error } = await createClient()
+    .from("lh_buscas")
+    .insert({ projeto_id: projetoId, ...dados })
+    .select(COLUNAS_BUSCA)
+    .single();
+  checar(error);
+  return data as Busca;
+}
+
+/** A busca mais recente do projeto — usada para retomar ao reabrir a tela. */
+export async function ultimaBuscaDb(projetoId: string): Promise<Busca | null> {
+  if (DEMO) return null;
+
+  const { data, error } = await createClient()
+    .from("lh_buscas")
+    .select(COLUNAS_BUSCA)
+    .eq("projeto_id", projetoId)
+    .order("criado_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  checar(error);
+  return (data as Busca | null) ?? null;
+}
+
+export async function obterBuscaDb(id: string): Promise<Busca | null> {
+  const { data, error } = await createClient()
+    .from("lh_buscas")
+    .select(COLUNAS_BUSCA)
+    .eq("id", id)
+    .maybeSingle();
+  checar(error);
+  return (data as Busca | null) ?? null;
+}
+
+export async function atualizarBuscaDb(
+  id: string,
+  campos: Partial<
+    Pick<
+      Busca,
+      | "dataset_id"
+      | "status"
+      | "encontrados"
+      | "inseridos"
+      | "duplicados"
+      | "erro"
+      | "concluido_em"
+    >
+  >
+): Promise<Busca> {
+  const { data, error } = await createClient()
+    .from("lh_buscas")
+    .update(campos)
+    .eq("id", id)
+    .select(COLUNAS_BUSCA)
+    .single();
+  checar(error);
+  return data as Busca;
+}
+
+export type ResultadoImportacao = { inseridos: number; duplicados: number };
 
 /**
- * Insere o que a busca no mapa achou, pulando quem já está no projeto.
- *
- * Roda pelo webhook (sem sessão), então usa o cliente admin e confere o
- * dono pelo projeto antes de gravar qualquer coisa.
+ * Grava o que a busca achou, pulando quem já está no projeto.
+ * Roda com a sessão do usuário, então a RLS já garante o dono.
  */
-export async function importarDoMapaDb(
+export async function importarLugaresDb(
   projetoId: string,
-  lugares: LeadDoMapa[]
+  lugares: LugarImportado[]
 ): Promise<ResultadoImportacao> {
-  const { createAdminClient } = await import("./supabase/admin");
   const { chaveTelefone } = await import("./mapas");
-  const admin = createAdminClient();
+  const supabase = createClient();
 
-  const { data: projeto } = await admin
-    .from(T.projetos)
-    .select("id")
-    .eq("id", projetoId)
-    .maybeSingle();
-  if (!projeto) throw new Error("Projeto não encontrado.");
-
-  const { data: existentes, error } = await admin
+  const { data: existentes, error } = await supabase
     .from(T.leads)
     .select("telefone, place_id")
     .eq("projeto_id", projetoId);
   checar(error);
 
-  const telefonesUsados = new Set<string>();
-  const placesUsados = new Set<string>();
+  const telefones = new Set<string>();
+  const places = new Set<string>();
   for (const l of (existentes ?? []) as {
     telefone: string | null;
     place_id: string | null;
   }[]) {
     const k = chaveTelefone(l.telefone);
-    if (k) telefonesUsados.add(k);
-    if (l.place_id) placesUsados.add(l.place_id);
+    if (k) telefones.add(k);
+    if (l.place_id) places.add(l.place_id);
   }
 
-  const novos: LeadDoMapa[] = [];
+  const novos: LugarImportado[] = [];
   let duplicados = 0;
 
   for (const lugar of lugares) {
     const k = chaveTelefone(lugar.telefone);
-    const repetido =
-      (lugar.place_id && placesUsados.has(lugar.place_id)) || (k && telefonesUsados.has(k));
-
-    if (repetido) {
+    if ((lugar.place_id && places.has(lugar.place_id)) || (k && telefones.has(k))) {
       duplicados += 1;
       continue;
     }
-    if (lugar.place_id) placesUsados.add(lugar.place_id);
-    if (k) telefonesUsados.add(k);
+    if (lugar.place_id) places.add(lugar.place_id);
+    if (k) telefones.add(k);
     novos.push(lugar);
   }
 
   let inseridos = 0;
-  for (let i = 0; i < novos.length; i += 250) {
-    const lote = novos.slice(i, i + 250).map((l) => ({
+  for (let i = 0; i < novos.length; i += 200) {
+    const lote = novos.slice(i, i + 200).map((l) => ({
       projeto_id: projetoId,
-      nome: l.nome,
-      telefone: l.telefone,
-      endereco: l.endereco,
-      instagram: l.instagram,
-      sinais: l.sinais,
-      place_id: l.place_id,
+      ...l,
       origem: "mapa",
       status: "novo" as const,
     }));
-    const { error: erroLote, count } = await admin
+    const { error: erroLote, count } = await supabase
       .from(T.leads)
       .insert(lote, { count: "exact" });
     if (erroLote)
@@ -793,15 +845,4 @@ export async function importarDoMapaDb(
   }
 
   return { inseridos, duplicados };
-}
-
-/** Critérios do projeto, para o webhook saber quais sinais pode marcar. */
-export async function criteriosDoProjeto(projetoId: string): Promise<Criterio[]> {
-  const { createAdminClient } = await import("./supabase/admin");
-  const { data } = await createAdminClient()
-    .from(T.projetos)
-    .select("criterios")
-    .eq("id", projetoId)
-    .maybeSingle();
-  return ((data?.criterios ?? []) as Criterio[]) ?? [];
 }

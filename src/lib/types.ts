@@ -71,6 +71,23 @@ export type Interacao = {
   criado_em: string;
 };
 
+export type Busca = {
+  id: string;
+  projeto_id: string;
+  run_id: string;
+  dataset_id: string | null;
+  termo: string;
+  local: string;
+  limite: number;
+  status: "rodando" | "concluida" | "erro";
+  encontrados: number;
+  inseridos: number;
+  duplicados: number;
+  erro: string | null;
+  criado_em: string;
+  concluido_em: string | null;
+};
+
 export type Template = {
   id: string;
   nome: string;

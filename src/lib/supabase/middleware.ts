@@ -8,7 +8,6 @@ const ROTAS_PUBLICAS = [
   // pelo header x-lh-token dentro da própria rota. Sem esta linha o
   // middleware devolve 307 para /login e o n8n nunca entrega evento.
   "/api/n8n",
-  "/api/importar",
 ];
 
 function ehPublica(pathname: string) {

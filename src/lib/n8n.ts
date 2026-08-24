@@ -12,8 +12,6 @@ import { soDigitos, telefoneWhatsapp } from "./format";
  */
 
 export const N8N_URL = process.env.N8N_WEBHOOK_URL ?? "";
-/** Fluxo separado: dispara a busca no mapa (Apify) e devolve em /api/importar. */
-export const N8N_BUSCA_URL = process.env.N8N_BUSCA_URL ?? "";
 const N8N_TOKEN = process.env.N8N_TOKEN ?? "";
 
 /** Token que o n8n precisa mandar de volta para o callback ser aceito. */
@@ -21,54 +19,6 @@ export const TOKEN_CALLBACK = process.env.LH_WEBHOOK_TOKEN ?? "";
 
 export function n8nConfigurado(): boolean {
   return !!N8N_URL;
-}
-
-export function buscaConfigurada(): boolean {
-  return !!N8N_BUSCA_URL;
-}
-
-export type PedidoBusca = {
-  projeto_id: string;
-  projeto: string;
-  /** o que procurar: "petshop", "advogado"... */
-  termo: string;
-  /** onde: "Videira, SC" */
-  local: string;
-  /** teto de resultados, para não torrar credito do Apify de uma vez */
-  limite: number;
-};
-
-/** Pede ao n8n que rode a busca. O resultado volta em /api/importar. */
-export async function pedirBusca(
-  pedido: PedidoBusca
-): Promise<{ ok: true } | { ok: false; erro: string }> {
-  if (!N8N_BUSCA_URL) return { ok: false, erro: "Busca não configurada." };
-
-  try {
-    const resposta = await fetch(N8N_BUSCA_URL, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        ...(N8N_TOKEN ? { "x-lh-token": N8N_TOKEN } : {}),
-      },
-      body: JSON.stringify(pedido),
-      // scraping demora: aqui só esperamos o n8n aceitar o trabalho
-      signal: AbortSignal.timeout(20_000),
-    });
-
-    if (!resposta.ok) {
-      return { ok: false, erro: `n8n respondeu ${resposta.status}.` };
-    }
-    return { ok: true };
-  } catch (e) {
-    const msg =
-      e instanceof Error && e.name === "TimeoutError"
-        ? "O n8n não respondeu a tempo."
-        : e instanceof Error
-          ? e.message
-          : "Falha ao falar com o n8n.";
-    return { ok: false, erro: msg };
-  }
 }
 
 export type PayloadDisparo = {

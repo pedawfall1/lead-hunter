@@ -18,7 +18,14 @@ import { atualizarStatus } from "@/app/actions/leads";
 import { STATUS_ORDER, ehStatus } from "@/lib/status";
 import { soDigitos } from "@/lib/format";
 import { acharServico, contarSinais } from "@/lib/servicos";
-import type { Interacao, Lead, LeadStatus, Projeto, Template } from "@/lib/types";
+import type {
+  Busca,
+  Interacao,
+  Lead,
+  LeadStatus,
+  Projeto,
+  Template,
+} from "@/lib/types";
 import Tooltip from "@/components/ui/Tooltip";
 import {
   IconChevron,
@@ -48,6 +55,7 @@ export default function QuadroLeads({
   interacoesIniciais,
   n8nAtivo,
   buscaAtiva,
+  ultimaBusca,
 }: {
   projeto: Projeto;
   leadsIniciais: Lead[];
@@ -55,6 +63,7 @@ export default function QuadroLeads({
   interacoesIniciais: Record<string, Interacao[]>;
   n8nAtivo: boolean;
   buscaAtiva: boolean;
+  ultimaBusca: Busca | null;
 }) {
   const router = useRouter();
   const [, iniciar] = useTransition();
@@ -276,6 +285,23 @@ export default function QuadroLeads({
         )}
       </div>
 
+      {ultimaBusca?.status === "rodando" && !modalMapa && (
+        <button
+          onClick={() => setModalMapa(true)}
+          className="flex w-full items-center gap-3 rounded-xl border border-brand/25 bg-brand/[0.07] px-4 py-2.5 text-left transition-colors hover:bg-brand/[0.12]"
+        >
+          <span className="relative flex h-2 w-2 shrink-0">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-brand" />
+          </span>
+          <span className="min-w-0 flex-1 text-sm text-brand-soft">
+            Buscando <span className="font-medium">{ultimaBusca.termo}</span> em{" "}
+            {ultimaBusca.local}...
+          </span>
+          <span className="shrink-0 text-xs text-slate-500">ver</span>
+        </button>
+      )}
+
       {/* ---------- kanban ---------- */}
       {leads.length === 0 ? (
         <div className="card flex flex-col items-center gap-3 px-6 py-14 text-center">
@@ -361,7 +387,11 @@ export default function QuadroLeads({
       )}
 
       {modalMapa && (
-        <ModalBuscarMapa projeto={projeto} aoFechar={() => setModalMapa(false)} />
+        <ModalBuscarMapa
+          projeto={projeto}
+          buscaInicial={ultimaBusca}
+          aoFechar={() => setModalMapa(false)}
+        />
       )}
 
       {modalCsv && (

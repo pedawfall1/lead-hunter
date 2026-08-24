@@ -4,9 +4,11 @@ import {
   listarLeads,
   listarTemplates,
   obterProjeto,
+  ultimaBuscaDb,
 } from "@/lib/db";
 import QuadroLeads from "@/components/leads/QuadroLeads";
-import { buscaConfigurada, n8nConfigurado } from "@/lib/n8n";
+import { n8nConfigurado } from "@/lib/n8n";
+import { apifyConfigurado } from "@/lib/apify";
 
 export const dynamic = "force-dynamic";
 
@@ -23,9 +25,10 @@ export default async function ProjetoPage({
   const projeto = await obterProjeto(params.id);
   if (!projeto) notFound();
 
-  const [leads, templates] = await Promise.all([
+  const [leads, templates, ultimaBusca] = await Promise.all([
     listarLeads(params.id),
     listarTemplates(),
+    ultimaBuscaDb(params.id),
   ]);
 
   const interacoes = await interacoesPorLead(leads.map((l) => l.id));
@@ -37,7 +40,8 @@ export default async function ProjetoPage({
       templates={templates}
       interacoesIniciais={interacoes}
       n8nAtivo={n8nConfigurado()}
-      buscaAtiva={buscaConfigurada()}
+      buscaAtiva={apifyConfigurado()}
+      ultimaBusca={ultimaBusca}
     />
   );
 }
