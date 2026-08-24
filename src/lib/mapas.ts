@@ -34,6 +34,10 @@ export type LugarBruto = {
   placeId?: string;
   place_id?: string;
   categoryName?: string;
+  // vem do add-on de contatos
+  emails?: string[];
+  email?: string;
+  instagrams?: string[];
 };
 
 export type LugarNormalizado = {
@@ -42,6 +46,7 @@ export type LugarNormalizado = {
   endereco: string | null;
   instagram: string | null;
   placeId: string | null;
+  email: string | null;
   temSite: boolean;
   nota: number | null;
   avaliacoes: number | null;
@@ -66,8 +71,12 @@ function numero(...vs: (number | string | undefined)[]): number | null {
 }
 
 /** Extrai @perfil de uma URL de Instagram, se o scraper trouxer uma. */
+function primeiro(lista: string[] | undefined): string | undefined {
+  return Array.isArray(lista) ? lista.find((v) => !!v?.trim()) : undefined;
+}
+
 function instagramDe(bruto: LugarBruto): string | null {
-  const cru = texto(bruto.instagram);
+  const cru = texto(bruto.instagram, primeiro(bruto.instagrams));
   if (!cru) return null;
   const m = cru.match(/instagram\.com\/([A-Za-z0-9._]+)/i);
   return (m ? m[1] : cru).replace(/^@/, "") || null;
@@ -86,6 +95,7 @@ export function normalizarLugar(bruto: LugarBruto): LugarNormalizado | null {
     endereco: texto(bruto.fullAddress, bruto.address, bruto.endereco),
     instagram: instagramDe(bruto),
     placeId: texto(bruto.placeId, bruto.place_id),
+    email: texto(bruto.email, primeiro(bruto.emails))?.toLowerCase() ?? null,
     // "url" de scraper de mapa costuma ser o link do próprio Google, não o site
     temSite: !!site && !/google\.[a-z.]+\/maps/i.test(site),
     nota: numero(bruto.totalScore, bruto.rating),

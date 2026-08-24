@@ -270,6 +270,14 @@ export default function ModalLead({
             {tentativas} {tentativas === 1 ? "toque" : "toques"}
           </span>
         )}
+        {lead.email && (
+          <a
+            href={`mailto:${lead.email}`}
+            className="chip border-line bg-ink-700 text-slate-300 hover:bg-ink-600"
+          >
+            ✉ {lead.email}
+          </a>
+        )}
         {lead.instagram && (
           <a
             href={linkInstagram(lead.instagram)}
@@ -345,6 +353,18 @@ export default function ModalLead({
                 placeholder="@perfil"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="label" htmlFor="email">E-mail</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              className="input"
+              defaultValue={lead.email ?? ""}
+              placeholder="contato@empresa.com.br"
+            />
           </div>
 
           <div>

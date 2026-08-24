@@ -61,15 +61,29 @@ export type Corrida = {
   runId: string;
   datasetId: string | null;
   status: StatusCorrida;
+  /** o que o Apify diz sobre a corrida — vira a mensagem de erro na tela */
+  recado: string | null;
+};
+
+export type OpcoesBusca = {
+  termo: string;
+  local: string;
+  limite: number;
+  /** filtra na origem: não gasta crédito com quem já tem site */
+  soSemSite?: boolean;
+  /** raspa o site do negócio atrás de e-mail e redes; custa mais por lugar */
+  buscarContatos?: boolean;
 };
 
 /**
- * Entrada do actor de Google Maps. Os nomes seguem o
- * compass~crawler-google-places, que é o mais usado; outro actor pode
- * precisar de ajuste aqui.
+ * Entrada do actor de Google Maps.
+ *
+ * Os nomes seguem o compass~crawler-google-places. Campo opcional só entra
+ * quando está ligado: actor costuma validar a entrada, e mandar chave que
+ * ele não conhece é o jeito mais fácil de a corrida falhar na largada.
  */
-function entradaDoAtor(dados: { termo: string; local: string; limite: number }) {
-  return {
+function entradaDoAtor(dados: OpcoesBusca) {
+  const entrada: Record<string, unknown> = {
     searchStringsArray: [dados.termo],
     locationQuery: dados.local,
     maxCrawledPlacesPerSearch: dados.limite,
@@ -77,17 +91,23 @@ function entradaDoAtor(dados: { termo: string; local: string; limite: number }) 
     skipClosedPlaces: true,
     scrapePlaceDetailPage: true,
   };
+
+  if (dados.soSemSite) entrada.website = "withoutWebsite";
+  if (dados.buscarContatos) entrada.scrapeContacts = true;
+
+  return entrada;
 }
 
-export async function iniciarCorrida(dados: {
-  termo: string;
-  local: string;
-  limite: number;
-}): Promise<Corrida> {
+export async function iniciarCorrida(dados: OpcoesBusca): Promise<Corrida> {
   if (!TOKEN) throw new Error("APIFY_TOKEN não configurado.");
 
   const r = await chamar<{
-    data: { id: string; defaultDatasetId?: string; status: string };
+    data: {
+      id: string;
+      defaultDatasetId?: string;
+      status: string;
+      statusMessage?: string;
+    };
   }>(`/acts/${ATOR}/runs`, {
     method: "POST",
     body: JSON.stringify(entradaDoAtor(dados)),
@@ -97,6 +117,7 @@ export async function iniciarCorrida(dados: {
     runId: r.data.id,
     datasetId: r.data.defaultDatasetId ?? null,
     status: traduzir(r.data.status),
+    recado: r.data.statusMessage ?? null,
   };
 }
 
@@ -104,13 +125,19 @@ export async function estadoDaCorrida(runId: string): Promise<Corrida> {
   if (!TOKEN) throw new Error("APIFY_TOKEN não configurado.");
 
   const r = await chamar<{
-    data: { id: string; defaultDatasetId?: string; status: string };
+    data: {
+      id: string;
+      defaultDatasetId?: string;
+      status: string;
+      statusMessage?: string;
+    };
   }>(`/actor-runs/${runId}`);
 
   return {
     runId: r.data.id,
     datasetId: r.data.defaultDatasetId ?? null,
     status: traduzir(r.data.status),
+    recado: r.data.statusMessage ?? null,
   };
 }
 

@@ -26,7 +26,13 @@ import type { ActionResult, Busca } from "@/lib/types";
  */
 export async function iniciarBusca(
   projetoId: string,
-  dados: { termo: string; local: string; limite: number }
+  dados: {
+    termo: string;
+    local: string;
+    limite: number;
+    soSemSite: boolean;
+    buscarContatos: boolean;
+  }
 ): Promise<ActionResult<Busca>> {
   const termo = dados.termo.trim();
   const local = dados.local.trim();
@@ -41,7 +47,13 @@ export async function iniciarBusca(
     const projeto = await obterProjeto(projetoId);
     if (!projeto) return { ok: false, erro: "Projeto não encontrado." };
 
-    const corrida = await iniciarCorrida({ termo, local, limite });
+    const corrida = await iniciarCorrida({
+      termo,
+      local,
+      limite,
+      soSemSite: dados.soSemSite,
+      buscarContatos: dados.buscarContatos,
+    });
 
     const busca = await criarBuscaDb(projetoId, {
       run_id: corrida.runId,
@@ -78,7 +90,9 @@ export async function conferirBusca(
     if (corrida.status === "erro") {
       const atualizada = await atualizarBuscaDb(busca.id, {
         status: "erro",
-        erro: "O Apify terminou a corrida sem sucesso.",
+        erro:
+          corrida.recado ??
+          "O Apify terminou a corrida sem sucesso. Veja o log da corrida no painel do Apify.",
         concluido_em: new Date().toISOString(),
       });
       return { ok: true, data: atualizada };
@@ -106,6 +120,7 @@ export async function conferirBusca(
         telefone: lugar.telefone,
         endereco: lugar.endereco,
         instagram: lugar.instagram,
+        email: lugar.email,
         sinais: sinaisDoLugar(lugar, projeto?.criterios ?? []),
         place_id: lugar.placeId,
       });

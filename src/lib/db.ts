@@ -122,7 +122,7 @@ export async function excluirProjetoDb(id: string): Promise<void> {
 /* --------------------------------- leads -------------------------------- */
 
 const COLUNAS_LEAD =
-  "id, projeto_id, nome, telefone, endereco, instagram, sinais, status, nota, proximo_contato, criado_em, atualizado_em";
+  "id, projeto_id, nome, telefone, endereco, instagram, email, sinais, status, nota, proximo_contato, criado_em, atualizado_em";
 
 export async function listarLeads(projetoId?: string): Promise<Lead[]> {
   if (DEMO) {
@@ -164,6 +164,7 @@ export type DadosLead = {
   telefone: string | null;
   endereco: string | null;
   instagram: string | null;
+  email: string | null;
   sinais: Sinais;
   status: LeadStatus;
   nota: string | null;
@@ -258,6 +259,9 @@ type LeadImportado = {
   sinais: Sinais;
 };
 
+/** Campos que o CSV não traz, para o insert bater com o schema. */
+const VAZIOS_DO_CSV = { email: null };
+
 export async function inserirLeadsDb(
   projetoId: string,
   linhas: LeadImportado[]
@@ -267,6 +271,7 @@ export async function inserirLeadsDb(
       id: novoId(),
       projeto_id: projetoId,
       ...l,
+      email: null,
       status: "novo" as const,
       nota: null,
       proximo_contato: null,
@@ -281,6 +286,7 @@ export async function inserirLeadsDb(
   const registros = linhas.map((l) => ({
     projeto_id: projetoId,
     ...l,
+    ...VAZIOS_DO_CSV,
     status: "novo" as const,
   }));
 
@@ -709,6 +715,7 @@ export type LugarImportado = {
   telefone: string | null;
   endereco: string | null;
   instagram: string | null;
+  email: string | null;
   sinais: Sinais;
   place_id: string | null;
 };

@@ -37,6 +37,7 @@ export type Lead = {
   telefone: string | null;
   endereco: string | null;
   instagram: string | null;
+  email: string | null;
   sinais: Sinais;
   status: LeadStatus;
   nota: string | null;

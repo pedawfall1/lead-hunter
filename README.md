@@ -265,6 +265,7 @@ registro. Conferir de novo depois disso é barato: não reimporta nada.
 | --- | --- |
 | sem `website` | `sem_site` |
 | sem `website` mas com Instagram | `so_linktree` |
+| e-mail encontrado | preenche o campo de e-mail do lead |
 | sem Instagram | `sem_instagram` |
 | sem `placeId` | `sem_google_negocio` |
 | `imagesCount` igual a zero | `gmn_sem_foto` |
@@ -274,6 +275,25 @@ registro. Conferir de novo depois disso é barato: não reimporta nada.
 Só é marcado o critério que o **projeto** usa: um projeto de site não ganha
 "sem Instagram" só porque o dado veio na resposta. Um link do próprio Google
 Maps no campo `website` não conta como ter site.
+
+### As opções do actor
+
+O actor de Google Maps tem uma dezena de add-ons. Para prospecção só dois
+mudam alguma coisa, e são os dois que estão na tela:
+
+| Opção na tela | Vira na entrada do actor | Por quê |
+| --- | --- | --- |
+| Só quem não tem site | `website: "withoutWebsite"` | filtra no Google, antes de gastar crédito com quem já tem |
+| Buscar e-mail e redes | `scrapeContacts: true` | abre o site de cada lugar atrás de contato; custa e demora mais |
+
+Os outros ficam de fora de propósito: **Reviews** e **Images** trazem volume
+que não ajuda a abordar e pesam no crédito; **Competitor analysis** é cobrado
+à parte; **Geolocation** e **place IDs** são outras formas de dizer onde
+procurar, que o campo "Onde" já resolve.
+
+Campo opcional só é enviado quando está ligado — actor valida a entrada, e
+mandar chave que ele não conhece é o jeito mais fácil de a corrida falhar na
+largada. Se falhar, a tela mostra o recado do próprio Apify.
 
 Trocar de actor é trocar `APIFY_ACTOR`. O normalizador em
 [`src/lib/mapas.ts`](src/lib/mapas.ts) aceita apelidos de campo

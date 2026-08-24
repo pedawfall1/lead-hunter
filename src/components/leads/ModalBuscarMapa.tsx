@@ -31,6 +31,8 @@ export default function ModalBuscarMapa({
   const [termo, setTermo] = useState(projeto.nicho ?? "");
   const [local, setLocal] = useState(projeto.regiao ?? "");
   const [limite, setLimite] = useState(50);
+  const [soSemSite, setSoSemSite] = useState(false);
+  const [buscarContatos, setBuscarContatos] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [busca, setBusca] = useState<Busca | null>(
     buscaInicial?.status === "rodando" ? buscaInicial : null
@@ -71,7 +73,13 @@ export default function ModalBuscarMapa({
     e.preventDefault();
     setErro(null);
     iniciar(async () => {
-      const r = await iniciarBusca(projeto.id, { termo, local, limite });
+      const r = await iniciarBusca(projeto.id, {
+        termo,
+        local,
+        limite,
+        soSemSite,
+        buscarContatos,
+      });
       if (!r.ok) {
         setErro(r.erro);
         return;
@@ -250,6 +258,43 @@ export default function ModalBuscarMapa({
             Cada resultado consome crédito do Apify. Comece baixo para medir o
             custo real antes de soltar volume.
           </p>
+        </div>
+
+        <div className="space-y-2">
+          <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line bg-ink-900 px-3 py-2.5 transition-colors hover:border-slate-600">
+            <input
+              type="checkbox"
+              checked={soSemSite}
+              onChange={(e) => setSoSemSite(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
+            />
+            <span className="leading-snug">
+              <span className="block text-sm text-slate-200">
+                Só quem não tem site
+              </span>
+              <span className="block text-xs text-slate-500">
+                Filtra no Google, antes de gastar crédito com quem já tem.
+              </span>
+            </span>
+          </label>
+
+          <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line bg-ink-900 px-3 py-2.5 transition-colors hover:border-slate-600">
+            <input
+              type="checkbox"
+              checked={buscarContatos}
+              onChange={(e) => setBuscarContatos(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
+            />
+            <span className="leading-snug">
+              <span className="block text-sm text-slate-200">
+                Buscar e-mail e redes sociais
+              </span>
+              <span className="block text-xs text-slate-500">
+                Abre o site de cada lugar atrás de contato. Traz mais, custa
+                mais e demora mais.
+              </span>
+            </span>
+          </label>
         </div>
 
         <div className="rounded-lg border border-line bg-ink-900 p-3">
