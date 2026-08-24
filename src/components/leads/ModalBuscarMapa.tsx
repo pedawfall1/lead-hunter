@@ -203,6 +203,21 @@ export default function ModalBuscarMapa({
             </>
           )}
 
+          {busca.amostra && (
+            <details className="w-full rounded-lg border border-line bg-ink-900 px-3 py-2 text-left">
+              <summary className="cursor-pointer text-xs text-slate-500">
+                Ver o que o scraper devolveu
+              </summary>
+              <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+                Primeiro resultado, como veio. Se um campo que você esperava
+                não está aqui, ele não foi raspado — não é o app que perdeu.
+              </p>
+              <pre className="mt-2 max-h-56 overflow-auto rounded bg-ink-950 p-2.5 font-mono text-[10.5px] leading-relaxed text-slate-400">
+                {JSON.stringify(busca.amostra, null, 2)}
+              </pre>
+            </details>
+          )}
+
           <div className="mt-1 flex gap-2">
             <button
               className="btn-ghost"
@@ -307,11 +322,12 @@ export default function ModalBuscarMapa({
             />
             <span className="leading-snug">
               <span className="block text-sm text-slate-200">
-                Buscar e-mail e redes sociais
+                Buscar e-mail e Instagram
               </span>
               <span className="block text-xs text-slate-500">
-                Abre o site de cada lugar atrás de contato. Traz mais, custa
-                mais e demora mais.
+                É esta opção que traz as redes sociais. Ela abre o site de cada
+                lugar atrás de contato — então rende pouco justamente em quem
+                não tem site. Custa e demora mais.
               </span>
             </span>
           </label>

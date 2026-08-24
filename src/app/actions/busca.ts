@@ -134,6 +134,9 @@ export async function conferirBusca(
     const atualizada = await atualizarBuscaDb(busca.id, {
       dataset_id: datasetId,
       status: "concluida",
+      // guarda o primeiro item como veio: e a unica forma de saber depois
+      // quais campos o actor realmente devolveu
+      amostra: (brutos[0] as Record<string, unknown> | undefined) ?? null,
       encontrados: brutos.length,
       inseridos,
       duplicados,

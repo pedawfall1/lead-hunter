@@ -34,10 +34,15 @@ export type LugarBruto = {
   placeId?: string;
   place_id?: string;
   categoryName?: string;
-  // vem do add-on de contatos
+  // vem do add-on de contatos, ou dos "Perfis" da ficha do Google
   emails?: string[];
   email?: string;
   instagrams?: string[];
+  facebooks?: string[];
+  socialMedias?: string[];
+  profiles?: string[];
+  socialProfiles?: string[];
+  additionalInfo?: unknown;
 };
 
 export type LugarNormalizado = {
@@ -75,11 +80,34 @@ function primeiro(lista: string[] | undefined): string | undefined {
   return Array.isArray(lista) ? lista.find((v) => !!v?.trim()) : undefined;
 }
 
+/**
+ * Acha o Instagram onde quer que o actor tenha posto.
+ *
+ * Cada scraper devolve os "Perfis" da ficha do Google num campo diferente —
+ * e alguns só trazem isso com o add-on de contatos ligado. Em vez de apostar
+ * num nome, varremos as listas conhecidas atrás de um link do Instagram.
+ */
 function instagramDe(bruto: LugarBruto): string | null {
-  const cru = texto(bruto.instagram, primeiro(bruto.instagrams));
+  const candidatos: (string | undefined)[] = [
+    texto(bruto.instagram) ?? undefined,
+    primeiro(bruto.instagrams),
+    ...[bruto.socialMedias, bruto.profiles, bruto.socialProfiles].flatMap(
+      (lista) =>
+        Array.isArray(lista)
+          ? lista.filter((v) => /instagram\.com/i.test(String(v)))
+          : []
+    ),
+  ];
+
+  const cru = texto(...candidatos);
   if (!cru) return null;
+
   const m = cru.match(/instagram\.com\/([A-Za-z0-9._]+)/i);
-  return (m ? m[1] : cru).replace(/^@/, "") || null;
+  const handle = (m ? m[1] : cru).replace(/^@/, "").replace(/\/$/, "");
+  // "explore", "p" e afins sao caminhos do proprio Instagram, nao perfis
+  if (!handle || ["p", "explore", "reel", "reels"].includes(handle.toLowerCase()))
+    return null;
+  return handle;
 }
 
 export function normalizarLugar(bruto: LugarBruto): LugarNormalizado | null {

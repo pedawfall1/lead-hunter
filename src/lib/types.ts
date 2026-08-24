@@ -85,6 +85,8 @@ export type Busca = {
   inseridos: number;
   duplicados: number;
   qualificados: number;
+  /** primeiro item como veio do scraper, para conferir os campos */
+  amostra: Record<string, unknown> | null;
   erro: string | null;
   criado_em: string;
   concluido_em: string | null;

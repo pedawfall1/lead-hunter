@@ -302,6 +302,18 @@ Trocar de actor é trocar `APIFY_ACTOR`. O normalizador em
 funciona sem ajuste. A entrada do actor é montada em
 [`src/lib/apify.ts`](src/lib/apify.ts).
 
+### Quando um campo não vem
+
+Cada actor devolve os "Perfis" da ficha do Google num campo diferente, e
+alguns só trazem isso com o add-on de contatos ligado. Em vez de apostar num
+nome, o normalizador varre as listas conhecidas (`instagrams`, `socialMedias`,
+`profiles`, `socialProfiles`) atrás de um link do Instagram.
+
+Se mesmo assim faltar, a tela de resultado tem **"Ver o que o scraper
+devolveu"**: o primeiro item da corrida fica salvo em `lh_buscas.amostra`
+exatamente como veio. Isso responde na hora se o campo não foi raspado ou se
+o app perdeu no caminho — sem depender de abrir o painel do Apify.
+
 ### Duplicata
 
 Antes de gravar, o app compara `place_id` e os 8 últimos dígitos do telefone

@@ -708,7 +708,7 @@ export async function resumoNav(): Promise<ProjetoNav[]> {
 /* ------------------------ busca no mapa (Apify) ------------------------ */
 
 const COLUNAS_BUSCA =
-  "id, projeto_id, run_id, dataset_id, termo, local, limite, status, encontrados, inseridos, duplicados, qualificados, erro, criado_em, concluido_em";
+  "id, projeto_id, run_id, dataset_id, termo, local, limite, status, encontrados, inseridos, duplicados, qualificados, amostra, erro, criado_em, concluido_em";
 
 export type LugarImportado = {
   nome: string;
@@ -775,6 +775,7 @@ export async function atualizarBuscaDb(
       | "inseridos"
       | "duplicados"
       | "qualificados"
+      | "amostra"
       | "erro"
       | "concluido_em"
     >
