@@ -126,7 +126,7 @@ export async function conferirBusca(
       });
     }
 
-    const { inseridos, duplicados } = await importarLugaresDb(
+    const { inseridos, duplicados, qualificados } = await importarLugaresDb(
       busca.projeto_id,
       lugares
     );
@@ -137,6 +137,7 @@ export async function conferirBusca(
       encontrados: brutos.length,
       inseridos,
       duplicados,
+      qualificados,
       concluido_em: new Date().toISOString(),
     });
 

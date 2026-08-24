@@ -5,7 +5,7 @@ import { formatarTelefone } from "@/lib/format";
 import { rotulosDosSinais } from "@/lib/servicos";
 import { balde, rotuloPrazo } from "@/lib/agenda";
 import type { Criterio, Lead } from "@/lib/types";
-import { IconWhatsapp } from "@/components/ui/icons";
+import { IconInstagram, IconWhatsapp } from "@/components/ui/icons";
 import { TagsSinais } from "./Sinais";
 
 type Props = {
@@ -67,9 +67,24 @@ export default function CartaoLead({
       )}
 
       <div className="mt-2 flex items-center justify-between gap-2">
-        <span className="truncate text-xs tabular-nums text-slate-400">
+        <span className="min-w-0 flex-1 truncate text-xs tabular-nums text-slate-400">
           {telefone || "sem telefone"}
         </span>
+
+        {/* canais que a busca no mapa costuma trazer e ninguem via aqui */}
+        {lead.instagram && (
+          <span
+            className="shrink-0 text-slate-600"
+            title={`@${lead.instagram.replace(/^@/, "")}`}
+          >
+            <IconInstagram className="h-3.5 w-3.5" />
+          </span>
+        )}
+        {lead.email && (
+          <span className="shrink-0 text-[11px] text-slate-600" title={lead.email}>
+            ✉
+          </span>
+        )}
 
         {telefone && (
           <button

@@ -84,6 +84,7 @@ export type Busca = {
   encontrados: number;
   inseridos: number;
   duplicados: number;
+  qualificados: number;
   erro: string | null;
   criado_em: string;
   concluido_em: string | null;

@@ -174,11 +174,31 @@ export default function ModalBuscarMapa({
                 {busca.encontrados} encontrados · {busca.duplicados} já estavam
                 no projeto
               </p>
-              {busca.inseridos > 0 && (
+
+              {busca.inseridos > 0 && busca.qualificados > 0 && (
                 <p className="max-w-xs text-xs leading-relaxed text-slate-500">
-                  Entraram na coluna <span className="text-slate-300">Novo</span>{" "}
-                  com os sinais de qualificação já marcados.
+                  <span className="text-brand-soft">
+                    {busca.qualificados} com sinal marcado
+                  </span>{" "}
+                  — entraram na coluna{" "}
+                  <span className="text-slate-300">Novo</span>, prontos para
+                  abordar.
                 </p>
+              )}
+
+              {busca.inseridos > 0 && busca.qualificados === 0 && (
+                <div className="max-w-xs rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-left">
+                  <p className="text-xs leading-relaxed text-amber-200">
+                    Nenhum sinal foi marcado. Os critérios deste projeto são
+                    coisas que o Google Maps não enxerga — como &ldquo;controla
+                    tudo no papel&rdquo;.
+                  </p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-slate-400">
+                    Marque na mão ao abrir cada lead, ou adicione ao projeto
+                    critérios que a busca consegue provar: sem site, sem Google
+                    Meu Negócio, nota baixa, poucas avaliações.
+                  </p>
+                </div>
               )}
             </>
           )}

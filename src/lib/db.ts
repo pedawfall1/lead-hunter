@@ -708,7 +708,7 @@ export async function resumoNav(): Promise<ProjetoNav[]> {
 /* ------------------------ busca no mapa (Apify) ------------------------ */
 
 const COLUNAS_BUSCA =
-  "id, projeto_id, run_id, dataset_id, termo, local, limite, status, encontrados, inseridos, duplicados, erro, criado_em, concluido_em";
+  "id, projeto_id, run_id, dataset_id, termo, local, limite, status, encontrados, inseridos, duplicados, qualificados, erro, criado_em, concluido_em";
 
 export type LugarImportado = {
   nome: string;
@@ -774,6 +774,7 @@ export async function atualizarBuscaDb(
       | "encontrados"
       | "inseridos"
       | "duplicados"
+      | "qualificados"
       | "erro"
       | "concluido_em"
     >
@@ -789,7 +790,12 @@ export async function atualizarBuscaDb(
   return data as Busca;
 }
 
-export type ResultadoImportacao = { inseridos: number; duplicados: number };
+export type ResultadoImportacao = {
+  inseridos: number;
+  duplicados: number;
+  /** dos inseridos, quantos entraram com ao menos um sinal marcado */
+  qualificados: number;
+};
 
 /**
  * Grava o que a busca achou, pulando quem já está no projeto.
@@ -833,6 +839,10 @@ export async function importarLugaresDb(
     novos.push(lugar);
   }
 
+  const qualificados = novos.filter(
+    (l) => Object.values(l.sinais).some(Boolean)
+  ).length;
+
   let inseridos = 0;
   for (let i = 0; i < novos.length; i += 200) {
     const lote = novos.slice(i, i + 200).map((l) => ({
@@ -851,5 +861,5 @@ export async function importarLugaresDb(
     inseridos += count ?? lote.length;
   }
 
-  return { inseridos, duplicados };
+  return { inseridos, duplicados, qualificados };
 }
