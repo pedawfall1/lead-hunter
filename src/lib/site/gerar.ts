@@ -61,10 +61,16 @@ TAMANHOS (respeite, o layout depende disso):
 - diferenciais: exatamente 3, no máximo 60 caracteres cada, sem ponto final
 - cta_botao: até 30 caracteres, verbo no infinitivo
 
-busca_imagens: 2 a 3 buscas de banco de imagens, EM INGLÊS, que ilustrem este ramo. O acervo é indexado em inglês — "barbearia" traz muito menos e pior que "barber shop".
-- Concreto e fotografável: "dental clinic interior", "mechanic repairing car engine", "lawyer office desk".
-- Nada de abstração ("success", "quality") nem de nome do negócio: o acervo não tem foto da loja específica.
-- Varie o enquadramento entre elas: um ambiente, uma pessoa trabalhando, um detalhe.
+busca_imagens: EXATAMENTE 3 buscas de banco de imagens, EM INGLÊS. O acervo é indexado em inglês — "barbearia" traz muito menos e pior que "barber shop". A ORDEM importa, cada posição tem um papel:
+  1. AMBIENTE — o espaço do negócio, acolhedor e bem iluminado. Ex.: "modern beauty salon interior", "cozy coffee shop interior".
+  2. ATENDIMENTO — uma pessoa sendo atendida ou o profissional trabalhando COM alguém. Ex.: "woman receiving facial treatment", "barber cutting client hair". Esta é a que mais vende: gente, não objeto.
+  3. DETALHE — um close do serviço acontecendo, ainda com mão ou pessoa em cena. Ex.: "hands applying massage oil", "hairdresser hands styling".
+
+Regras das três:
+- NUNCA peça equipamento, máquina, ferramenta ou aparelho sozinho ("dental equipment", "salon machine"). O acervo devolve foto técnica e fria de autoclave e compressor, que parece catálogo industrial e não o negócio do cliente.
+- Nada de abstração ("success", "quality", "innovation") nem do nome do negócio: o acervo não tem foto da loja específica.
+- 2 a 4 palavras cada, concretas e fotografáveis.
+- Escreva o ramo por extenso na busca: "clinic" sozinho traz hospital; "aesthetic clinic treatment" traz o que interessa.
 
 ESCOLHAS DE ESTILO:
 - paleta e estilo combinam com o ramo: advocacia e contabilidade pedem sobriedade; alimentação pede cor quente; saúde e estética pedem claro e limpo; oficina e construção pedem contraste forte.
