@@ -1,6 +1,7 @@
 import { criteriosSugeridos } from "@/lib/servicos";
 import type {
   Criterio,
+  Demo,
   Interacao,
   Lead,
   LeadStatus,
@@ -20,6 +21,7 @@ type Estado = {
   leads: Lead[];
   interacoes: Interacao[];
   templates: Template[];
+  demos: Demo[];
 };
 
 const global_ = globalThis as unknown as { __leadHunterDemo?: Estado };
@@ -422,6 +424,7 @@ function semear(): Estado {
     leads,
     interacoes,
     templates,
+    demos: [],
   };
 }
 

@@ -1,9 +1,11 @@
 import { DEMO } from "./config";
 import { agora, estado, novoId } from "./demo/dados";
 import { createClient } from "./supabase/server";
+import type { ConteudoSite } from "./site/tipos";
 import type {
   Busca,
   Criterio,
+  Demo,
   Interacao,
   Lead,
   LeadStatus,
@@ -29,6 +31,7 @@ const T = {
   leads: "lh_leads",
   interacoes: "lh_interacoes",
   templates: "lh_templates_mensagem",
+  demos: "lh_demos",
 } as const;
 
 function checar(error: { message: string } | null) {
@@ -157,6 +160,18 @@ export async function listarAgendados(): Promise<Lead[]> {
     .order("proximo_contato", { ascending: true });
   checar(error);
   return (data ?? []) as Lead[];
+}
+
+export async function obterLead(id: string): Promise<Lead | null> {
+  if (DEMO) return estado().leads.find((l) => l.id === id) ?? null;
+
+  const { data, error } = await createClient()
+    .from(T.leads)
+    .select(COLUNAS_LEAD)
+    .eq("id", id)
+    .maybeSingle();
+  checar(error);
+  return (data as Lead | null) ?? null;
 }
 
 export type DadosLead = {
@@ -481,6 +496,119 @@ export async function excluirTemplateDb(id: string): Promise<void> {
     .delete()
     .eq("id", id);
   checar(error);
+}
+
+/* --------------------------------- demos -------------------------------- */
+
+export type DadosDemo = {
+  lead_id: string;
+  projeto_id: string;
+  slug: string;
+  titulo: string;
+  conteudo: ConteudoSite;
+  html: string;
+  modelo: string | null;
+  tokens_entrada: number;
+  tokens_saida: number;
+};
+
+export async function listarDemosDoLead(leadId: string): Promise<Demo[]> {
+  if (DEMO)
+    return estado()
+      .demos.filter((d) => d.lead_id === leadId)
+      .sort(porCriacaoDesc);
+
+  const { data, error } = await createClient()
+    .from(T.demos)
+    .select("*")
+    .eq("lead_id", leadId)
+    .order("criado_em", { ascending: false });
+  checar(error);
+  return (data ?? []) as Demo[];
+}
+
+/**
+ * Leitura da página pública. Só devolve demo publicada — despublicar é o
+ * jeito de tirar do ar sem perder o histórico nem os tokens já gastos.
+ */
+export async function obterDemoPorSlug(slug: string): Promise<Demo | null> {
+  if (DEMO)
+    return estado().demos.find((d) => d.slug === slug && d.publicado) ?? null;
+
+  const { data, error } = await createClient()
+    .from(T.demos)
+    .select("*")
+    .eq("slug", slug)
+    .eq("publicado", true)
+    .maybeSingle();
+  checar(error);
+  return (data as Demo | null) ?? null;
+}
+
+export async function criarDemoDb(dados: DadosDemo): Promise<Demo> {
+  if (DEMO) {
+    const demo: Demo = {
+      id: novoId(),
+      ...dados,
+      publicado: true,
+      criado_em: agora(),
+    };
+    estado().demos.unshift(demo);
+    return demo;
+  }
+
+  const { data, error } = await createClient()
+    .from(T.demos)
+    .insert(dados)
+    .select("*")
+    .single();
+  checar(error);
+  return data as Demo;
+}
+
+export async function publicarDemoDb(
+  id: string,
+  publicado: boolean
+): Promise<Demo> {
+  if (DEMO) {
+    const d = estado().demos.find((x) => x.id === id);
+    if (!d) throw new Error("Demo não encontrada.");
+    d.publicado = publicado;
+    return { ...d };
+  }
+
+  const { data, error } = await createClient()
+    .from(T.demos)
+    .update({ publicado })
+    .eq("id", id)
+    .select("*")
+    .single();
+  checar(error);
+  return data as Demo;
+}
+
+export async function excluirDemoDb(id: string): Promise<void> {
+  if (DEMO) {
+    const e = estado();
+    e.demos = e.demos.filter((d) => d.id !== id);
+    return;
+  }
+
+  const { error } = await createClient().from(T.demos).delete().eq("id", id);
+  checar(error);
+}
+
+/** Já existe demo com este slug? O slug é a URL, e URL repetida vaza demo. */
+export async function slugEmUso(slug: string): Promise<boolean> {
+  if (DEMO) return estado().demos.some((d) => d.slug === slug);
+
+  const { data, error } = await createClient()
+    .from(T.demos)
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
+  checar(error);
+  return !!data;
 }
 
 /* --------------------------- webhook do n8n ---------------------------- */

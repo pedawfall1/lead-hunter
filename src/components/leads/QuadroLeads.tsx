@@ -54,6 +54,7 @@ export default function QuadroLeads({
   templates,
   interacoesIniciais,
   n8nAtivo,
+  openaiAtivo,
   buscaAtiva,
   ultimaBusca,
 }: {
@@ -62,6 +63,7 @@ export default function QuadroLeads({
   templates: Template[];
   interacoesIniciais: Record<string, Interacao[]>;
   n8nAtivo: boolean;
+  openaiAtivo: boolean;
   buscaAtiva: boolean;
   ultimaBusca: Busca | null;
 }) {
@@ -365,6 +367,7 @@ export default function QuadroLeads({
           templates={templates}
           interacoes={interacoes[leadSelecionado.id] ?? []}
           n8nAtivo={n8nAtivo}
+          openaiAtivo={openaiAtivo}
           abaInicial={selecionado.aba}
           aoFechar={() => setSelecionado(null)}
           aoAtualizar={(atualizado) =>

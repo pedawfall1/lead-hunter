@@ -32,10 +32,11 @@ import {
 } from "@/app/actions/leads";
 import { dispararPeloN8n } from "@/app/actions/disparo";
 import type { Interacao, Lead, Projeto, Template } from "@/lib/types";
+import AbaDemo from "./AbaDemo";
 import { EditorSinais, TagsSinais } from "./Sinais";
 import Timeline from "./Timeline";
 
-type Aba = "detalhes" | "historico" | "whatsapp";
+type Aba = "detalhes" | "historico" | "whatsapp" | "demo";
 
 type Props = {
   lead: Lead;
@@ -44,6 +45,8 @@ type Props = {
   interacoes: Interacao[];
   /** o n8n está configurado no servidor? habilita o disparo automático */
   n8nAtivo?: boolean;
+  /** OPENAI_API_KEY existe no servidor? liga a geração de demo */
+  openaiAtivo?: boolean;
   abaInicial: Aba;
   aoFechar: () => void;
   aoAtualizar: (lead: Lead) => void;
@@ -64,6 +67,7 @@ export default function ModalLead({
   templates,
   interacoes,
   n8nAtivo,
+  openaiAtivo,
   abaInicial,
   aoFechar,
   aoAtualizar,
@@ -303,6 +307,7 @@ export default function ModalLead({
             ["detalhes", "Detalhes"],
             ["historico", `Histórico${interacoes.length ? ` (${interacoes.length})` : ""}`],
             ["whatsapp", "WhatsApp"],
+            ["demo", "Demo"],
           ] as [Aba, string][]
         ).map(([id, label]) => (
           <button
@@ -598,6 +603,9 @@ export default function ModalLead({
             </p>
           )}
         </div>
+      )}
+      {aba === "demo" && (
+        <AbaDemo lead={lead} projeto={projeto} openaiAtivo={openaiAtivo} />
       )}
     </Modal>
   );

@@ -1,3 +1,5 @@
+import type { ConteudoSite } from "./site/tipos";
+
 export const STATUS = [
   "novo",
   "contatado",
@@ -96,6 +98,33 @@ export type Template = {
   id: string;
   nome: string;
   texto: string;
+  criado_em: string;
+};
+
+/**
+ * Uma demo de site gerada para o lead.
+ *
+ * O HTML fica gravado, e não é remontado a cada acesso de propósito: a
+ * página pública precisa responder sem sessão, então ela lê UMA linha e
+ * serve. Sem isso o `/demo` teria que ler lead e projeto, e a tabela de
+ * leads não pode ficar exposta. Efeito colateral bom: mexer no template
+ * não muda uma demo que o cliente já recebeu.
+ */
+export type Demo = {
+  id: string;
+  lead_id: string;
+  projeto_id: string;
+  /** parte pública da URL: /demo/<slug> */
+  slug: string;
+  titulo: string;
+  /** o JSON que a LLM escreveu, guardado para poder re-renderizar depois */
+  conteudo: ConteudoSite;
+  html: string;
+  modelo: string | null;
+  tokens_entrada: number;
+  tokens_saida: number;
+  /** fora do ar sem apagar: o /demo só serve o que está publicado */
+  publicado: boolean;
   criado_em: string;
 };
 

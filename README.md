@@ -35,7 +35,9 @@ Places API, ainda desabilitado de propósito.
 1. Crie um projeto em [supabase.com](https://supabase.com).
 2. Abra **SQL Editor → New query**, cole o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) e rode.
    Isso cria `lh_projetos`, `lh_leads`, `lh_interacoes`, `lh_templates_mensagem`,
-   os enums, o trigger de `atualizado_em` e as policies de RLS.
+   `lh_buscas`, `lh_nao_perturbe` e `lh_demos`, os enums, o trigger de
+   `atualizado_em` e as policies de RLS. Instalação nova só precisa deste
+   arquivo; banco antigo, ver as migrações em `supabase/migrations/`.
 
    As tabelas usam o prefixo `lh_` porque o projeto Supabase em uso é
    compartilhado com outros sistemas. Para mudar o prefixo, altere o objeto `T`
@@ -327,6 +329,81 @@ Os créditos do Apify são consumidos por resultado, então o campo **máximo de
 resultados** existe para você medir antes de soltar volume. O padrão é 50 e o
 teto é 300 por busca.
 
+## Demo de site (OpenAI)
+
+A aba **Demo** no modal do lead gera uma landing page institucional com os
+dados daquele lead e devolve um link pronto pra mandar junto da abordagem:
+em vez de "posso fazer o site de vocês?", você manda "fiz um rascunho, dá uma
+olhada".
+
+```
+OPENAI_API_KEY=sk-...
+# OPENAI_MODEL=gpt-4o-mini   (padrão)
+```
+
+### Por que sai barato
+
+**A LLM não escreve o HTML.** Ela devolve só o conteúdo em JSON — chamada,
+sobre, serviços, diferenciais, mais um nome de paleta e um de estilo. Quem
+monta a página é [`src/lib/site/render.ts`](src/lib/site/render.ts), escrito
+uma vez.
+
+|  | HTML pela LLM | JSON + template |
+| --- | --- | --- |
+| Tokens de saída | ~20.000 | ~1.500 |
+| Qualidade | varia a cada geração | constante |
+| Mobile | às vezes quebra | resolvido de uma vez |
+
+São seis paletas × três estilos, escolhidos pelo ramo — dezoito caras
+diferentes sem dezoito templates pra manter. As cores são nossas, não da
+LLM: pedir hex pra ela é como ganhar cinza sobre cinza uma vez a cada três.
+
+Telefone, endereço, Instagram e e-mail **não passam pela LLM**: vão do lead
+direto pro template. Gastar token pra ela copiar um telefone é pagar pra ela
+errar um dígito.
+
+O modelo fica em variável de ambiente porque nome de modelo muda de
+temporada, e trocar de modelo não pode virar deploy de código.
+
+### O link
+
+A página fica em `/demo/<slug>`, fora da área logada — o cliente abre sem ter
+conta aqui. Quem protege é o slug, com 8 caracteres aleatórios no fim:
+`/demo/advocacia-silva` sozinho seria adivinhável e daria pra listar proposta
+dos outros chutando nome de negócio.
+
+- O HTML fica **gravado** na linha da demo. A rota pública lê uma linha e
+  serve, sem chegar perto de `lh_leads`. Efeito colateral bom: mexer no
+  template não muda uma demo que o cliente já recebeu.
+- **Tirar do ar** despublica sem apagar. A rota só serve `publicado = true`,
+  e responde com `no-store` pra CDN não continuar entregando depois.
+- A página sai com `noindex`: indexada, competiria no Google com o site real
+  do cliente.
+- Tem uma fita no topo dizendo que é demonstração. Ela some na impressão,
+  pra não sujar um PDF da proposta.
+
+### O que a LLM é proibida de fazer
+
+O prompt gasta mais linha proibindo do que pedindo, e por um motivo só: a
+página vai ser mostrada ao dono do negócio, que sabe a verdade sobre ele.
+"15 anos de mercado" chutado num negócio de 2 anos não é deslize estético, é
+a proposta indo pro lixo. Nada de número inventado, prêmio, certificação ou
+depoimento com nome de pessoa.
+
+Como `strict: true` do Structured Outputs garante o formato mas não o
+tamanho, `saneiarConteudo` apara na entrada do template — h1 de 300
+caracteres estoura o hero no celular.
+
+### Sem chave
+
+O botão **Copiar prompt** funciona sempre e não custa nada: monta o mesmo
+briefing como texto pedindo o HTML, pra colar no v0, Lovable ou Claude. É o
+caminho manual e também o escape pra quando a geração automática não agradar.
+
+No modo demo a geração roda sem chave nenhuma, com conteúdo de
+[`exemplo.ts`](src/lib/site/exemplo.ts) — o resto do app roda inteiro sem
+configurar nada, e essa aba não ia ser a única a exigir cartão.
+
 ## Estrutura
 
 ```
@@ -340,6 +417,7 @@ src/
     actions/                  # server actions (auth, projetos, leads, templates)
     login/
     api/n8n/route.ts          # callback do n8n (entregue, lido, resposta...)
+    demo/[slug]/route.ts      # a demo de site, pública, servida como HTML puro
   components/
     relatorios/               # funil, série temporal, ranking, mapa de ritmo
     leads/                    # kanban, cards, modais, importação
@@ -354,13 +432,28 @@ src/
     n8n.ts                    # contrato de ida e volta com o n8n
     mapas.ts                  # normaliza o resultado do scraper e infere sinais
     apify.ts                  # inicia a corrida e busca o dataset
+    site/                     # a demo de site do lead
+      briefing.ts             #   o que o app sabe do lead, num objeto só
+      gerar.ts                #   chamada da OpenAI (JSON, nunca HTML)
+      render.ts               #   o conteúdo vira página; o layout mora aqui
+      paletas.ts  tipos.ts  slug.ts  exemplo.ts
     supabase/admin.ts         # service_role, só para o webhook
     config.ts  csv.ts  format.ts  status.ts  types.ts
 middleware.ts                 # renova a sessão e bloqueia rotas privadas
 supabase/
   schema.sql                  # instalação nova
-  migrations/001_*.sql        # a mesma criação, como registro do que foi aplicado
+  migrations/001_*.sql        # o app inicial
+  migrations/002_demos.sql    # lh_demos: as demos de site geradas
+  migrations/003_*.sql        # buscas, não perturbe e as colunas do disparo
 ```
+
+**Instalação nova:** rode só o `schema.sql` — ele já contém tudo.
+
+**Banco que já existe:** rode as migrações que faltarem. A `003` alinha o
+SQL versionado com o que o código passou a usar depois do 001 (a busca no
+Maps, o disparo pelo n8n e a lista de não perturbe); é toda idempotente
+(`if not exists`), então rodar num banco que já recebeu essas mudanças na
+mão não quebra nada.
 
 ## Isolamento por conta
 
@@ -374,6 +467,16 @@ criar o usuário no painel do Supabase; nada muda no código.
 
 ## Próximos passos (quando estiver no PC)
 
-1. Fila de disparo do dia, com intervalo aleatório e janela de horário.
-2. Valor por lead, para o kanban virar previsão de faturamento.
-3. Lista de não perturbe na interface (a tabela já existe).
+1. Rodar a `003_alinha_schema.sql` no Supabase de produção (o schema estava
+   atrasado em relação ao código).
+2. Análise de Instagram: um segundo actor do Apify preenche `parado_30d`,
+   `poucos_seguidores` e `so_linktree` — sinais que hoje ninguém preenche
+   porque o Google Maps não sabe — e alimenta a demo com bio, cores e fotos
+   reais do perfil.
+3. Variável `{demo}` nos templates de WhatsApp, para a abordagem já sair com
+   o link da proposta.
+4. Guardar nota e nº de avaliações do Google no lead: hoje viram sinal na
+   importação e são descartados, mas dariam prova social real na demo.
+5. Fila de disparo do dia, com intervalo aleatório e janela de horário.
+6. Valor por lead, para o kanban virar previsão de faturamento.
+7. Lista de não perturbe na interface (a tabela já existe).
