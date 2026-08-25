@@ -277,6 +277,7 @@ alter table public.lh_leads add column if not exists ig_dados  jsonb;
 alter table public.lh_leads add column if not exists ig_run_id text;
 alter table public.lh_leads add column if not exists ig_em     timestamptz;
 alter table public.lh_leads add column if not exists ig_erro   text;
+alter table public.lh_leads add column if not exists ig_bruto  jsonb;
 
 create index if not exists lh_leads_ig_run_idx
   on public.lh_leads (ig_run_id)

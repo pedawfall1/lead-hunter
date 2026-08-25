@@ -51,6 +51,8 @@ export type Lead = {
   ig_run_id: string | null;
   ig_em: string | null;
   ig_erro: string | null;
+  /** o item cru do scraper, para conferir que campos ele devolveu */
+  ig_bruto: Record<string, unknown> | null;
   criado_em: string;
   atualizado_em: string;
 };

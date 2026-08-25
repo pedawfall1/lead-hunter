@@ -233,6 +233,19 @@ export default function AbaInstagram({ lead, buscaAtiva, aoAtualizar }: Props) {
             Os sinais de qualificação do lead já foram atualizados com isso, e a
             bio entra no briefing quando você gerar a demo de site.
           </p>
+
+          {/* Um campo em branco pode ser do actor ou do normalizador. Só o
+              item cru responde qual dos dois — mesma saída da busca no Maps. */}
+          {lead.ig_bruto && (
+            <details className="rounded-lg border border-line bg-ink-900 p-3">
+              <summary className="cursor-pointer text-[12px] text-slate-400">
+                Ver o que o scraper devolveu
+              </summary>
+              <pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap break-all text-[11px] leading-relaxed text-slate-500">
+                {JSON.stringify(lead.ig_bruto, null, 2)}
+              </pre>
+            </details>
+          )}
         </div>
       )}
 

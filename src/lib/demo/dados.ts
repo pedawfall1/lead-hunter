@@ -1,11 +1,23 @@
 import { criteriosSugeridos } from "@/lib/servicos";
 
+import type {
+  Criterio,
+  Demo,
+  Interacao,
+  Lead,
+  LeadStatus,
+  Projeto,
+  Template,
+  TipoInteracao,
+} from "@/lib/types";
+
 /** Lead que ainda nao teve o Instagram analisado. */
 const SEM_INSTAGRAM = {
   ig_dados: null,
   ig_run_id: null,
   ig_em: null,
   ig_erro: null,
+  ig_bruto: null,
 } as const;
 
 /**
@@ -51,18 +63,9 @@ function instagramDeExemplo(usuario: string, dias: number) {
     ig_run_id: null,
     ig_em: diasAtras(1),
     ig_erro: null,
+    ig_bruto: null,
   };
 }
-import type {
-  Criterio,
-  Demo,
-  Interacao,
-  Lead,
-  LeadStatus,
-  Projeto,
-  Template,
-  TipoInteracao,
-} from "@/lib/types";
 
 /**
  * Banco de mentira do modo demo: vive na memória do processo.

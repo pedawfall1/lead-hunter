@@ -56,6 +56,7 @@ export async function analisarInstagram(
 
     const atualizado = await salvarInstagramDb(leadId, {
       ig_run_id: corrida.runId,
+      ig_bruto: null,
       ig_erro: null,
     });
 
@@ -113,6 +114,10 @@ export async function conferirInstagram(
       leadId,
       {
         ig_dados: perfil,
+        // O item cru fica guardado: e a unica forma de saber depois se um
+        // campo faltou porque o actor nao trouxe ou porque o normalizador
+        // perdeu no caminho. Mesma ideia de lh_buscas.amostra.
+        ig_bruto: (brutos[0] as Record<string, unknown> | undefined) ?? null,
         ig_run_id: null,
         ig_em: new Date().toISOString(),
         // Perfil nao encontrado nao e falha da corrida: e a resposta.

@@ -117,8 +117,11 @@ function css(c: Cores): string {
     ".contato .val{font-weight:600;font-size:15px;word-break:break-word}",
 
     `footer{border-top:1px solid ${c.borda};padding:34px 0;color:${c.suave};font-size:14px}`,
-    "footer .env{display:flex;flex-wrap:wrap;gap:10px 20px;justify-content:space-between;align-items:center}",
-    ".credito{font-size:11.5px;opacity:.6}",
+    "footer .env{display:flex;flex-wrap:wrap;gap:14px 20px;justify-content:space-between;align-items:center}",
+    ".feito-por{display:flex;align-items:center;gap:10px;text-decoration:none;opacity:.75}",
+    ".feito-por:hover{opacity:1}",
+    ".feito-por span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600}",
+    ".feito-por img{height:38px;width:auto}",
 
     ".zap{position:fixed;right:18px;bottom:18px;z-index:30;width:58px;height:58px;border-radius:50%;background:#25d366;display:grid;place-items:center;box-shadow:0 10px 26px -8px rgba(0,0,0,.55)}",
 
@@ -200,16 +203,21 @@ function figura(img: ImagemSite, papel: "moldura" | "galeria"): string {
     : `<figure>${tag}</figure>`;
 }
 
+const ARIUM_URL = "https://arium-ia.cloud";
+
 /**
- * Crédito das fotos no rodapé.
+ * Assinatura da agência no rodapé.
  *
- * O Pexels não exige atribuição, mas pede. Fica discreto: é uma proposta
- * comercial, não uma galeria.
+ * O PNG passa pelo otimizador de imagem do próprio Next em vez de ir por
+ * caminho direto: o arquivo original tem mais de 1 MB, e a demo é aberta
+ * no celular do cliente, muitas vezes em 4G ruim. Assim chega com 20 KB.
  */
-function creditoFotos(imagens: ImagemSite[]): string {
-  const nomes = [...new Set(imagens.map((i) => i.autor))].filter(Boolean);
-  if (!nomes.length) return "";
-  return `<span class="credito">Fotos: ${nomes.map(esc).join(", ")} · Pexels</span>`;
+function assinaturaArium(): string {
+  const logo = "/_next/image?url=%2Farium.png&amp;w=256&amp;q=80";
+  return `<a class="feito-por" href="${ARIUM_URL}" target="_blank" rel="noopener">
+  <span>Desenvolvido por</span>
+  <img src="${logo}" alt="Arium" width="41" height="48" loading="lazy">
+</a>`;
 }
 
 export type OpcoesRender = {
@@ -331,9 +339,8 @@ ${diferenciais ? `<section class="sec${galeria.length ? " alt" : ""}"><div class
 </div></section>
 
 <footer><div class="env">
-  <span>${esc(conteudo.titulo)}${briefing.regiao ? ` · ${esc(briefing.regiao)}` : ""}</span>
-  ${creditoFotos(imagens)}
-  <span>${new Date().getFullYear()}</span>
+  <span>${esc(conteudo.titulo)}${briefing.regiao ? ` · ${esc(briefing.regiao)}` : ""} · ${new Date().getFullYear()}</span>
+  ${assinaturaArium()}
 </div></footer>
 ${zap ? `<a class="zap" href="${zap}" target="_blank" rel="noopener" aria-label="Falar no WhatsApp">${ZAP}</a>` : ""}
 </body>

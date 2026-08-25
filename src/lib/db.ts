@@ -125,7 +125,7 @@ export async function excluirProjetoDb(id: string): Promise<void> {
 /* --------------------------------- leads -------------------------------- */
 
 const COLUNAS_LEAD =
-  "id, projeto_id, nome, telefone, endereco, instagram, email, sinais, status, nota, proximo_contato, ig_dados, ig_run_id, ig_em, ig_erro, criado_em, atualizado_em";
+  "id, projeto_id, nome, telefone, endereco, instagram, email, sinais, status, nota, proximo_contato, ig_dados, ig_run_id, ig_em, ig_erro, ig_bruto, criado_em, atualizado_em";
 
 export async function listarLeads(projetoId?: string): Promise<Lead[]> {
   if (DEMO) {
@@ -264,7 +264,9 @@ export async function ajustarLeadDb(
  */
 export async function salvarInstagramDb(
   id: string,
-  campos: Partial<Pick<Lead, "ig_dados" | "ig_run_id" | "ig_em" | "ig_erro">>,
+  campos: Partial<
+    Pick<Lead, "ig_dados" | "ig_run_id" | "ig_em" | "ig_erro" | "ig_bruto">
+  >,
   sinais?: { marcar: Sinais; desmarcar: string[] }
 ): Promise<Lead> {
   const aplicar = (lead: Lead) => {
@@ -341,6 +343,7 @@ export const SEM_INSTAGRAM = {
   ig_run_id: null,
   ig_em: null,
   ig_erro: null,
+  ig_bruto: null,
 } as const;
 
 export async function inserirLeadsDb(

@@ -30,9 +30,15 @@ export type PerfilBruto = {
   verified?: boolean;
   is_verified?: boolean;
   profilePicUrl?: string;
+  // Cada actor batiza a lista de posts de um jeito. Sem apostar num nome:
+  // se nenhum destes vier, `postsDe` varre o objeto atras de uma lista que
+  // pareca de posts.
   latestPosts?: PostBruto[];
   posts_list?: PostBruto[];
+  topPosts?: PostBruto[];
+  edge_owner_to_timeline_media?: { edges?: { node?: PostBruto }[] };
   error?: string;
+  [k: string]: unknown;
 };
 
 type PostBruto = {
@@ -112,11 +118,51 @@ function quandoDoPost(p: PostBruto): string | null {
 const AGREGADORES =
   /(linktr\.ee|beacons\.|linkr\.bio|bio\.link|linklist|campsite\.bio|linkme|many\.link|lnk\.bio)/i;
 
+/** Isto parece um post? Basta ter data e alguma métrica ou legenda. */
+function pareceposts(v: unknown): v is PostBruto[] {
+  if (!Array.isArray(v) || !v.length) return false;
+  const p = v[0] as Record<string, unknown> | null;
+  if (!p || typeof p !== "object") return false;
+  const temData = "timestamp" in p || "taken_at_timestamp" in p;
+  const temResto =
+    "likesCount" in p || "likes" in p || "caption" in p || "commentsCount" in p;
+  return temData && temResto;
+}
+
+/**
+ * Acha a lista de posts onde quer que o actor a tenha posto.
+ *
+ * O `apify~instagram-profile-scraper` devolveu perfil sem `latestPosts` em
+ * teste real: seguidores e bio vieram, o resto ficou vazio. Em vez de
+ * apostar no nome do campo, procura pelos conhecidos e, se falhar, varre o
+ * objeto atrás de qualquer lista que tenha cara de post.
+ */
+function postsDe(bruto: PerfilBruto): PostBruto[] {
+  const conhecidos = [
+    bruto.latestPosts,
+    bruto.posts_list,
+    bruto.topPosts,
+    bruto.edge_owner_to_timeline_media?.edges
+      ?.map((e) => e?.node)
+      .filter((n): n is PostBruto => !!n),
+  ];
+
+  for (const lista of conhecidos) {
+    if (pareceposts(lista)) return lista;
+  }
+
+  for (const valor of Object.values(bruto)) {
+    if (pareceposts(valor)) return valor;
+  }
+
+  return [];
+}
+
 export function normalizarPerfil(bruto: PerfilBruto): PerfilInstagram | null {
   const usuario = txt(bruto.username);
   if (!usuario) return null;
 
-  const brutos = bruto.latestPosts ?? bruto.posts_list ?? [];
+  const brutos = postsDe(bruto);
   const posts: Post[] = brutos.slice(0, 12).map((p) => ({
     quando: quandoDoPost(p),
     curtidas: num(p.likesCount, p.likes) ?? 0,
