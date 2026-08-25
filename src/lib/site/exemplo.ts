@@ -67,6 +67,8 @@ export function conteudoDeExemplo(b: Briefing): ConteudoSite {
     // Semente separada para o estilo de proposito: com `s % 3` e `s % 6` a
     // partir do mesmo numero, o resto de 3 sai do resto de 6 — a paleta
     // decidiria o estilo sozinha e so 6 das 18 combinacoes apareceriam.
+    // Em ingles, como o prompt manda: e assim que o acervo e indexado.
+    busca_imagens: [`${ramo} business`, `${ramo} professional working`],
     paleta: PALETAS[s % PALETAS.length],
     estilo: ESTILOS[semente(`${b.nomeCurto}|estilo`) % ESTILOS.length],
   };

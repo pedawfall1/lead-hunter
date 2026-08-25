@@ -1,4 +1,5 @@
 import { DEMO } from "@/lib/config";
+import { buscarImagens } from "./pexels";
 import { conteudoDeExemplo } from "./exemplo";
 import { briefingComoTexto, type Briefing } from "./briefing";
 import {
@@ -60,6 +61,11 @@ TAMANHOS (respeite, o layout depende disso):
 - diferenciais: exatamente 3, no máximo 60 caracteres cada, sem ponto final
 - cta_botao: até 30 caracteres, verbo no infinitivo
 
+busca_imagens: 2 a 3 buscas de banco de imagens, EM INGLÊS, que ilustrem este ramo. O acervo é indexado em inglês — "barbearia" traz muito menos e pior que "barber shop".
+- Concreto e fotografável: "dental clinic interior", "mechanic repairing car engine", "lawyer office desk".
+- Nada de abstração ("success", "quality") nem de nome do negócio: o acervo não tem foto da loja específica.
+- Varie o enquadramento entre elas: um ambiente, uma pessoa trabalhando, um detalhe.
+
 ESCOLHAS DE ESTILO:
 - paleta e estilo combinam com o ramo: advocacia e contabilidade pedem sobriedade; alimentação pede cor quente; saúde e estética pedem claro e limpo; oficina e construção pedem contraste forte.
 - Não repita a mesma combinação para todo mundo.
@@ -77,8 +83,10 @@ export async function gerarConteudo(
   briefing: Briefing
 ): Promise<ResultadoGeracao> {
   if (DEMO) {
+    const exemplo = saneiarConteudo(conteudoDeExemplo(briefing));
+    exemplo.imagens = await buscarImagens(exemplo.busca_imagens);
     return {
-      conteudo: saneiarConteudo(conteudoDeExemplo(briefing)),
+      conteudo: exemplo,
       modelo: "exemplo (modo demo)",
       tokens: { entrada: 0, saida: 0 },
     };
@@ -169,8 +177,15 @@ export async function gerarConteudo(
     throw new Error("A OpenAI devolveu um JSON que não deu para ler.");
   }
 
+  const conteudo = saneiarConteudo(bruto);
+
+  // Depois da LLM, nao junto: ela escreve a busca, quem acha a foto e o
+  // Pexels. Se a busca falhar, `imagens` fica vazio e o site cai no
+  // gradiente — imagem e melhoria, nao requisito.
+  conteudo.imagens = await buscarImagens(conteudo.busca_imagens);
+
   return {
-    conteudo: saneiarConteudo(bruto),
+    conteudo,
     modelo: MODELO,
     tokens: {
       entrada: dados.usage?.prompt_tokens ?? 0,

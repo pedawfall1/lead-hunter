@@ -338,6 +338,7 @@ olhada".
 
 ```
 OPENAI_API_KEY=sk-...
+PEXELS_API_KEY=...          # fotos; gratuito em pexels.com/api
 # OPENAI_MODEL=gpt-4o-mini   (padrão)
 ```
 
@@ -364,6 +365,33 @@ errar um dígito.
 
 O modelo fica em variável de ambiente porque nome de modelo muda de
 temporada, e trocar de modelo não pode virar deploy de código.
+
+### As fotos
+
+Página institucional sem imagem fica com cara de rascunho, e rascunho não
+vende. A LLM não escolhe foto — ela escreve **2 ou 3 buscas em inglês**
+(`busca_imagens`), o servidor consulta o Pexels e usa o que voltar: uma no
+topo, uma na seção "sobre", o resto vira galeria.
+
+- **Em inglês** porque o acervo é indexado assim: "barbearia" traz muito
+  menos e pior que "barber shop".
+- As buscas são **intercaladas**, não enfileiradas — senão a página inteira
+  ficaria com três fotos quase iguais da primeira consulta.
+- Por que Pexels e não as fotos do Instagram do lead: as URLs do Instagram
+  são assinadas e **expiram em dias**. A demo quebraria justo quando o
+  cliente resolvesse abrir o link. As do Pexels são CDN estável, então a
+  página aponta direto — nada é baixado nem guardado.
+- **Falha em silêncio**: sem chave, sem resultado ou com a API fora do ar, a
+  página sai com gradiente e tipografia. Imagem é melhoria, não requisito.
+- No topo a foto leva um véu escuro por cima. Sem ele, foto clara com texto
+  branco é o jeito mais fácil de a demo chegar ilegível no celular.
+
+O Pexels não exige atribuição, mas pede — o rodapé traz o crédito dos
+fotógrafos, discreto.
+
+Para mexer no template sem gastar chamada nenhuma, rode `npm run dev` e abra
+`/demo/teste-render` (e `?semfoto` para ver o caminho sem imagem). A rota só
+existe em desenvolvimento.
 
 ### O link
 
@@ -436,6 +464,7 @@ src/
       briefing.ts             #   o que o app sabe do lead, num objeto só
       gerar.ts                #   chamada da OpenAI (JSON, nunca HTML)
       render.ts               #   o conteúdo vira página; o layout mora aqui
+      pexels.ts               #   busca as fotos; falha em silencio
       paletas.ts  tipos.ts  slug.ts  exemplo.ts
     supabase/admin.ts         # service_role, só para o webhook
     config.ts  csv.ts  format.ts  status.ts  types.ts

@@ -1,3 +1,5 @@
+import type { ImagemSite } from "./pexels";
+
 /**
  * O contrato com a LLM.
  *
@@ -50,6 +52,13 @@ export type ConteudoSite = {
   cta_botao: string;
   paleta: Paleta;
   estilo: Estilo;
+  /** 2 a 3 buscas EM INGLES para o Pexels; ver pexels.ts */
+  busca_imagens: string[];
+  /**
+   * Preenchido no servidor depois da LLM, nao por ela: a LLM nao ve o
+   * acervo do Pexels e inventaria URL que nao existe.
+   */
+  imagens?: ImagemSite[];
 };
 
 /**
@@ -77,6 +86,7 @@ export const ESQUEMA_CONTEUDO = {
     "cta_botao",
     "paleta",
     "estilo",
+    "busca_imagens",
   ],
   properties: {
     titulo: { type: "string" },
@@ -103,6 +113,7 @@ export const ESQUEMA_CONTEUDO = {
     cta_botao: { type: "string" },
     paleta: { type: "string", enum: [...PALETAS] },
     estilo: { type: "string", enum: [...ESTILOS] },
+    busca_imagens: { type: "array", items: { type: "string" } },
   },
 } as const;
 
@@ -139,5 +150,10 @@ export function saneiarConteudo(c: ConteudoSite): ConteudoSite {
     cta_botao: corta(c.cta_botao, 40),
     paleta: PALETAS.includes(c.paleta) ? c.paleta : "sobrio_azul",
     estilo: ESTILOS.includes(c.estilo) ? c.estilo : "escuro",
+    busca_imagens: (c.busca_imagens ?? [])
+      .slice(0, 3)
+      .map((q) => corta(q, 60))
+      .filter(Boolean),
+    imagens: c.imagens,
   };
 }
