@@ -30,6 +30,21 @@ export const ESTILOS = ["escuro", "claro", "elegante"] as const;
 
 export type Estilo = (typeof ESTILOS)[number];
 
+/**
+ * A estrutura da página, não só a cor.
+ *
+ * Paleta e estilo mudam pintura e tipografia, mas a planta continuava a
+ * mesma para todo mundo — e duas demos lado a lado se denunciavam. O
+ * layout muda o topo, que é a parte que a pessoa vê primeiro.
+ *
+ * - `classico`: topo largo com a foto ao fundo, sob véu escuro
+ * - `dividido`: texto de um lado, foto do outro, sem véu
+ * - `centrado`: sem foto no topo, texto no meio e a foto logo abaixo
+ */
+export const LAYOUTS = ["classico", "dividido", "centrado"] as const;
+
+export type Layout = (typeof LAYOUTS)[number];
+
 export type ServicoSite = {
   nome: string;
   descricao: string;
@@ -52,6 +67,7 @@ export type ConteudoSite = {
   cta_botao: string;
   paleta: Paleta;
   estilo: Estilo;
+  layout: Layout;
   /**
    * Cor da marca escolhida a mao, no editor da aba Demo. Atropela a
    * paleta: e a cor tirada do Instagram do cliente quando o palpite da
@@ -92,6 +108,7 @@ export const ESQUEMA_CONTEUDO = {
     "cta_botao",
     "paleta",
     "estilo",
+    "layout",
     "busca_imagens",
   ],
   properties: {
@@ -119,6 +136,7 @@ export const ESQUEMA_CONTEUDO = {
     cta_botao: { type: "string" },
     paleta: { type: "string", enum: [...PALETAS] },
     estilo: { type: "string", enum: [...ESTILOS] },
+    layout: { type: "string", enum: [...LAYOUTS] },
     busca_imagens: { type: "array", items: { type: "string" } },
   },
 } as const;
@@ -156,6 +174,7 @@ export function saneiarConteudo(c: ConteudoSite): ConteudoSite {
     cta_botao: corta(c.cta_botao, 40),
     paleta: PALETAS.includes(c.paleta) ? c.paleta : "sobrio_azul",
     estilo: ESTILOS.includes(c.estilo) ? c.estilo : "escuro",
+    layout: LAYOUTS.includes(c.layout) ? c.layout : "classico",
     busca_imagens: (c.busca_imagens ?? [])
       .slice(0, 3)
       .map((q) => corta(q, 60))

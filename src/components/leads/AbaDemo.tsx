@@ -5,13 +5,13 @@ import { IconCheck, IconCopy, IconTrash } from "@/components/ui/icons";
 import {
   excluirDemo,
   gerarDemo,
-  listarDemos,
   reestilizarDemo,
   publicarDemo,
 } from "@/app/actions/site";
 import { montarBriefing, promptParaColar } from "@/lib/site/briefing";
 import { dataCurta } from "@/lib/format";
-import { ESTILOS, PALETAS } from "@/lib/site/tipos";
+import { ESTILOS, LAYOUTS, PALETAS } from "@/lib/site/tipos";
+import PreviaDemo from "./PreviaDemo";
 import type { Demo, Lead, Projeto } from "@/lib/types";
 
 type Props = {
@@ -19,6 +19,9 @@ type Props = {
   projeto: Projeto;
   /** OPENAI_API_KEY existe no servidor? sem ela sobra o caminho manual */
   openaiAtivo?: boolean;
+  /** a lista vive no ModalLead: a aba WhatsApp tambem precisa dela */
+  demos: Demo[];
+  aoMudarDemos: (lista: Demo[]) => void;
 };
 
 function Copiar({ texto, label }: { texto: string; label: string }) {
@@ -53,6 +56,68 @@ function Copiar({ texto, label }: { texto: string; label: string }) {
   );
 }
 
+/**
+ * As etapas por onde a geração passa, na ordem real: a LLM escreve o texto,
+ * o Pexels acha as fotos, o `render.ts` monta a página.
+ *
+ * Os tempos são estimativa, não medição — a server action é uma chamada só
+ * e não reporta progresso. Por isso a última etapa não tem prazo: ela fica
+ * na tela até a resposta chegar, em vez de fingir que terminou.
+ */
+const ETAPAS: [string, number][] = [
+  ["Lendo o que sabemos do lead", 900],
+  ["Escrevendo o texto do site", 4200],
+  ["Escolhendo as fotos", 2600],
+  ["Montando a página", 0],
+];
+
+/**
+ * Muda sempre que a aparência muda. Serve de `key` do editor e de cache
+ * buster do iframe da prévia.
+ */
+function versaoDemo(d: Demo): string {
+  const c = d.conteudo;
+  return `${c?.paleta ?? ""}-${c?.estilo ?? ""}-${c?.layout ?? ""}-${c?.cor_marca ?? ""}`;
+}
+
+function Progresso() {
+  const [etapa, setEtapa] = useState(0);
+
+  useEffect(() => {
+    if (etapa >= ETAPAS.length - 1) return;
+    const t = setTimeout(() => setEtapa((n) => n + 1), ETAPAS[etapa][1]);
+    return () => clearTimeout(t);
+  }, [etapa]);
+
+  return (
+    <ol className="mt-3 space-y-1.5">
+      {ETAPAS.map(([texto], i) => {
+        const feita = i < etapa;
+        const agora = i === etapa;
+        return (
+          <li
+            key={texto}
+            className={`flex items-center gap-2 text-[13px] transition-colors ${
+              feita ? "text-slate-500" : agora ? "text-white" : "text-slate-600"
+            }`}
+          >
+            <span className="grid h-4 w-4 shrink-0 place-items-center">
+              {feita ? (
+                <IconCheck className="h-3.5 w-3.5 text-emerald-400" />
+              ) : agora ? (
+                <span className="h-2 w-2 animate-pulse rounded-full bg-brand" />
+              ) : (
+                <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />
+              )}
+            </span>
+            {texto}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 const NOME_PALETA: Record<string, string> = {
   sobrio_azul: "Azul sóbrio",
   preto_dourado: "Preto e dourado",
@@ -60,6 +125,12 @@ const NOME_PALETA: Record<string, string> = {
   quente_terra: "Terra quente",
   clinico_claro: "Clínico claro",
   vibrante_roxo: "Roxo vibrante",
+};
+
+const NOME_LAYOUT: Record<string, string> = {
+  classico: "Foto ao fundo",
+  dividido: "Texto e foto lado a lado",
+  centrado: "Centrado, foto abaixo",
 };
 
 const NOME_ESTILO: Record<string, string> = {
@@ -82,13 +153,21 @@ function Aparencia({
 }: {
   demo: Demo;
   pendente: boolean;
-  aoAplicar: (a: { paleta: string; estilo: string; corMarca: string | null }) => void;
+  aoAplicar: (a: {
+    paleta: string;
+    estilo: string;
+    layout: string;
+    corMarca: string | null;
+  }) => void;
 }) {
   const [paleta, setPaleta] = useState<string>(
     demo.conteudo?.paleta ?? "sobrio_azul"
   );
   const [estilo, setEstilo] = useState<string>(
     demo.conteudo?.estilo ?? "escuro"
+  );
+  const [layout, setLayout] = useState<string>(
+    demo.conteudo?.layout ?? "classico"
   );
   const [usarCor, setUsarCor] = useState(!!demo.conteudo?.cor_marca);
   const [cor, setCor] = useState(demo.conteudo?.cor_marca ?? "#f97316");
@@ -122,6 +201,24 @@ function Aparencia({
             ))}
           </select>
         </div>
+      </div>
+
+      <div>
+        <label className="label" htmlFor={`lay-${demo.id}`}>
+          Layout do topo
+        </label>
+        <select
+          id={`lay-${demo.id}`}
+          className="input"
+          value={layout}
+          onChange={(e) => setLayout(e.target.value)}
+        >
+          {LAYOUTS.map((l) => (
+            <option key={l} value={l}>
+              {NOME_LAYOUT[l] ?? l}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div>
@@ -162,7 +259,7 @@ function Aparencia({
         type="button"
         disabled={pendente}
         onClick={() =>
-          aoAplicar({ paleta, estilo, corMarca: usarCor ? cor : null })
+          aoAplicar({ paleta, estilo, layout, corMarca: usarCor ? cor : null })
         }
         className="btn-primary px-3 py-1.5 text-xs disabled:opacity-50"
       >
@@ -172,9 +269,13 @@ function Aparencia({
   );
 }
 
-export default function AbaDemo({ lead, projeto, openaiAtivo }: Props) {
-  const [demos, setDemos] = useState<Demo[]>([]);
-  const [carregando, setCarregando] = useState(true);
+export default function AbaDemo({
+  lead,
+  projeto,
+  openaiAtivo,
+  demos,
+  aoMudarDemos,
+}: Props) {
   const [erro, setErro] = useState<string | null>(null);
   const [pendente, iniciar] = useTransition();
   const [verPrompt, setVerPrompt] = useState(false);
@@ -182,19 +283,6 @@ export default function AbaDemo({ lead, projeto, openaiAtivo }: Props) {
 
   const briefing = montarBriefing(lead, projeto);
   const prompt = promptParaColar(briefing);
-
-  useEffect(() => {
-    let vivo = true;
-    listarDemos(lead.id).then((r) => {
-      if (!vivo) return;
-      if (r.ok) setDemos(r.data ?? []);
-      else setErro(r.erro);
-      setCarregando(false);
-    });
-    return () => {
-      vivo = false;
-    };
-  }, [lead.id]);
 
   // A URL so existe no browser: o mesmo app roda em localhost e na Vercel,
   // e a demo tem que ser copiavel dos dois.
@@ -204,7 +292,7 @@ export default function AbaDemo({ lead, projeto, openaiAtivo }: Props) {
     setErro(null);
     iniciar(async () => {
       const r = await gerarDemo(lead.id);
-      if (r.ok && r.data) setDemos((d) => [r.data as Demo, ...d]);
+      if (r.ok && r.data) aoMudarDemos([r.data as Demo, ...demos]);
       else if (!r.ok) setErro(r.erro);
     });
   }
@@ -213,8 +301,8 @@ export default function AbaDemo({ lead, projeto, openaiAtivo }: Props) {
     iniciar(async () => {
       const r = await publicarDemo(demo.id, !demo.publicado);
       if (r.ok && r.data)
-        setDemos((lista) =>
-          lista.map((d) => (d.id === demo.id ? (r.data as Demo) : d))
+        aoMudarDemos(
+          demos.map((d) => (d.id === demo.id ? (r.data as Demo) : d))
         );
       else if (!r.ok) setErro(r.erro);
     });
@@ -222,14 +310,19 @@ export default function AbaDemo({ lead, projeto, openaiAtivo }: Props) {
 
   function reestilizar(
     demo: Demo,
-    ajuste: { paleta: string; estilo: string; corMarca: string | null }
+    ajuste: {
+      paleta: string;
+      estilo: string;
+      layout: string;
+      corMarca: string | null;
+    }
   ) {
     setErro(null);
     iniciar(async () => {
       const r = await reestilizarDemo(demo.id, ajuste);
       if (r.ok && r.data)
-        setDemos((lista) =>
-          lista.map((d) => (d.id === demo.id ? (r.data as Demo) : d))
+        aoMudarDemos(
+          demos.map((d) => (d.id === demo.id ? (r.data as Demo) : d))
         );
       else if (!r.ok) setErro(r.erro);
     });
@@ -238,7 +331,7 @@ export default function AbaDemo({ lead, projeto, openaiAtivo }: Props) {
   function remover(demo: Demo) {
     iniciar(async () => {
       const r = await excluirDemo(demo.id);
-      if (r.ok) setDemos((lista) => lista.filter((d) => d.id !== demo.id));
+      if (r.ok) aoMudarDemos(demos.filter((d) => d.id !== demo.id));
       else setErro(r.erro);
     });
   }
@@ -282,6 +375,8 @@ export default function AbaDemo({ lead, projeto, openaiAtivo }: Props) {
           <Copiar texto={prompt} label="Copiar prompt" />
         </div>
 
+        {pendente && !editando && <Progresso />}
+
         {!openaiAtivo && (
           <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
             Sem <code>OPENAI_API_KEY</code> no servidor a geração automática
@@ -308,9 +403,7 @@ export default function AbaDemo({ lead, projeto, openaiAtivo }: Props) {
         )}
       </div>
 
-      {carregando ? (
-        <p className="text-sm text-slate-500">Carregando demos…</p>
-      ) : demos.length === 0 ? (
+      {demos.length === 0 ? (
         <p className="rounded-lg border border-line bg-ink-900 px-3 py-4 text-sm text-slate-400">
           Nenhuma demo gerada para este lead ainda.
         </p>
@@ -382,14 +475,24 @@ export default function AbaDemo({ lead, projeto, openaiAtivo }: Props) {
                 </div>
 
                 {editando === d.id && (
-                  <Aparencia
-                    // remonta o editor quando a demo muda, para os campos
-                    // refletirem o que acabou de ser aplicado
-                    key={`${d.id}-${d.conteudo?.cor_marca ?? ""}-${d.conteudo?.paleta}-${d.conteudo?.estilo}`}
-                    demo={d}
-                    pendente={pendente}
-                    aoAplicar={(a) => reestilizar(d, a)}
-                  />
+                  <>
+                    <Aparencia
+                      // remonta o editor quando a demo muda, para os campos
+                      // refletirem o que acabou de ser aplicado
+                      key={`${d.id}-${versaoDemo(d)}`}
+                      demo={d}
+                      pendente={pendente}
+                      aoAplicar={(a) => reestilizar(d, a)}
+                    />
+                    {d.publicado ? (
+                      <PreviaDemo slug={d.slug} versao={versaoDemo(d)} />
+                    ) : (
+                      <p className="mt-3 rounded-lg border border-line bg-ink-900 px-3 py-3 text-[12.5px] text-slate-400">
+                        A prévia mostra a página pública, e esta demo está fora
+                        do ar. Republique para ver.
+                      </p>
+                    )}
+                  </>
                 )}
               </li>
             );

@@ -16,9 +16,11 @@ import { montarBriefing } from "@/lib/site/briefing";
 import { ehCorValida } from "@/lib/site/paletas";
 import {
   ESTILOS,
+  LAYOUTS,
   PALETAS,
   type ConteudoSite,
   type Estilo,
+  type Layout,
   type Paleta,
 } from "@/lib/site/tipos";
 import { gerarConteudo, openaiConfigurado } from "@/lib/site/gerar";
@@ -102,7 +104,12 @@ export async function listarDemos(leadId: string): Promise<ActionResult<Demo[]>>
  */
 export async function reestilizarDemo(
   id: string,
-  ajuste: { paleta?: string; estilo?: string; corMarca?: string | null }
+  ajuste: {
+    paleta?: string;
+    estilo?: string;
+    layout?: string;
+    corMarca?: string | null;
+  }
 ): Promise<ActionResult<Demo>> {
   try {
     const demo = await obterDemoDb(id);
@@ -127,6 +134,9 @@ export async function reestilizarDemo(
       estilo: (ESTILOS as readonly string[]).includes(ajuste.estilo ?? "")
         ? (ajuste.estilo as Estilo)
         : demo.conteudo.estilo,
+      layout: (LAYOUTS as readonly string[]).includes(ajuste.layout ?? "")
+        ? (ajuste.layout as Layout)
+        : demo.conteudo.layout,
       cor_marca: cor,
     };
 

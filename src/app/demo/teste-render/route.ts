@@ -117,6 +117,7 @@ const conteudo: ConteudoSite = {
   cta_botao: "Falar no WhatsApp",
   busca_imagens: ["architecture office", "architect working"],
   paleta: "quente_terra",
+  layout: "classico",
   estilo: "escuro",
   imagens,
 };
@@ -128,9 +129,16 @@ export async function GET(req: Request) {
     return new Response("Not found", { status: 404 });
   }
 
-  const semFoto = new URL(req.url).searchParams.has("semfoto");
+  const p = new URL(req.url).searchParams;
+  const semFoto = p.has("semfoto");
+  // ?layout=dividido | centrado, para comparar as tres plantas na hora
+  const layout = p.get("layout") as ConteudoSite["layout"] | null;
   const html = renderizarSite(
-    semFoto ? { ...conteudo, imagens: [] } : conteudo,
+    {
+      ...conteudo,
+      ...(semFoto ? { imagens: [] } : {}),
+      ...(layout ? { layout } : {}),
+    },
     briefing
   );
   return new Response(html, {

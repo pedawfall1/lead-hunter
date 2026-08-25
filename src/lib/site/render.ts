@@ -68,6 +68,21 @@ function css(c: Cores): string {
     ".hero h1{font-size:clamp(36px,6.6vw,64px);max-width:15ch}",
     ".hero .sub{font-size:clamp(17px,2.2vw,21px);max-width:50ch;margin-bottom:34px;opacity:.92}",
     ".acoes{display:flex;flex-wrap:wrap;gap:12px}",
+
+    /* layout dividido: texto de um lado, foto do outro, sem veu por cima */
+    ".hero.dividido .env{display:grid;gap:clamp(32px,5vw,56px);grid-template-columns:1fr;align-items:center;padding-top:clamp(56px,9vw,96px);padding-bottom:clamp(56px,9vw,96px)}",
+    "@media(min-width:920px){.hero.dividido .env{grid-template-columns:1.05fr .95fr}}",
+    ".hero.dividido h1{max-width:none}",
+    `.hero.dividido .lado{border-radius:18px;overflow:hidden;border:1px solid ${c.borda};box-shadow:0 30px 60px -34px rgba(0,0,0,.6)}`,
+    ".hero.dividido .lado img{width:100%;height:clamp(280px,40vw,460px);object-fit:cover}",
+
+    /* layout centrado: sem foto atras do texto; ela entra logo abaixo */
+    ".hero.centrado .env{text-align:center;padding-bottom:clamp(40px,6vw,64px)}",
+    ".hero.centrado h1{max-width:20ch;margin-left:auto;margin-right:auto}",
+    ".hero.centrado .sub{margin-left:auto;margin-right:auto}",
+    ".hero.centrado .acoes{justify-content:center}",
+    `.faixa{width:min(1140px,90vw);margin:0 auto clamp(56px,9vw,104px);border-radius:18px;overflow:hidden;border:1px solid ${c.borda};box-shadow:0 30px 60px -34px rgba(0,0,0,.6)}`,
+    ".faixa img{width:100%;height:clamp(240px,34vw,420px);object-fit:cover}",
     /* sem foto: o gradiente da marca continua sendo o fundo */
     `.hero.liso{background:linear-gradient(158deg,${c.marca}26,transparent 60%)}`,
     /* com foto: ela vai atras, e a camada escura garante o contraste do
@@ -129,8 +144,55 @@ function css(c: Cores): string {
        o site no ar. Some na impressão para não sujar um PDF da proposta. */
     `.fita{background:${c.marca};color:${c.marcaTexto};text-align:center;padding:9px 16px;font-size:13px;font-weight:600}`,
     "@media print{.fita,.zap{display:none}}",
+
+    /* Entrada das seções ao rolar. Começa visível e só some quando o JS
+       assume: sem script — ou se ele falhar — a página continua legível,
+       em vez de ficar em branco para sempre. */
+    ".rev{opacity:1}",
+    "html.js .rev{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s cubic-bezier(.22,.61,.36,1)}",
+    "html.js .rev.dentro{opacity:1;transform:none}",
+    "@media(prefers-reduced-motion:reduce){html.js .rev{opacity:1;transform:none;transition:none}}",
   ].join("\n");
 }
+
+/**
+ * Revelação ao rolar.
+ *
+ * A classe `js` entra antes do CSS pintar, então não há flash: sem script,
+ * a regra `html.js .rev` nunca casa e tudo nasce visível. `once` porque
+ * seção que reaparece a cada rolagem irrita em vez de impressionar.
+ */
+const SCRIPT_ANIMACAO = `<script>
+(function(){
+  document.documentElement.classList.add('js');
+  function tudo(alvos){
+    for(var i=0;i<alvos.length;i++)alvos[i].classList.add('dentro');
+  }
+  function iniciar(){
+    var alvos=document.querySelectorAll('.rev');
+    if(!('IntersectionObserver' in window)){tudo(alvos);return;}
+    var o=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(e.isIntersecting){e.target.classList.add('dentro');o.unobserve(e.target)}
+      })
+    },{rootMargin:'0px 0px -12% 0px'});
+    for(var i=0;i<alvos.length;i++)o.observe(alvos[i]);
+
+    // Rede de seguranca: se em 2,5s nada apareceu, o observer nao esta
+    // entregando (navegador estranho, aba em segundo plano, webview de
+    // rede social). Melhor a pagina inteira de uma vez do que uma pagina
+    // em branco na mao do cliente.
+    setTimeout(function(){
+      if(!document.querySelector('.rev.dentro'))tudo(alvos);
+    },2500);
+  }
+  if(document.readyState==='loading'){
+    addEventListener('DOMContentLoaded',iniciar);
+  }else{
+    iniciar();
+  }
+})();
+</script>`;
 
 const CHECK =
   '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -206,6 +268,23 @@ function figura(img: ImagemSite, papel: "moldura" | "galeria"): string {
 const ARIUM_URL = "https://arium-ia.cloud";
 
 /**
+ * Favicon desenhado na hora: um quadrado na cor da marca com a inicial do
+ * negócio. Vai como data URI, então não custa requisição nenhuma.
+ *
+ * Sem isso a aba do cliente mostra o ícone de página em branco — detalhe
+ * pequeno que denuncia rascunho.
+ */
+function favicon(titulo: string, c: Cores): string {
+  const letra = esc((titulo.trim()[0] ?? "•").toUpperCase());
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">` +
+    `<rect width="64" height="64" rx="14" fill="${c.marca}"/>` +
+    `<text x="32" y="44" font-family="sans-serif" font-size="36" font-weight="700" ` +
+    `text-anchor="middle" fill="${c.marcaTexto}">${letra}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+/**
  * Assinatura da agência no rodapé.
  *
  * O PNG passa pelo otimizador de imagem do próprio Next em vez de ir por
@@ -273,6 +352,44 @@ export function renderizarSite(
 
   const titulo = `${esc(conteudo.titulo)}${briefing.regiao ? ` — ${esc(briefing.regiao)}` : ""}`;
 
+  const eyebrow = briefing.regiao
+    ? `<p class="eyebrow">${esc(briefing.regiao)}</p>`
+    : "";
+  const textoTopo = `
+    ${eyebrow}
+    <h1>${esc(conteudo.chamada)}</h1>
+    <p class="sub">${esc(conteudo.subchamada)}</p>
+    <div class="acoes">
+      ${botaoHero}
+      <a class="btn vazado" href="#servicos"${
+        conteudo.layout === "classico" && heroImg
+          ? ' style="color:#fff;border-color:rgba(255,255,255,.45)"'
+          : ""
+      }>Ver serviços</a>
+    </div>`;
+
+  // Cada layout usa a primeira foto de um jeito: ao fundo, ao lado, ou
+  // numa faixa logo abaixo do texto.
+  let topo: string;
+  if (conteudo.layout === "dividido" && imagens[0]) {
+    topo = `<section class="hero dividido liso"><div class="env">
+  <div>${textoTopo}</div>
+  <div class="lado"><img src="${heroImg}" alt="${esc(imagens[0].alt)}" style="background:${esc(imagens[0].cor)}"></div>
+</div></section>`;
+  } else if (conteudo.layout === "centrado") {
+    topo = `<section class="hero centrado liso"><div class="env">${textoTopo}</div></section>
+${
+  imagens[0] && heroImg
+    ? `<div class="faixa rev"><img src="${heroImg}" alt="${esc(imagens[0].alt)}" style="background:${esc(imagens[0].cor)}"></div>`
+    : ""
+}`;
+  } else {
+    topo = `<section class="hero ${heroImg ? "foto" : "liso"}">
+  ${heroImg ? `<div class="fundo" style="background-image:url('${heroImg}')"></div><div class="veu"></div>` : ""}
+  <div class="env">${textoTopo}</div>
+</section>`;
+  }
+
   return `<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -283,6 +400,7 @@ export function renderizarSite(
 <!-- Demonstracao nao pode indexar: concorreria no Google com o negocio real -->
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="${c.fundo}">
+<link rel="icon" href="${favicon(conteudo.titulo, c)}">
 ${heroImg ? `<link rel="preconnect" href="https://images.pexels.com">` : ""}
 <style>${css(c)}</style>
 </head>
@@ -293,20 +411,9 @@ ${assinatura ? `<div class="fita">${esc(assinatura)}</div>` : ""}
   ${botao}
 </div></header>
 
-<section class="hero ${heroImg ? "foto" : "liso"}">
-  ${heroImg ? `<div class="fundo" style="background-image:url('${heroImg}')"></div><div class="veu"></div>` : ""}
-  <div class="env">
-    ${briefing.regiao ? `<p class="eyebrow">${esc(briefing.regiao)}</p>` : ""}
-    <h1>${esc(conteudo.chamada)}</h1>
-    <p class="sub">${esc(conteudo.subchamada)}</p>
-    <div class="acoes">
-      ${botaoHero}
-      <a class="btn vazado" href="#servicos"${heroImg ? ' style="color:#fff;border-color:rgba(255,255,255,.45)"' : ""}>Ver serviços</a>
-    </div>
-  </div>
-</section>
+${topo}
 
-<section class="sec"><div class="env sobre">
+<section class="sec"><div class="env sobre rev">
   <div>
     <p class="eyebrow">Sobre</p>
     <h2 class="titulo-sec">${esc(conteudo.sobre_titulo)}</h2>
@@ -315,7 +422,7 @@ ${assinatura ? `<div class="fita">${esc(assinatura)}</div>` : ""}
   ${sobreImg ? figura(sobreImg, "moldura") : ""}
 </div></section>
 
-<section class="sec alt" id="servicos"><div class="env">
+<section class="sec alt" id="servicos"><div class="env rev">
   <p class="eyebrow">O que fazemos</p>
   <h2 class="titulo-sec">${esc(conteudo.servicos_titulo)}</h2>
   <div class="grade" style="margin-top:38px">${servicos}</div>
@@ -323,15 +430,15 @@ ${assinatura ? `<div class="fita">${esc(assinatura)}</div>` : ""}
 
 ${
   galeria.length
-    ? `<section class="sec"><div class="env"><div class="galeria">${galeria
+    ? `<section class="sec"><div class="env"><div class="galeria rev">${galeria
         .map((i) => figura(i, "galeria"))
         .join("")}</div></div></section>`
     : ""
 }
 
-${diferenciais ? `<section class="sec${galeria.length ? " alt" : ""}"><div class="env">${diferenciais}</div></section>` : ""}
+${diferenciais ? `<section class="sec${galeria.length ? " alt" : ""}"><div class="env rev">${diferenciais}</div></section>` : ""}
 
-<section class="sec${galeria.length ? "" : " alt"}"><div class="env cta">
+<section class="sec${galeria.length ? "" : " alt"}"><div class="env cta rev">
   <h2>${esc(conteudo.cta_titulo)}</h2>
   <p>${esc(conteudo.cta_texto)}</p>
   ${botao}
@@ -343,6 +450,7 @@ ${diferenciais ? `<section class="sec${galeria.length ? " alt" : ""}"><div class
   ${assinaturaArium()}
 </div></footer>
 ${zap ? `<a class="zap" href="${zap}" target="_blank" rel="noopener" aria-label="Falar no WhatsApp">${ZAP}</a>` : ""}
+${SCRIPT_ANIMACAO}
 </body>
 </html>`;
 }

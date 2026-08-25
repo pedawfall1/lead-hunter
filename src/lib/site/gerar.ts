@@ -74,6 +74,10 @@ Regras das três:
 
 ESCOLHAS DE ESTILO:
 - paleta e estilo combinam com o ramo: advocacia e contabilidade pedem sobriedade; alimentação pede cor quente; saúde e estética pedem claro e limpo; oficina e construção pedem contraste forte.
+- layout é a estrutura do topo da página:
+  - "classico": foto ocupando o fundo inteiro, texto por cima. Vale quando o ambiente impressiona — restaurante, salão, hotel, academia.
+  - "dividido": texto de um lado, foto do outro. Bom para serviço técnico ou profissional, onde o texto pesa tanto quanto a imagem — advogado, contador, clínica, oficina.
+  - "centrado": texto no meio, foto numa faixa abaixo. Bom para negócio de marca forte e mensagem curta — loja, estúdio, marca própria.
 - Não repita a mesma combinação para todo mundo.
 
 TOM: português do Brasil, direto, sem jargão de marketing. Nada de "soluções inovadoras", "excelência" ou "parceria de sucesso". Fale como o dono do negócio falaria de si mesmo se soubesse escrever bem.`;

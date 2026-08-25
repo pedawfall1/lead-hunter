@@ -31,7 +31,8 @@ import {
   registrarDisparo,
 } from "@/app/actions/leads";
 import { dispararPeloN8n } from "@/app/actions/disparo";
-import type { Interacao, Lead, Projeto, Template } from "@/lib/types";
+import { listarDemos } from "@/app/actions/site";
+import type { Demo, Interacao, Lead, Projeto, Template } from "@/lib/types";
 import AbaDemo from "./AbaDemo";
 import AbaInstagram from "./AbaInstagram";
 import { EditorSinais, TagsSinais } from "./Sinais";
@@ -83,6 +84,29 @@ export default function ModalLead({
   const [erro, setErro] = useState<string | null>(null);
   const [salvo, setSalvo] = useState(false);
 
+  // As demos moram aqui, e nao dentro da aba Demo, porque a aba WhatsApp
+  // tambem precisa delas: e de onde sai a variavel {demo} da mensagem.
+  const [demos, setDemos] = useState<Demo[]>([]);
+
+  useEffect(() => {
+    let vivo = true;
+    listarDemos(lead.id).then((r) => {
+      if (vivo && r.ok) setDemos(r.data ?? []);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [lead.id]);
+
+  // A demo mais recente que esta no ar. Despublicada nao entra: o link
+  // levaria o cliente a uma pagina que nao existe mais.
+  const linkDemo = useMemo(() => {
+    const d = demos.find((x) => x.publicado);
+    if (!d) return null;
+    const origem = typeof window === "undefined" ? "" : window.location.origin;
+    return `${origem}/demo/${d.slug}`;
+  }, [demos]);
+
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
   const [mensagem, setMensagem] = useState("");
   const [copiado, setCopiado] = useState(false);
@@ -115,10 +139,11 @@ export default function ModalLead({
         bairro,
         servico: servicoLabel.toLowerCase(),
         motivo,
+        demo: linkDemo,
       })
     );
     // `semente` entra de proposito: mexer nela sorteia outra variacao
-  }, [templateAtual, lead.nome, bairro, servicoLabel, motivo, semente]);
+  }, [templateAtual, lead.nome, bairro, servicoLabel, motivo, linkDemo, semente]);
 
   const numero = telefoneWhatsapp(lead.telefone);
   const link = numero ? linkWhatsapp(lead.telefone, mensagem) : "";
@@ -520,6 +545,18 @@ export default function ModalLead({
             </div>
           )}
 
+          {/* {demo} sem demo no ar sobra literal na mensagem. Melhor avisar
+              aqui do que o lead receber um "{demo}" cru no WhatsApp. */}
+          {templateAtual &&
+            /\{\s*demo\s*\}/i.test(templateAtual.texto) &&
+            !linkDemo && (
+              <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
+                Esse template usa <code>{"{demo}"}</code>, mas este lead não tem
+                demo publicada. Gere uma na aba <strong>Demo</strong> ou a
+                variável vai sair crua na mensagem.
+              </p>
+            )}
+
           <div>
             <div className="mb-1.5 flex items-end justify-between gap-2">
               <span className="label mb-0">Mensagem</span>
@@ -618,7 +655,13 @@ export default function ModalLead({
       )}
 
       {aba === "demo" && (
-        <AbaDemo lead={lead} projeto={projeto} openaiAtivo={openaiAtivo} />
+        <AbaDemo
+          lead={lead}
+          projeto={projeto}
+          openaiAtivo={openaiAtivo}
+          demos={demos}
+          aoMudarDemos={setDemos}
+        />
       )}
     </Modal>
   );

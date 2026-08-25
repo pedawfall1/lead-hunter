@@ -155,6 +155,10 @@ abre o WhatsApp com o texto pronto e **você** dá o último clique de enviar.
 - `{motivo}` é o primeiro sinal ativo virado frase: `sem_site` → "não encontrei o
   site de vocês", `parado_30d` → "o Instagram de vocês está parado faz um tempo".
   É o que faz o mesmo template servir para qualquer serviço.
+- `{demo}` vira o link da demo de site publicada mais recente do lead. Demo
+  fora do ar não entra — o link levaria a uma página que não existe mais. A
+  tela avisa se o template usa a variável e o lead ainda não tem demo, para
+  o cliente não receber um `{demo}` cru.
 - Ao abrir o WhatsApp, um lead que estava em **Novo** vira **Contatado** sozinho.
   Quem já respondeu/negociou/fechou não regride.
 
@@ -440,6 +444,27 @@ Para mexer no template sem gastar chamada nenhuma, rode `npm run dev` e abra
 `/demo/teste-render` (e `?semfoto` para ver o caminho sem imagem). A rota só
 existe em desenvolvimento.
 
+### Layout, cor e prévia
+
+Cada demo tem um botão **Aparência**: paleta, estilo, **layout do topo** e a
+cor da marca do cliente. Aplicar re-renderiza em cima do JSON já salvo, então
+**não gasta token** — e a prévia ao lado, num aparelho de mentira, é um
+iframe da própria rota pública: o que você vê é exatamente o que o cliente
+abre, não uma reconstrução.
+
+São 3 layouts × 3 estilos × 6 paletas. O layout muda a estrutura do topo,
+não só a pintura:
+
+| Layout | Topo | Bom para |
+| --- | --- | --- |
+| `classico` | foto ao fundo, texto por cima | quando o ambiente impressiona |
+| `dividido` | texto de um lado, foto do outro | serviço técnico ou profissional |
+| `centrado` | texto no meio, foto numa faixa abaixo | marca forte, mensagem curta |
+
+As seções entram com um fade ao rolar. Se o `IntersectionObserver` não
+entregar (webview de rede social, aba em segundo plano), uma rede de
+segurança revela tudo em 2,5s — página de venda não pode ficar em branco.
+
 ### O link
 
 A página fica em `/demo/<slug>`, fora da área logada — o cliente abre sem ter
@@ -456,6 +481,25 @@ dos outros chutando nome de negócio.
   do cliente.
 - Tem uma fita no topo dizendo que é demonstração. Ela some na impressão,
   pra não sujar um PDF da proposta.
+- A demo tem **favicon próprio**: a inicial do negócio na cor da marca, como
+  data URI — sem requisição extra.
+- O link chega no WhatsApp com **título, descrição e miniatura** em vez de
+  pelado. A miniatura é desenhada por `/demo/<slug>/og`, e as metatags são
+  montadas na hora de servir porque `og:image` precisa de URL absoluta e o
+  domínio muda entre localhost, preview e produção.
+
+> ⚠️ A **miniatura** não foi testada nesta máquina: o `@vercel/og` carrega a
+> fonte dele por URL de arquivo e quebra quando o caminho do projeto tem
+> espaço no nome (`Backup PC`). Em Linux, como na Vercel, isso não acontece.
+> Se falhar mesmo assim, nada quebra — o card cai para título e descrição.
+> Confira depois do deploy em developers.facebook.com/tools/debug.
+- O link chega no WhatsApp com **título, descrição e miniatura** em vez de
+  pelado. A miniatura é desenhada por ; se ela falhar, o
+  card cai para título e descrição sem quebrar nada.
+- A demo tem **favicon próprio**: a inicial do negócio na cor da marca.
+- Nos templates de WhatsApp,  vira o link da demo publicada mais
+  recente. A aba avisa se o template usa a variável e o lead ainda não tem
+  demo no ar — melhor do que o cliente receber um `{demo}` cru.
 
 ### O que a LLM é proibida de fazer
 

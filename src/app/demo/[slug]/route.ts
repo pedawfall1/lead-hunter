@@ -24,8 +24,39 @@ const NAO_ENCONTRADA = `<!doctype html>
 <p style="margin:0">O link pode ter expirado ou a demonstração foi retirada do ar.</p></div>
 </body></html>`;
 
+function esc(v: string): string {
+  return v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+}
+
+/**
+ * As metatags de compartilhamento, montadas na hora de servir.
+ *
+ * Ficam fora do HTML gravado de propósito: `og:image` precisa de URL
+ * absoluta, e o domínio muda entre localhost, preview da Vercel e produção.
+ * Gravada junto, a miniatura de uma demo antiga apontaria para o domínio
+ * errado para sempre.
+ */
+function metasOg(
+  origem: string,
+  slug: string,
+  titulo: string,
+  descricao: string
+): string {
+  const url = `${origem}/demo/${encodeURIComponent(slug)}`;
+  return [
+    `<meta property="og:type" content="website">`,
+    `<meta property="og:title" content="${esc(titulo)}">`,
+    `<meta property="og:description" content="${esc(descricao)}">`,
+    `<meta property="og:url" content="${esc(url)}">`,
+    `<meta property="og:image" content="${esc(url)}/og">`,
+    `<meta property="og:image:width" content="1200">`,
+    `<meta property="og:image:height" content="630">`,
+    `<meta name="twitter:card" content="summary_large_image">`,
+  ].join("\n");
+}
+
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: { slug: string } }
 ) {
   const demo = await obterDemoPorSlug(params.slug);
@@ -37,7 +68,18 @@ export async function GET(
     });
   }
 
-  return new Response(demo.html, {
+  const origem = new URL(req.url).origin;
+  const html = demo.html.replace(
+    "</head>",
+    `${metasOg(
+      origem,
+      demo.slug,
+      demo.titulo,
+      demo.conteudo?.subchamada ?? ""
+    )}\n</head>`
+  );
+
+  return new Response(html, {
     status: 200,
     headers: {
       "content-type": "text/html; charset=utf-8",

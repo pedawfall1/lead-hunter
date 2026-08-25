@@ -69,6 +69,8 @@ export type VariaveisTemplate = {
   servico?: string | null;
   /** a frase do sinal que qualificou o lead */
   motivo?: string | null;
+  /** o link da demo de site mais recente que está no ar */
+  demo?: string | null;
 };
 
 export const VARIAVEIS: { chave: keyof VariaveisTemplate; ajuda: string }[] = [
@@ -76,6 +78,7 @@ export const VARIAVEIS: { chave: keyof VariaveisTemplate; ajuda: string }[] = [
   { chave: "bairro", ajuda: "bairro do endereço, ou a região do projeto" },
   { chave: "servico", ajuda: "o serviço que o projeto vende" },
   { chave: "motivo", ajuda: "o sinal que qualificou o lead, em frase" },
+  { chave: "demo", ajuda: "link da demo de site (gere na aba Demo)" },
 ];
 
 /**
@@ -88,7 +91,7 @@ export function preencherTemplate(
   vars: VariaveisTemplate
 ): string {
   return texto.replace(
-    /\{\s*(nome|bairro|servico|serviço|motivo)\s*\}/gi,
+    /\{\s*(nome|bairro|servico|serviço|motivo|demo)\s*\}/gi,
     (m, chave: string) => {
       const k = chave
         .toLowerCase()
