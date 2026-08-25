@@ -119,8 +119,10 @@ export default function AbaDemo({ lead, projeto, openaiAtivo }: Props) {
           Demo de site para {briefing.nomeCurto}
         </p>
         <p className="mb-3 text-[13px] leading-relaxed text-slate-400">
-          Gera uma página de proposta com os dados deste lead e devolve um
-          link pra você mandar junto da abordagem.
+          <strong className="font-semibold text-slate-300">Gerar demo</strong>{" "}
+          monta a página aqui mesmo e devolve o link pronto pra mandar — a IA
+          escreve só o texto, o layout é nosso, então sai por frações de
+          centavo.
         </p>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -138,7 +140,7 @@ export default function AbaDemo({ lead, projeto, openaiAtivo }: Props) {
             onClick={() => setVerPrompt((v) => !v)}
             className="btn-sub px-2.5 py-1.5 text-xs"
           >
-            {verPrompt ? "Esconder prompt" : "Ver prompt manual"}
+            {verPrompt ? "Esconder prompt" : "Prompt pro v0 / Lovable"}
           </button>
           <Copiar texto={prompt} label="Copiar prompt" />
         </div>
@@ -152,12 +154,20 @@ export default function AbaDemo({ lead, projeto, openaiAtivo }: Props) {
         )}
 
         {verPrompt && (
-          <textarea
-            readOnly
-            value={prompt}
-            rows={12}
-            className="input mt-3 font-mono text-[11.5px] leading-relaxed"
-          />
+          <>
+            <p className="mt-3 text-[12px] leading-relaxed text-slate-500">
+              Caminho alternativo: cole no v0, Lovable ou Claude quando quiser
+              um layout diferente do nosso. Este pede HTML porque quem monta a
+              página é a ferramenta do outro lado — não gasta seu crédito da
+              OpenAI, e o resultado não volta pra cá.
+            </p>
+            <textarea
+              readOnly
+              value={prompt}
+              rows={12}
+              className="input mt-2 font-mono text-[11.5px] leading-relaxed"
+            />
+          </>
         )}
       </div>
 
