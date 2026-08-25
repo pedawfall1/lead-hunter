@@ -13,8 +13,14 @@
 -- ---------- leads: contato e identidade do Google ----------
 -- email    = vem do add-on de contatos do scraper
 -- place_id = identidade da ficha do Google, usada para deduplicar busca
+-- origem   = 'manual', 'csv' ou 'mapa'
 alter table public.lh_leads add column if not exists email    text;
 alter table public.lh_leads add column if not exists place_id text;
+alter table public.lh_leads add column if not exists origem   text not null default 'manual';
+
+create index if not exists lh_leads_telefone_idx
+  on public.lh_leads (telefone)
+  where telefone is not null;
 
 -- Ultima linha de defesa contra duplicata: rodar a mesma busca duas vezes
 -- nao pode gerar dois cards do mesmo lugar. Parcial porque lead digitado
@@ -86,11 +92,14 @@ create index if not exists lh_buscas_projeto_idx
 -- agencia, nao para uma campanha. Por isso a chave e (user_id, telefone) e
 -- nao passa por projeto.
 create table if not exists public.lh_nao_perturbe (
-  user_id   uuid not null references auth.users(id) on delete cascade,
+  id        uuid primary key default gen_random_uuid(),
+  user_id   uuid not null references auth.users(id) on delete cascade default auth.uid(),
   telefone  text not null,
   motivo    text,
   criado_em timestamptz not null default now(),
-  primary key (user_id, telefone)
+  -- o upsert de db.ts usa onConflict "user_id,telefone": sem esta unique
+  -- ele falha, e o mesmo numero entraria duas vezes na lista
+  unique (user_id, telefone)
 );
 
 -- ---------- RLS ----------

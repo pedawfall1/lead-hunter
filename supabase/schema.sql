@@ -61,6 +61,8 @@ create table if not exists public.lh_leads (
   email           text,
   -- identidade da ficha do Google, usada para deduplicar a busca no Maps
   place_id        text,
+  -- de onde o lead veio: 'manual', 'csv' ou 'mapa'
+  origem          text not null default 'manual',
   sinais          jsonb not null default '{}'::jsonb,
   status          lh_lead_status not null default 'novo',
   nota            text,
@@ -127,19 +129,24 @@ create table if not exists public.lh_buscas (
 
 -- ---------- lista de nao perturbe ----------
 -- Vale para TODOS os projetos do dono: quem pediu para parar pediu para a
--- agencia, nao para uma campanha. Por isso a chave e (user_id, telefone).
+-- agencia, nao para uma campanha. Por isso a unicidade e (user_id, telefone)
+-- e nao passa por projeto.
 create table if not exists public.lh_nao_perturbe (
-  user_id   uuid not null references auth.users(id) on delete cascade,
+  id        uuid primary key default gen_random_uuid(),
+  user_id   uuid not null references auth.users(id) on delete cascade default auth.uid(),
   telefone  text not null,
   motivo    text,
   criado_em timestamptz not null default now(),
-  primary key (user_id, telefone)
+  -- o upsert de db.ts usa onConflict "user_id,telefone": sem esta unique
+  -- ele falha, e o mesmo numero entraria duas vezes na lista
+  unique (user_id, telefone)
 );
 
 create index if not exists lh_leads_projeto_id_idx      on public.lh_leads (projeto_id);
 create index if not exists lh_leads_status_idx          on public.lh_leads (status);
 create index if not exists lh_leads_proximo_contato_idx on public.lh_leads (proximo_contato);
 create index if not exists lh_leads_sinais_idx          on public.lh_leads using gin (sinais);
+create index if not exists lh_leads_telefone_idx        on public.lh_leads (telefone) where telefone is not null;
 create index if not exists lh_interacoes_lead_id_idx    on public.lh_interacoes (lead_id, criado_em desc);
 create index if not exists lh_projetos_user_id_idx      on public.lh_projetos (user_id);
 create index if not exists lh_buscas_projeto_idx        on public.lh_buscas (projeto_id, criado_em desc);
