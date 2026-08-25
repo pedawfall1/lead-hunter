@@ -6,10 +6,12 @@ import {
   excluirDemo,
   gerarDemo,
   listarDemos,
+  reestilizarDemo,
   publicarDemo,
 } from "@/app/actions/site";
 import { montarBriefing, promptParaColar } from "@/lib/site/briefing";
 import { dataCurta } from "@/lib/format";
+import { ESTILOS, PALETAS } from "@/lib/site/tipos";
 import type { Demo, Lead, Projeto } from "@/lib/types";
 
 type Props = {
@@ -51,12 +53,132 @@ function Copiar({ texto, label }: { texto: string; label: string }) {
   );
 }
 
+const NOME_PALETA: Record<string, string> = {
+  sobrio_azul: "Azul sóbrio",
+  preto_dourado: "Preto e dourado",
+  verde_natural: "Verde natural",
+  quente_terra: "Terra quente",
+  clinico_claro: "Clínico claro",
+  vibrante_roxo: "Roxo vibrante",
+};
+
+const NOME_ESTILO: Record<string, string> = {
+  escuro: "Escuro",
+  claro: "Claro",
+  elegante: "Elegante (serifada)",
+};
+
+/**
+ * Editor de aparência de uma demo já gerada.
+ *
+ * Re-renderiza em cima do JSON que já está salvo, então mexer na cor **não
+ * gasta token**. É o caminho para quando você abre o Instagram do cliente e
+ * vê que a marca dele não é nada do que a LLM chutou.
+ */
+function Aparencia({
+  demo,
+  pendente,
+  aoAplicar,
+}: {
+  demo: Demo;
+  pendente: boolean;
+  aoAplicar: (a: { paleta: string; estilo: string; corMarca: string | null }) => void;
+}) {
+  const [paleta, setPaleta] = useState<string>(
+    demo.conteudo?.paleta ?? "sobrio_azul"
+  );
+  const [estilo, setEstilo] = useState<string>(
+    demo.conteudo?.estilo ?? "escuro"
+  );
+  const [usarCor, setUsarCor] = useState(!!demo.conteudo?.cor_marca);
+  const [cor, setCor] = useState(demo.conteudo?.cor_marca ?? "#f97316");
+
+  return (
+    <div className="mt-3 space-y-3 rounded-lg border border-line bg-ink-950 p-3">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="label" htmlFor={`pal-${demo.id}`}>Paleta</label>
+          <select
+            id={`pal-${demo.id}`}
+            className="input"
+            value={paleta}
+            onChange={(e) => setPaleta(e.target.value)}
+          >
+            {PALETAS.map((p) => (
+              <option key={p} value={p}>{NOME_PALETA[p] ?? p}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="label" htmlFor={`est-${demo.id}`}>Estilo</label>
+          <select
+            id={`est-${demo.id}`}
+            className="input"
+            value={estilo}
+            onChange={(e) => setEstilo(e.target.value)}
+          >
+            {ESTILOS.map((e) => (
+              <option key={e} value={e}>{NOME_ESTILO[e] ?? e}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label className="flex items-center gap-2 text-[13px] text-slate-300">
+          <input
+            type="checkbox"
+            checked={usarCor}
+            onChange={(e) => setUsarCor(e.target.checked)}
+          />
+          Usar a cor da marca do cliente
+        </label>
+
+        {usarCor && (
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              type="color"
+              value={/^#[0-9a-f]{6}$/i.test(cor) ? cor : "#f97316"}
+              onChange={(e) => setCor(e.target.value)}
+              className="h-9 w-12 cursor-pointer rounded border border-line bg-ink-900"
+              aria-label="Cor da marca"
+            />
+            <input
+              type="text"
+              value={cor}
+              onChange={(e) => setCor(e.target.value)}
+              placeholder="#f97316"
+              className="input flex-1 font-mono text-[13px]"
+            />
+          </div>
+        )}
+        <p className="mt-1.5 text-[11.5px] leading-relaxed text-slate-500">
+          Pegue a cor no Instagram do cliente quando o palpite não bater. O
+          texto do botão vira preto ou branco sozinho, pelo contraste.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        disabled={pendente}
+        onClick={() =>
+          aoAplicar({ paleta, estilo, corMarca: usarCor ? cor : null })
+        }
+        className="btn-primary px-3 py-1.5 text-xs disabled:opacity-50"
+      >
+        {pendente ? "Aplicando…" : "Aplicar (não gasta crédito)"}
+      </button>
+    </div>
+  );
+}
+
 export default function AbaDemo({ lead, projeto, openaiAtivo }: Props) {
   const [demos, setDemos] = useState<Demo[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [pendente, iniciar] = useTransition();
   const [verPrompt, setVerPrompt] = useState(false);
+  const [editando, setEditando] = useState<string | null>(null);
 
   const briefing = montarBriefing(lead, projeto);
   const prompt = promptParaColar(briefing);
@@ -90,6 +212,21 @@ export default function AbaDemo({ lead, projeto, openaiAtivo }: Props) {
   function alternar(demo: Demo) {
     iniciar(async () => {
       const r = await publicarDemo(demo.id, !demo.publicado);
+      if (r.ok && r.data)
+        setDemos((lista) =>
+          lista.map((d) => (d.id === demo.id ? (r.data as Demo) : d))
+        );
+      else if (!r.ok) setErro(r.erro);
+    });
+  }
+
+  function reestilizar(
+    demo: Demo,
+    ajuste: { paleta: string; estilo: string; corMarca: string | null }
+  ) {
+    setErro(null);
+    iniciar(async () => {
+      const r = await reestilizarDemo(demo.id, ajuste);
       if (r.ok && r.data)
         setDemos((lista) =>
           lista.map((d) => (d.id === demo.id ? (r.data as Demo) : d))
@@ -228,6 +365,13 @@ export default function AbaDemo({ lead, projeto, openaiAtivo }: Props) {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setEditando(editando === d.id ? null : d.id)}
+                    className="btn-sub px-2.5 py-1.5 text-xs"
+                  >
+                    {editando === d.id ? "Fechar" : "Aparência"}
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => remover(d)}
                     disabled={pendente}
                     className="btn-sub ml-auto px-2 py-1.5 text-xs text-rose-300 disabled:opacity-50"
@@ -236,6 +380,17 @@ export default function AbaDemo({ lead, projeto, openaiAtivo }: Props) {
                     <IconTrash className="h-3.5 w-3.5" />
                   </button>
                 </div>
+
+                {editando === d.id && (
+                  <Aparencia
+                    // remonta o editor quando a demo muda, para os campos
+                    // refletirem o que acabou de ser aplicado
+                    key={`${d.id}-${d.conteudo?.cor_marca ?? ""}-${d.conteudo?.paleta}-${d.conteudo?.estilo}`}
+                    demo={d}
+                    pendente={pendente}
+                    aoAplicar={(a) => reestilizar(d, a)}
+                  />
+                )}
               </li>
             );
           })}

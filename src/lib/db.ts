@@ -587,6 +587,46 @@ export async function publicarDemoDb(
   return data as Demo;
 }
 
+export async function obterDemoDb(id: string): Promise<Demo | null> {
+  if (DEMO) return estado().demos.find((d) => d.id === id) ?? null;
+
+  const { data, error } = await createClient()
+    .from(T.demos)
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  checar(error);
+  return (data as Demo | null) ?? null;
+}
+
+/**
+ * Troca a aparência sem gerar de novo.
+ *
+ * O `conteudo` continua o mesmo — muda só a paleta/estilo/cor e o `html`
+ * re-renderizado em cima dele. É por isso que vale guardar o JSON da LLM:
+ * ajustar a cor não gasta token nenhum.
+ */
+export async function reestilizarDemoDb(
+  id: string,
+  dados: { conteudo: ConteudoSite; html: string }
+): Promise<Demo> {
+  if (DEMO) {
+    const d = estado().demos.find((x) => x.id === id);
+    if (!d) throw new Error("Demo não encontrada.");
+    Object.assign(d, dados);
+    return { ...d };
+  }
+
+  const { data, error } = await createClient()
+    .from(T.demos)
+    .update(dados)
+    .eq("id", id)
+    .select("*")
+    .single();
+  checar(error);
+  return data as Demo;
+}
+
 export async function excluirDemoDb(id: string): Promise<void> {
   if (DEMO) {
     const e = estado();

@@ -52,6 +52,12 @@ export type ConteudoSite = {
   cta_botao: string;
   paleta: Paleta;
   estilo: Estilo;
+  /**
+   * Cor da marca escolhida a mao, no editor da aba Demo. Atropela a
+   * paleta: e a cor tirada do Instagram do cliente quando o palpite da
+   * LLM nao bateu. A LLM nao preenche este campo.
+   */
+  cor_marca?: string | null;
   /** 2 a 3 buscas EM INGLES para o Pexels; ver pexels.ts */
   busca_imagens: string[];
   /**
@@ -155,5 +161,6 @@ export function saneiarConteudo(c: ConteudoSite): ConteudoSite {
       .map((q) => corta(q, 60))
       .filter(Boolean),
     imagens: c.imagens,
+    cor_marca: c.cor_marca,
   };
 }

@@ -227,7 +227,7 @@ export function renderizarSite(
   briefing: Briefing,
   opcoes: OpcoesRender = {}
 ): string {
-  const c = cores(conteudo.paleta, conteudo.estilo);
+  const c = cores(conteudo.paleta, conteudo.estilo, conteudo.cor_marca);
   const zap = linkZap(briefing, conteudo);
   const assinatura =
     opcoes.assinatura === undefined ? FITA_PADRAO : opcoes.assinatura;
