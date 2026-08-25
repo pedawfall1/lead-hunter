@@ -1,5 +1,6 @@
 import { extrairBairro, formatarTelefone, nomeCurto } from "@/lib/format";
 import { acharServico, rotulosDosSinais } from "@/lib/servicos";
+import { temasDasLegendas } from "@/lib/instagram";
 import type { Lead, Projeto } from "@/lib/types";
 
 /**
@@ -28,10 +29,22 @@ export type Briefing = {
   sinais: string[];
   /** a anotação livre que você escreveu no lead */
   observacoes: string | null;
+  /** a bio do Instagram, quando o perfil já foi analisado */
+  bioInstagram: string | null;
+  /** as palavras que mais aparecem nas legendas do perfil */
+  temas: string[];
+  seguidores: number | null;
 };
 
 export function montarBriefing(lead: Lead, projeto: Projeto): Briefing {
+  const ig = lead.ig_dados;
+
   return {
+    // A bio é a melhor frase que existe sobre o negócio, escrita por quem o
+    // conhece. Vale mais para o texto do site que qualquer palpite da LLM.
+    bioInstagram: ig?.bio ?? null,
+    temas: ig ? temasDasLegendas(ig, 8) : [],
+    seguidores: ig?.seguidores ?? null,
     nome: lead.nome,
     nomeCurto: nomeCurto(lead.nome),
     nicho: projeto.nicho,
@@ -70,6 +83,12 @@ export function briefingComoTexto(b: Briefing): string {
     ["Telefone", b.telefoneVisivel],
     ["Instagram", b.instagram ? `@${b.instagram}` : null],
     ["E-mail", b.email],
+    // A bio é o negócio se descrevendo com as próprias palavras.
+    ["Como eles se descrevem no Instagram", b.bioInstagram],
+    [
+      "Assuntos que mais aparecem nos posts deles",
+      b.temas.length ? b.temas.join(", ") : null,
+    ],
     ["Anotações minhas sobre este lead", b.observacoes],
   ]);
 

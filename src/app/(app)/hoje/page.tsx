@@ -7,6 +7,7 @@ import {
 import ListaHoje from "@/components/hoje/ListaHoje";
 import { n8nConfigurado } from "@/lib/n8n";
 import { openaiConfigurado } from "@/lib/site/gerar";
+import { apifyConfigurado } from "@/lib/apify";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Hoje - Lead Hunter" };
@@ -28,6 +29,7 @@ export default async function HojePage() {
       interacoesIniciais={interacoes}
       n8nAtivo={n8nConfigurado()}
       openaiAtivo={openaiConfigurado()}
+      buscaAtiva={apifyConfigurado()}
     />
   );
 }

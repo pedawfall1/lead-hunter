@@ -268,3 +268,16 @@ create policy "dono via projeto" on public.lh_demos for all to authenticated
 drop policy if exists "publicada e publica" on public.lh_demos;
 create policy "publicada e publica" on public.lh_demos for select to anon
   using (publicado = true);
+
+-- ---------- analise de Instagram no lead ----------
+-- ig_dados  = o perfil normalizado (seguidores, bio, posts, engajamento),
+--             como `PerfilInstagram` em src/lib/instagram.ts
+-- ig_run_id = corrida do Apify em andamento; volta a null quando termina
+alter table public.lh_leads add column if not exists ig_dados  jsonb;
+alter table public.lh_leads add column if not exists ig_run_id text;
+alter table public.lh_leads add column if not exists ig_em     timestamptz;
+alter table public.lh_leads add column if not exists ig_erro   text;
+
+create index if not exists lh_leads_ig_run_idx
+  on public.lh_leads (ig_run_id)
+  where ig_run_id is not null;

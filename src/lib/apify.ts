@@ -121,6 +121,46 @@ export async function iniciarCorrida(dados: OpcoesBusca): Promise<Corrida> {
   };
 }
 
+/**
+ * Actor de perfil do Instagram. Trocável sem mexer no código, igual ao de
+ * mapas — o normalizador em `instagram.ts` aceita apelidos de campo, então
+ * a maioria dos scrapers de perfil funciona sem ajuste.
+ */
+const ATOR_IG = process.env.APIFY_ACTOR_IG ?? "apify~instagram-profile-scraper";
+
+/**
+ * Dispara a leitura de um perfil.
+ *
+ * Mesmo vaivém do mapa: volta na hora com o id e quem acompanha é a tela.
+ * Um perfil sozinho costuma levar de 15 a 40 segundos — mais do que uma
+ * função serverless vive.
+ */
+export async function iniciarCorridaIg(usuario: string): Promise<Corrida> {
+  if (!TOKEN) throw new Error("APIFY_TOKEN não configurado.");
+
+  const limpo = usuario.trim().replace(/^@/, "");
+  if (!limpo) throw new Error("Instagram vazio.");
+
+  const r = await chamar<{
+    data: {
+      id: string;
+      defaultDatasetId?: string;
+      status: string;
+      statusMessage?: string;
+    };
+  }>(`/acts/${ATOR_IG}/runs`, {
+    method: "POST",
+    body: JSON.stringify({ usernames: [limpo] }),
+  });
+
+  return {
+    runId: r.data.id,
+    datasetId: r.data.defaultDatasetId ?? null,
+    status: traduzir(r.data.status),
+    recado: r.data.statusMessage ?? null,
+  };
+}
+
 export async function estadoDaCorrida(runId: string): Promise<Corrida> {
   if (!TOKEN) throw new Error("APIFY_TOKEN não configurado.");
 
@@ -145,9 +185,17 @@ export async function itensDaCorrida(
   datasetId: string,
   limite: number
 ): Promise<LugarBruto[]> {
+  return itensBrutos<LugarBruto>(datasetId, limite);
+}
+
+/** O mesmo dataset, sem presumir o formato de quem chamou. */
+export async function itensBrutos<T>(
+  datasetId: string,
+  limite: number
+): Promise<T[]> {
   if (!TOKEN) throw new Error("APIFY_TOKEN não configurado.");
 
-  const itens = await chamar<LugarBruto[]>(
+  const itens = await chamar<T[]>(
     `/datasets/${datasetId}/items?clean=true&format=json&limit=${Math.min(limite, 1000)}`
   );
 

@@ -1,4 +1,58 @@
 import { criteriosSugeridos } from "@/lib/servicos";
+
+/** Lead que ainda nao teve o Instagram analisado. */
+const SEM_INSTAGRAM = {
+  ig_dados: null,
+  ig_run_id: null,
+  ig_em: null,
+  ig_erro: null,
+} as const;
+
+/**
+ * Um perfil de mentira para o modo demo mostrar o relatorio de Instagram.
+ *
+ * A analise de verdade precisa do Apify, entao sem isto a aba ficaria
+ * eternamente vazia para quem so quer ver a tela — o mesmo motivo de
+ * `site/exemplo.ts` existir.
+ */
+function instagramDeExemplo(usuario: string, dias: number) {
+  const quando = (d: number) => diasAtras(d);
+  const posts = [0, 1, 2, 3, 4].map((i) => ({
+    quando: quando(dias + i * 6),
+    curtidas: 9 + ((i * 7) % 13),
+    comentarios: i % 3,
+    legenda: [
+      "limpeza de pele profunda, agende pelo direct",
+      "resultado de mais uma limpeza de pele",
+      "massagem relaxante com hora marcada",
+      "promocao de massagem essa semana",
+      "cuidados com a pele no inverno",
+    ][i],
+  }));
+
+  return {
+    ig_dados: {
+      usuario,
+      nome: null,
+      bio: "Estetica avancada. Atendimento com hora marcada.\nAgende pelo link.",
+      link: "https://linktr.ee/" + usuario,
+      seguidores: 412,
+      seguindo: 890,
+      publicacoes: 137,
+      privado: false,
+      verificado: false,
+      posts,
+      diasSemPostar: dias,
+      engajamento: 3.1,
+      postsPorMes: 6.2,
+      soLinkNaBio: true,
+      analisadoEm: diasAtras(1),
+    },
+    ig_run_id: null,
+    ig_em: diasAtras(1),
+    ig_erro: null,
+  };
+}
 import type {
   Criterio,
   Demo,
@@ -176,6 +230,12 @@ function montar(
       proximo_contato: s.retorno === undefined ? null : dataEm(s.retorno),
       criado_em: criadoEm,
       atualizado_em: diasAtras(Math.max(0, base - i * 0.1 - 2)),
+      // Todo lead com @ ja vem analisado no modo demo, para a aba
+      // Instagram ter o que mostrar. Os dias sem postar variam para
+      // aparecer tanto perfil parado quanto perfil em dia.
+      ...(s.ig
+        ? instagramDeExemplo(s.ig.replace(/^@/, ""), i % 3 === 0 ? 4 : 31 + i * 5)
+        : SEM_INSTAGRAM),
     };
   });
 }
@@ -361,6 +421,7 @@ function gerarExtras(
           : null,
       criado_em: horasAtras(idadeH),
       atualizado_em: horasAtras(Math.max(0, idadeH - 12)),
+      ...SEM_INSTAGRAM,
     });
   }
 

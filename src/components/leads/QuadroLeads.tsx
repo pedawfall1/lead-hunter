@@ -368,6 +368,7 @@ export default function QuadroLeads({
           interacoes={interacoes[leadSelecionado.id] ?? []}
           n8nAtivo={n8nAtivo}
           openaiAtivo={openaiAtivo}
+          buscaAtiva={buscaAtiva}
           abaInicial={selecionado.aba}
           aoFechar={() => setSelecionado(null)}
           aoAtualizar={(atualizado) =>

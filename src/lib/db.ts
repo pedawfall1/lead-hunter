@@ -125,7 +125,7 @@ export async function excluirProjetoDb(id: string): Promise<void> {
 /* --------------------------------- leads -------------------------------- */
 
 const COLUNAS_LEAD =
-  "id, projeto_id, nome, telefone, endereco, instagram, email, sinais, status, nota, proximo_contato, criado_em, atualizado_em";
+  "id, projeto_id, nome, telefone, endereco, instagram, email, sinais, status, nota, proximo_contato, ig_dados, ig_run_id, ig_em, ig_erro, criado_em, atualizado_em";
 
 export async function listarLeads(projetoId?: string): Promise<Lead[]> {
   if (DEMO) {
@@ -195,6 +195,7 @@ export async function criarLeadDb(
       id: novoId(),
       projeto_id: projetoId,
       ...dados,
+      ...SEM_INSTAGRAM,
       criado_em: agora(),
       atualizado_em: agora(),
     };
@@ -254,6 +255,61 @@ export async function ajustarLeadDb(
   return data as Lead;
 }
 
+/**
+ * Grava o resultado (ou o andamento) da análise de Instagram.
+ *
+ * Os sinais entram por `marcar`/`desmarcar` em vez de um objeto inteiro:
+ * o lead pode ter sinais que vieram do Google Maps ou que você marcou na
+ * mão, e sobrescrever tudo apagaria esses.
+ */
+export async function salvarInstagramDb(
+  id: string,
+  campos: Partial<Pick<Lead, "ig_dados" | "ig_run_id" | "ig_em" | "ig_erro">>,
+  sinais?: { marcar: Sinais; desmarcar: string[] }
+): Promise<Lead> {
+  const aplicar = (lead: Lead) => {
+    if (!sinais) return lead.sinais;
+    const novos = { ...lead.sinais, ...sinais.marcar };
+    for (const chave of sinais.desmarcar) delete novos[chave];
+    return novos;
+  };
+
+  if (DEMO) {
+    const lead = estado().leads.find((l) => l.id === id);
+    if (!lead) throw new Error("Lead não encontrado.");
+    Object.assign(lead, campos, {
+      sinais: aplicar(lead),
+      atualizado_em: agora(),
+    });
+    return { ...lead };
+  }
+
+  const supabase = createClient();
+
+  // Lê antes de escrever para mesclar os sinais. São duas idas ao banco,
+  // mas a alternativa é o Postgres decidir sozinho como juntar dois jsonb.
+  let novosSinais: Sinais | undefined;
+  if (sinais) {
+    const { data, error } = await supabase
+      .from(T.leads)
+      .select("sinais")
+      .eq("id", id)
+      .maybeSingle();
+    checar(error);
+    if (!data) throw new Error("Lead não encontrado.");
+    novosSinais = aplicar({ sinais: (data.sinais ?? {}) as Sinais } as Lead);
+  }
+
+  const { data, error } = await supabase
+    .from(T.leads)
+    .update(novosSinais ? { ...campos, sinais: novosSinais } : campos)
+    .eq("id", id)
+    .select(COLUNAS_LEAD)
+    .single();
+  checar(error);
+  return data as Lead;
+}
+
 export async function excluirLeadDb(id: string): Promise<void> {
   if (DEMO) {
     const e = estado();
@@ -274,8 +330,18 @@ type LeadImportado = {
   sinais: Sinais;
 };
 
-/** Campos que o CSV não traz, para o insert bater com o schema. */
+/**
+ * Campos que nem o CSV nem o cadastro manual preenchem. `ig_*` so ganha
+ * valor quando voce manda analisar o Instagram daquele lead.
+ */
 const VAZIOS_DO_CSV = { email: null };
+
+export const SEM_INSTAGRAM = {
+  ig_dados: null,
+  ig_run_id: null,
+  ig_em: null,
+  ig_erro: null,
+} as const;
 
 export async function inserirLeadsDb(
   projetoId: string,
@@ -287,6 +353,7 @@ export async function inserirLeadsDb(
       projeto_id: projetoId,
       ...l,
       email: null,
+      ...SEM_INSTAGRAM,
       status: "novo" as const,
       nota: null,
       proximo_contato: null,

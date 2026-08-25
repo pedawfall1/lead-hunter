@@ -329,6 +329,53 @@ Os créditos do Apify são consumidos por resultado, então o campo **máximo de
 resultados** existe para você medir antes de soltar volume. O padrão é 50 e o
 teto é 300 por busca.
 
+## Análise de Instagram
+
+A aba **Insta** no modal do lead lê o perfil pelo Apify — mesmo
+`APIFY_TOKEN` da busca no Maps, sem chave nova.
+
+```
+# APIFY_ACTOR_IG=apify~instagram-profile-scraper   (padrão)
+```
+
+Isso fecha um buraco antigo: o catálogo em [`servicos.ts`](src/lib/servicos.ts)
+já declarava `parado_30d`, `poucos_seguidores` e `so_linktree`, mas **ninguém
+preenchia** — o Google Maps não sabe nada disso.
+
+| O que o perfil mostra | Vira |
+| --- | --- |
+| último post há 30 dias ou mais | `parado_30d` |
+| menos de 500 seguidores | `poucos_seguidores` |
+| link da bio é linktree/beacons e não há site | `so_linktree` |
+| perfil não existe ou está fora do ar | `sem_instagram` |
+
+O relatório traz seguidores, dias sem postar, engajamento
+`(curtidas + comentários) ÷ seguidores` e ritmo de publicação.
+
+### Detalhes que importam
+
+- **A análise também DESMARCA.** Reanalisar um perfil que voltou a postar
+  apaga o `parado_30d` de antes — senão a etiqueta mente e você aborda o
+  cliente com um motivo que não existe mais. Os sinais são mesclados, não
+  sobrescritos: o que veio do Maps ou o que você marcou na mão fica.
+- **Ritmo pela janela real** entre o primeiro e o último post lido, não pela
+  contagem total dividida pela idade da conta: quem postava muito em 2019 e
+  parou continuaria com média alta.
+- **Perfil privado** ainda entrega seguidores e link da bio, então esses dois
+  sinais valem. O feed não, então ritmo e engajamento ficam de fora — chutar
+  viraria etiqueta errada no card.
+- **Mesmo vaivém da busca no Maps**: a corrida leva de 15 a 40 segundos,
+  função serverless morre antes. O `ig_run_id` fica no próprio lead e a tela
+  vai conferindo; fechar a janela não perde nada.
+
+A **bio entra no briefing da demo de site** — é o negócio se descrevendo com
+as próprias palavras, e vale mais que qualquer palpite da LLM. As palavras
+mais frequentes nas legendas vão junto, como assunto.
+
+As fotos do Instagram **não** entram na demo: as URLs são assinadas e expiram
+em dias, e a página quebraria justo quando o cliente abrisse o link. Para
+isso existe o Pexels.
+
 ## Demo de site (OpenAI)
 
 A aba **Demo** no modal do lead gera uma landing page institucional com os
@@ -460,6 +507,7 @@ src/
     n8n.ts                    # contrato de ida e volta com o n8n
     mapas.ts                  # normaliza o resultado do scraper e infere sinais
     apify.ts                  # inicia a corrida e busca o dataset
+    instagram.ts              # normaliza o perfil e infere sinais de social
     site/                     # a demo de site do lead
       briefing.ts             #   o que o app sabe do lead, num objeto só
       gerar.ts                #   chamada da OpenAI (JSON, nunca HTML)
@@ -474,6 +522,7 @@ supabase/
   migrations/001_*.sql        # o app inicial
   migrations/002_demos.sql    # lh_demos: as demos de site geradas
   migrations/003_*.sql        # buscas, não perturbe e as colunas do disparo
+  migrations/004_instagram.sql # ig_dados e a corrida no proprio lead
 ```
 
 **Instalação nova:** rode só o `schema.sql` — ele já contém tudo.
@@ -498,10 +547,8 @@ criar o usuário no painel do Supabase; nada muda no código.
 
 1. Rodar a `003_alinha_schema.sql` no Supabase de produção (o schema estava
    atrasado em relação ao código).
-2. Análise de Instagram: um segundo actor do Apify preenche `parado_30d`,
-   `poucos_seguidores` e `so_linktree` — sinais que hoje ninguém preenche
-   porque o Google Maps não sabe — e alimenta a demo com bio, cores e fotos
-   reais do perfil.
+2. Fotos reais do Instagram na demo, baixadas pro Supabase Storage (as URLs
+   do Instagram expiram, entao apontar direto nao serve).
 3. Variável `{demo}` nos templates de WhatsApp, para a abordagem já sair com
    o link da proposta.
 4. Guardar nota e nº de avaliações do Google no lead: hoje viram sinal na

@@ -28,6 +28,10 @@ const briefing: Briefing = {
   servico: "Site / Landing page",
   sinais: ["Não tem site"],
   observacoes: null,
+  bioInstagram:
+    "Arquitetura residencial e comercial em Videira. Projeto, interiores e obra.",
+  temas: ["projeto", "obra", "interiores", "reforma"],
+  seguidores: 1840,
 };
 
 const imagens: ImagemSite[] = [

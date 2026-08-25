@@ -26,6 +26,7 @@ export default function ListaHoje({
   interacoesIniciais,
   n8nAtivo,
   openaiAtivo,
+  buscaAtiva,
 }: {
   leads: Lead[];
   projetos: Projeto[];
@@ -33,6 +34,7 @@ export default function ListaHoje({
   interacoesIniciais: Record<string, Interacao[]>;
   n8nAtivo: boolean;
   openaiAtivo: boolean;
+  buscaAtiva: boolean;
 }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
@@ -212,6 +214,7 @@ export default function ListaHoje({
           interacoes={interacoes[leadAberto.id] ?? []}
           n8nAtivo={n8nAtivo}
           openaiAtivo={openaiAtivo}
+          buscaAtiva={buscaAtiva}
           abaInicial={aberto.aba}
           aoFechar={() => {
             setAberto(null);

@@ -33,10 +33,11 @@ import {
 import { dispararPeloN8n } from "@/app/actions/disparo";
 import type { Interacao, Lead, Projeto, Template } from "@/lib/types";
 import AbaDemo from "./AbaDemo";
+import AbaInstagram from "./AbaInstagram";
 import { EditorSinais, TagsSinais } from "./Sinais";
 import Timeline from "./Timeline";
 
-type Aba = "detalhes" | "historico" | "whatsapp" | "demo";
+type Aba = "detalhes" | "historico" | "whatsapp" | "instagram" | "demo";
 
 type Props = {
   lead: Lead;
@@ -47,6 +48,8 @@ type Props = {
   n8nAtivo?: boolean;
   /** OPENAI_API_KEY existe no servidor? liga a geração de demo */
   openaiAtivo?: boolean;
+  /** APIFY_TOKEN existe no servidor? liga a análise de Instagram */
+  buscaAtiva?: boolean;
   abaInicial: Aba;
   aoFechar: () => void;
   aoAtualizar: (lead: Lead) => void;
@@ -68,6 +71,7 @@ export default function ModalLead({
   interacoes,
   n8nAtivo,
   openaiAtivo,
+  buscaAtiva,
   abaInicial,
   aoFechar,
   aoAtualizar,
@@ -307,6 +311,7 @@ export default function ModalLead({
             ["detalhes", "Detalhes"],
             ["historico", `Histórico${interacoes.length ? ` (${interacoes.length})` : ""}`],
             ["whatsapp", "WhatsApp"],
+            ["instagram", "Insta"],
             ["demo", "Demo"],
           ] as [Aba, string][]
         ).map(([id, label]) => (
@@ -604,6 +609,14 @@ export default function ModalLead({
           )}
         </div>
       )}
+      {aba === "instagram" && (
+        <AbaInstagram
+          lead={lead}
+          buscaAtiva={buscaAtiva}
+          aoAtualizar={aoAtualizar}
+        />
+      )}
+
       {aba === "demo" && (
         <AbaDemo lead={lead} projeto={projeto} openaiAtivo={openaiAtivo} />
       )}

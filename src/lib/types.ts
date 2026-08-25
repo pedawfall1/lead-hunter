@@ -1,3 +1,4 @@
+import type { PerfilInstagram } from "./instagram";
 import type { ConteudoSite } from "./site/tipos";
 
 export const STATUS = [
@@ -44,6 +45,12 @@ export type Lead = {
   status: LeadStatus;
   nota: string | null;
   proximo_contato: string | null;
+  /** o perfil do Instagram lido pelo scraper; null se nunca foi analisado */
+  ig_dados: PerfilInstagram | null;
+  /** corrida do Apify em andamento; null quando nao ha nenhuma */
+  ig_run_id: string | null;
+  ig_em: string | null;
+  ig_erro: string | null;
   criado_em: string;
   atualizado_em: string;
 };
