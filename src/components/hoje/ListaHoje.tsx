@@ -25,12 +25,14 @@ export default function ListaHoje({
   templates,
   interacoesIniciais,
   n8nAtivo,
+  openaiAtivo,
 }: {
   leads: Lead[];
   projetos: Projeto[];
   templates: Template[];
   interacoesIniciais: Record<string, Interacao[]>;
   n8nAtivo: boolean;
+  openaiAtivo: boolean;
 }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
@@ -209,6 +211,7 @@ export default function ListaHoje({
           templates={templates}
           interacoes={interacoes[leadAberto.id] ?? []}
           n8nAtivo={n8nAtivo}
+          openaiAtivo={openaiAtivo}
           abaInicial={aberto.aba}
           aoFechar={() => {
             setAberto(null);

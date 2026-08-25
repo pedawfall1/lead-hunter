@@ -8,6 +8,7 @@ import {
 } from "@/lib/db";
 import QuadroLeads from "@/components/leads/QuadroLeads";
 import { n8nConfigurado } from "@/lib/n8n";
+import { openaiConfigurado } from "@/lib/site/gerar";
 import { apifyConfigurado } from "@/lib/apify";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,7 @@ export default async function ProjetoPage({
       templates={templates}
       interacoesIniciais={interacoes}
       n8nAtivo={n8nConfigurado()}
+      openaiAtivo={openaiConfigurado()}
       buscaAtiva={apifyConfigurado()}
       ultimaBusca={ultimaBusca}
     />

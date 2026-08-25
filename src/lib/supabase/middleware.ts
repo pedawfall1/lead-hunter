@@ -8,6 +8,10 @@ const ROTAS_PUBLICAS = [
   // pelo header x-lh-token dentro da própria rota. Sem esta linha o
   // middleware devolve 307 para /login e o n8n nunca entrega evento.
   "/api/n8n",
+  // Demo de site: o link vai pro cliente, que obviamente não tem login
+  // aqui. Quem protege é o slug aleatório, e a rota só serve linha
+  // publicada.
+  "/demo",
 ];
 
 function ehPublica(pathname: string) {
