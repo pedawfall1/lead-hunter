@@ -1,5 +1,6 @@
 import { DEMO } from "@/lib/config";
 import { buscarImagens } from "./pexels";
+import { forma } from "./paletas";
 import { conteudoDeExemplo } from "./exemplo";
 import { briefingComoTexto, type Briefing } from "./briefing";
 import {
@@ -82,6 +83,11 @@ ESCOLHAS DE ESTILO:
   - "classico": foto ocupando o fundo inteiro, texto por cima. Vale quando o ambiente impressiona — restaurante, salão, hotel, academia.
   - "dividido": texto de um lado, foto do outro. Bom para serviço técnico ou profissional, onde o texto pesa tanto quanto a imagem — advogado, contador, clínica, oficina.
   - "centrado": texto no meio, foto numa faixa abaixo. Bom para negócio de marca forte e mensagem curta — loja, estúdio, marca própria.
+- tom é o temperamento do ramo, e muda a forma da página inteira — cantos, peso das bordas, respiro, quantas fotos e a ORDEM das seções. É a escolha que mais diferencia um ramo do outro:
+  - "sobrio": advocacia, contabilidade, consultoria, cartório, seguros. Vende confiança.
+  - "caloroso": estética, salão, barbearia, restaurante, pet, floricultura, moda. Vende desejo.
+  - "robusto": mecânica, oficina, construção, marcenaria, transporte, serralheria, elétrica. Vende competência.
+  - "tecnico": clínica, odontologia, laboratório, fisioterapia, TI, engenharia, contabilidade digital. Vende precisão.
 - Não repita a mesma combinação para todo mundo.
 
 TOM: português do Brasil, direto, sem jargão de marketing. Nada de "soluções inovadoras", "excelência" ou "parceria de sucesso". Fale como o dono do negócio falaria de si mesmo se soubesse escrever bem.`;
@@ -98,7 +104,10 @@ export async function gerarConteudo(
 ): Promise<ResultadoGeracao> {
   if (DEMO) {
     const exemplo = saneiarConteudo(conteudoDeExemplo(briefing));
-    exemplo.imagens = await buscarImagens(exemplo.busca_imagens);
+    exemplo.imagens = await buscarImagens(
+      exemplo.busca_imagens,
+      forma(exemplo.tom).fotos
+    );
     return {
       conteudo: exemplo,
       modelo: "exemplo (modo demo)",
@@ -196,7 +205,12 @@ export async function gerarConteudo(
   // Depois da LLM, nao junto: ela escreve a busca, quem acha a foto e o
   // Pexels. Se a busca falhar, `imagens` fica vazio e o site cai no
   // gradiente — imagem e melhoria, nao requisito.
-  conteudo.imagens = await buscarImagens(conteudo.busca_imagens);
+  // Quantas fotos depende do temperamento: advocacia com galeria parece
+  // imobiliaria, estetica sem foto parece rascunho.
+  conteudo.imagens = await buscarImagens(
+    conteudo.busca_imagens,
+    forma(conteudo.tom).fotos
+  );
 
   return {
     conteudo,

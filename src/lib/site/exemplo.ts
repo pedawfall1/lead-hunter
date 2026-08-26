@@ -1,5 +1,11 @@
 import type { Briefing } from "./briefing";
-import { ESTILOS, LAYOUTS, PALETAS, type ConteudoSite } from "./tipos";
+import {
+  ESTILOS,
+  LAYOUTS,
+  PALETAS,
+  TONS,
+  type ConteudoSite,
+} from "./tipos";
 
 /**
  * Conteúdo de mentira para o modo demo.
@@ -104,5 +110,6 @@ export function conteudoDeExemplo(b: Briefing): ConteudoSite {
     paleta: PALETAS[s % PALETAS.length],
     estilo: ESTILOS[semente(`${b.nomeCurto}|estilo`) % ESTILOS.length],
     layout: LAYOUTS[semente(`${b.nomeCurto}|layout`) % LAYOUTS.length],
+    tom: TONS[semente(`${b.nomeCurto}|tom`) % TONS.length],
   };
 }

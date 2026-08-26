@@ -18,11 +18,13 @@ import {
   ESTILOS,
   LAYOUTS,
   PALETAS,
+  TONS,
   saneiarConteudo,
   type ConteudoSite,
   type Estilo,
   type Layout,
   type Paleta,
+  type Tom,
 } from "@/lib/site/tipos";
 import { gerarConteudo, openaiConfigurado } from "@/lib/site/gerar";
 import { renderizarSite } from "@/lib/site/render";
@@ -109,6 +111,7 @@ export async function reestilizarDemo(
     paleta?: string;
     estilo?: string;
     layout?: string;
+    tom?: string;
     corMarca?: string | null;
   }
 ): Promise<ActionResult<Demo>> {
@@ -138,6 +141,9 @@ export async function reestilizarDemo(
       layout: (LAYOUTS as readonly string[]).includes(ajuste.layout ?? "")
         ? (ajuste.layout as Layout)
         : demo.conteudo.layout,
+      tom: (TONS as readonly string[]).includes(ajuste.tom ?? "")
+        ? (ajuste.tom as Tom)
+        : demo.conteudo.tom,
       cor_marca: cor,
     };
 

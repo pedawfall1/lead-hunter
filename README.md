@@ -443,7 +443,9 @@ fotógrafos, discreto.
 Para mexer no template sem gastar chamada nenhuma, rode `npm run dev` e abra
 `/demo/teste-render`. Os parâmetros trocam o que quiser sem gerar nada:
 `?semfoto`, `?layout=dividido|centrado`, `?estilo=claro|elegante`,
-`?paleta=verde_natural`. A rota só existe em desenvolvimento.
+`?paleta=verde_natural`, `?tom=robusto|caloroso|sobrio`. A rota só existe em
+desenvolvimento, e corta as fotos como a geração de verdade cortaria — senão
+a prévia mostraria galeria num tom que não tem galeria.
 
 ### Prova social do Google
 
@@ -511,8 +513,32 @@ cor da marca do cliente. Aplicar re-renderiza em cima do JSON já salvo, então
 iframe da própria rota pública: o que você vê é exatamente o que o cliente
 abre, não uma reconstrução.
 
-São 3 layouts × 3 estilos × 6 paletas. O layout muda a estrutura do topo,
-não só a pintura:
+### Temperamento do ramo
+
+O eixo que faz mecânica não parecer clínica de estética. Paleta, estilo e
+layout mudavam cor, letra e o topo — mas a **planta** era a mesma para todo
+mundo, e duas demos de ramos opostos saíam irmãs.
+
+| Tom | Ramos | Forma | Ordem das seções |
+| --- | --- | --- | --- |
+| `sobrio` | advocacia, contabilidade, consultoria | cantos discretos, mais respiro, **2 fotos** | sobre → serviços → FAQ |
+| `caloroso` | estética, salão, restaurante, pet | cantos 22px, **5 fotos** | **galeria** → serviços → sobre |
+| `robusto` | mecânica, obra, oficina, transporte | cantos retos, borda 2px, sem sombra, **CAIXA ALTA** | serviços → como funciona |
+| `tecnico` | clínica, odonto, laboratório, TI | grade limpa, cantos médios | sobre → serviços → galeria |
+
+A **ordem** é o que mais diferencia, mais que cor: cada ramo vende por um
+argumento, e o argumento tem que vir primeiro. Advocacia vende confiança na
+pessoa, então listar serviço antes de dizer quem você é soa a balcão.
+Estética vende pelo olho, e esperar a terceira rolagem para mostrar foto é
+perder. Oficina vende competência: quem procura quer saber se você faz
+aquilo, não a sua história.
+
+A alternância de faixas claras é **calculada**, não escrita à mão em cada
+seção — com a ordem variando, `alt` fixo deixaria duas faixas iguais coladas
+em alguns tons.
+
+São 3 layouts × 3 estilos × 6 paletas × 4 tons. O layout muda a estrutura do
+topo:
 
 | Layout | Topo | Bom para |
 | --- | --- | --- |

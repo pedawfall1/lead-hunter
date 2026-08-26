@@ -2,6 +2,7 @@ import { renderizarSite } from "@/lib/site/render";
 import type { Briefing } from "@/lib/site/briefing";
 import type { ImagemSite } from "@/lib/site/pexels";
 import type { ConteudoSite } from "@/lib/site/tipos";
+import { forma } from "@/lib/site/paletas";
 
 /**
  * Bancada do template, só em desenvolvimento.
@@ -155,6 +156,7 @@ const conteudo: ConteudoSite = {
   busca_imagens: ["architecture office", "architect working"],
   paleta: "quente_terra",
   layout: "classico",
+  tom: "sobrio",
   estilo: "escuro",
   imagens,
 };
@@ -173,13 +175,23 @@ export async function GET(req: Request) {
   // ?estilo=claro | elegante, para conferir a tipografia de cada um
   const estilo = p.get("estilo") as ConteudoSite["estilo"] | null;
   const paleta = p.get("paleta") as ConteudoSite["paleta"] | null;
+  // ?tom=caloroso | robusto | tecnico — muda forma, respiro e ORDEM das secoes
+  const tom = p.get("tom") as ConteudoSite["tom"] | null;
+  const escolhido = { ...conteudo, ...(tom ? { tom } : {}) };
+  // Corta as fotos como a geracao de verdade cortaria: sobrio pede 2,
+  // caloroso pede 5. Sem isso a bancada mostraria galeria num tom que
+  // nao tem galeria, e a previa mentiria.
+  const quantas = forma(escolhido.tom).fotos;
+
   const html = renderizarSite(
     {
       ...conteudo,
+      imagens: imagens.slice(0, quantas),
       ...(semFoto ? { imagens: [] } : {}),
       ...(layout ? { layout } : {}),
       ...(estilo ? { estilo } : {}),
       ...(paleta ? { paleta } : {}),
+      ...(tom ? { tom } : {}),
     },
     briefing
   );

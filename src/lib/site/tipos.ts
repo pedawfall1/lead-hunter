@@ -45,6 +45,32 @@ export const LAYOUTS = ["classico", "dividido", "centrado"] as const;
 
 export type Layout = (typeof LAYOUTS)[number];
 
+/**
+ * O temperamento visual do ramo — o eixo que faltava.
+ *
+ * Paleta, estilo e layout mudavam cor, letra e o topo, mas a planta da
+ * página era a mesma para todo mundo: mesma ordem de seções, mesmos cantos
+ * arredondados, mesma densidade. Duas demos de ramos opostos saíam irmãs.
+ *
+ * O tom muda o que a pessoa sente antes de ler: forma dos cantos, peso da
+ * borda, uso de maiúscula, quanto respiro, quantas fotos — e principalmente
+ * **a ordem das seções**, porque cada ramo vende por um argumento
+ * diferente.
+ *
+ * - `sobrio`: advocacia, contabilidade, consultoria. Vende confiança, então
+ *   quem fala primeiro é o texto: sobre antes de serviço, pouca foto.
+ * - `caloroso`: estética, salão, restaurante, pet. Vende desejo, então a
+ *   foto vem cedo e grande, cantos redondos.
+ * - `robusto`: mecânica, construção, oficina, transporte. Vende
+ *   competência, então serviço e processo na frente, blocos sólidos e
+ *   cantos retos.
+ * - `tecnico`: clínica, odontologia, laboratório, TI. Vende precisão:
+ *   grade organizada, cantos médios, tudo no lugar.
+ */
+export const TONS = ["sobrio", "caloroso", "robusto", "tecnico"] as const;
+
+export type Tom = (typeof TONS)[number];
+
 export type ServicoSite = {
   nome: string;
   descricao: string;
@@ -90,6 +116,7 @@ export type ConteudoSite = {
   paleta: Paleta;
   estilo: Estilo;
   layout: Layout;
+  tom: Tom;
   /**
    * Cor da marca escolhida a mao, no editor da aba Demo. Atropela a
    * paleta: e a cor tirada do Instagram do cliente quando o palpite da
@@ -134,6 +161,7 @@ export const ESQUEMA_CONTEUDO = {
     "paleta",
     "estilo",
     "layout",
+    "tom",
     "busca_imagens",
   ],
   properties: {
@@ -187,6 +215,7 @@ export const ESQUEMA_CONTEUDO = {
     paleta: { type: "string", enum: [...PALETAS] },
     estilo: { type: "string", enum: [...ESTILOS] },
     layout: { type: "string", enum: [...LAYOUTS] },
+    tom: { type: "string", enum: [...TONS] },
     busca_imagens: { type: "array", items: { type: "string" } },
   },
 } as const;
@@ -237,6 +266,7 @@ export function saneiarConteudo(c: ConteudoSite): ConteudoSite {
     paleta: PALETAS.includes(c.paleta) ? c.paleta : "sobrio_azul",
     estilo: ESTILOS.includes(c.estilo) ? c.estilo : "escuro",
     layout: LAYOUTS.includes(c.layout) ? c.layout : "classico",
+    tom: TONS.includes(c.tom) ? c.tom : "tecnico",
     busca_imagens: (c.busca_imagens ?? [])
       .slice(0, 3)
       .map((q) => corta(q, 60))

@@ -1,4 +1,4 @@
-import type { Estilo, Paleta } from "./tipos";
+import type { Estilo, Paleta, Tom } from "./tipos";
 
 /**
  * As cores são nossas, não da LLM.
@@ -98,6 +98,75 @@ const TIPOGRAFIA: Record<
     peso: 600,
   },
 };
+
+/**
+ * A forma que cada temperamento dá à página.
+ *
+ * É aqui que mecânica deixa de parecer clínica de estética. Cor e letra já
+ * mudavam; o que denunciava era a geometria — todo mundo com o mesmo canto
+ * arredondado, a mesma sombra, o mesmo respiro.
+ */
+export type Forma = {
+  /** cantos: 0 é seco e industrial, 22 é acolhedor */
+  raio: number;
+  raioCard: number;
+  /** borda grossa lê como robusto; fina, como refinado */
+  borda: number;
+  /** sombra difusa dá leveza; sem sombra dá peso */
+  sombra: string;
+  /** título de seção em caixa alta muda o tom antes de a pessoa ler */
+  caixaAlta: boolean;
+  /** multiplicador do espaçamento vertical */
+  respiro: number;
+  /** quantas fotos a página pede ao Pexels */
+  fotos: number;
+};
+
+export const FORMAS: Record<Tom, Forma> = {
+  sobrio: {
+    raio: 8,
+    raioCard: 10,
+    borda: 1,
+    sombra: "0 18px 36px -30px rgba(0,0,0,.5)",
+    caixaAlta: false,
+    respiro: 1.15,
+    // Advocacia com galeria de fotos parece imobiliária. Duas bastam.
+    fotos: 2,
+  },
+  caloroso: {
+    raio: 22,
+    raioCard: 22,
+    borda: 1,
+    sombra: "0 26px 50px -30px rgba(0,0,0,.45)",
+    caixaAlta: false,
+    respiro: 1,
+    // Estética e restaurante vendem pelo olho: quanto mais foto, melhor.
+    fotos: 5,
+  },
+  robusto: {
+    raio: 3,
+    raioCard: 4,
+    borda: 2,
+    // Sem sombra: bloco sólido, sem leveza. É oficina, não spa.
+    sombra: "none",
+    caixaAlta: true,
+    respiro: 0.9,
+    fotos: 4,
+  },
+  tecnico: {
+    raio: 12,
+    raioCard: 14,
+    borda: 1,
+    sombra: "0 20px 40px -28px rgba(0,0,0,.5)",
+    caixaAlta: false,
+    respiro: 1,
+    fotos: 4,
+  },
+};
+
+export function forma(tom: Tom): Forma {
+  return FORMAS[tom] ?? FORMAS.tecnico;
+}
 
 /** "#RGB" ou "#RRGGBB" -> os três canais. Devolve null se não for cor. */
 function canais(hex: string): [number, number, number] | null {

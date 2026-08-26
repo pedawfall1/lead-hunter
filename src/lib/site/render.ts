@@ -1,6 +1,6 @@
 import { telefoneWhatsapp } from "@/lib/format";
 import type { Briefing } from "./briefing";
-import { cores, type Cores } from "./paletas";
+import { cores, forma, type Cores, type Forma } from "./paletas";
 import type { ImagemSite } from "./pexels";
 import type { ConteudoSite } from "./tipos";
 
@@ -40,7 +40,10 @@ function urlSegura(u: string | null | undefined): string | null {
   return esc(s);
 }
 
-function css(c: Cores): string {
+function css(c: Cores, f: Forma): string {
+  const r = f.raio;
+  const rc = f.raioCard;
+  const b = f.borda;
   return [
     "*,*::before,*::after{box-sizing:border-box}",
     "html{scroll-behavior:smooth}",
@@ -51,10 +54,14 @@ function css(c: Cores): string {
     "a{color:inherit}",
     "img{max-width:100%;display:block}",
     ".env{width:min(1140px,90vw);margin:0 auto}",
-    ".sec{padding:clamp(64px,10vw,120px) 0}",
-    `.alt{background:${c.superficie}}`,
+    `.sec{padding:calc(clamp(64px,10vw,120px) * ${f.respiro}) 0}`,
+    `.alt{background:${c.superficie};position:relative}`,
+    /* Faixa alternada era um cinza chapado. Um brilho da marca no topo
+       amarra a secao a identidade em vez de parecer bloco de sistema. */
+    `.alt::before{content:"";position:absolute;inset:0 0 auto;height:180px;background:linear-gradient(180deg,${c.marca}12,transparent);pointer-events:none}`,
+    ".alt > *{position:relative}",
     `.eyebrow{font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:${c.marca};font-weight:600;margin:0 0 14px}`,
-    ".titulo-sec{font-size:clamp(28px,4.2vw,44px);max-width:18ch}",
+    `.titulo-sec{font-size:clamp(28px,4.2vw,44px);max-width:18ch${f.caixaAlta ? ";text-transform:uppercase;letter-spacing:-.01em" : ""}}`,
     `.linha{height:1px;background:${c.borda};border:0;margin:0}`,
 
     `header{position:sticky;top:0;z-index:20;background:${c.fundo}f2;backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid ${c.borda}}`,
@@ -66,7 +73,7 @@ function css(c: Cores): string {
     `.menu a{text-decoration:none;font-size:14.5px;font-weight:500;color:${c.suave};transition:color .2s}`,
     `.menu a:hover{color:${c.texto}}`,
 
-    `.btn{display:inline-block;background:${c.marca};color:${c.marcaTexto};text-decoration:none;font-weight:600;padding:14px 26px;border-radius:11px;font-size:15px;white-space:nowrap;box-shadow:0 8px 20px -10px ${c.marca};transition:transform .18s ease,box-shadow .18s ease}`,
+    `.btn{display:inline-block;background:${c.marca};color:${c.marcaTexto};text-decoration:none;font-weight:600;padding:14px 26px;border-radius:${r}px;font-size:15px;white-space:nowrap;box-shadow:0 8px 20px -10px ${c.marca};transition:transform .18s ease,box-shadow .18s ease}`,
     `.btn:hover{transform:translateY(-2px);box-shadow:0 14px 28px -12px ${c.marca}}`,
     `.btn.vazado{background:transparent;color:${c.texto};border:1px solid ${c.borda};font-weight:500;box-shadow:none}`,
     `.btn.vazado:hover{box-shadow:none;border-color:${c.marca}}`,
@@ -79,20 +86,23 @@ function css(c: Cores): string {
     ".hero .sub{font-size:clamp(17px,2.2vw,21px);max-width:50ch;margin-bottom:34px;opacity:.92}",
     ".acoes{display:flex;flex-wrap:wrap;gap:12px}",
 
-    /* ---------- selo do Google ---------- */
-    ".selo{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:26px;font-size:14.5px}",
+    /* ---------- selo do Google ----------
+       Vira uma pastilha com borda: solto no meio do texto ele lia como
+       mais uma linha, e nao como o unico numero verdadeiro da pagina. */
+    `.selo{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:28px;font-size:14.5px;padding:10px 18px;border-radius:999px;border:1px solid ${c.borda};background:${c.fundo}}`,
     ".selo .estrelas{display:inline-flex;gap:1px}",
     ".selo strong{font-weight:600;font-size:16px}",
     `.selo-txt{color:${c.suave}}`,
-    /* no topo com foto, o texto de apoio e branco como o resto */
-    ".hero.foto .selo-txt{color:rgba(255,255,255,.82)}",
-    ".cta .selo{margin-top:0;margin-bottom:26px}",
+    /* no topo com foto, a pastilha fica de vidro sobre a imagem */
+    ".hero.foto .selo{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.22);backdrop-filter:blur(6px)}",
+    ".hero.foto .selo-txt{color:rgba(255,255,255,.85)}",
+    ".cta .selo{margin-top:0;margin-bottom:28px}",
 
     /* layout dividido: texto de um lado, foto do outro, sem veu por cima */
     ".hero.dividido .env{display:grid;gap:clamp(32px,5vw,56px);grid-template-columns:1fr;align-items:center;padding-top:clamp(56px,9vw,96px);padding-bottom:clamp(56px,9vw,96px)}",
     "@media(min-width:920px){.hero.dividido .env{grid-template-columns:1.05fr .95fr}}",
     ".hero.dividido h1{max-width:none}",
-    `.hero.dividido .lado{border-radius:18px;overflow:hidden;border:1px solid ${c.borda};box-shadow:0 30px 60px -34px rgba(0,0,0,.6)}`,
+    `.hero.dividido .lado{border-radius:${rc}px;overflow:hidden;border:${b}px solid ${c.borda};box-shadow:${f.sombra}}`,
     ".hero.dividido .lado img{width:100%;height:clamp(280px,40vw,460px);object-fit:cover}",
 
     /* layout centrado: sem foto atras do texto; ela entra logo abaixo */
@@ -100,10 +110,15 @@ function css(c: Cores): string {
     ".hero.centrado h1{max-width:20ch;margin-left:auto;margin-right:auto}",
     ".hero.centrado .sub{margin-left:auto;margin-right:auto}",
     ".hero.centrado .acoes{justify-content:center}",
-    `.faixa{width:min(1140px,90vw);margin:0 auto clamp(56px,9vw,104px);border-radius:18px;overflow:hidden;border:1px solid ${c.borda};box-shadow:0 30px 60px -34px rgba(0,0,0,.6)}`,
+    `.faixa{width:min(1140px,90vw);margin:0 auto clamp(56px,9vw,104px);border-radius:${rc}px;overflow:hidden;border:${b}px solid ${c.borda};box-shadow:${f.sombra}}`,
     ".faixa img{width:100%;height:clamp(240px,34vw,420px);object-fit:cover}",
-    /* sem foto: o gradiente da marca continua sendo o fundo */
-    `.hero.liso{background:linear-gradient(158deg,${c.marca}26,transparent 60%)}`,
+    /* Sem foto o topo era um gradiente diagonal chapado. Agora leva dois
+       focos de luz da cor da marca, que dão profundidade sem custar
+       imagem nenhuma. */
+    `.hero.liso{background:radial-gradient(1100px 520px at 12% -10%,${c.marca}2e,transparent 62%),radial-gradient(760px 420px at 88% 8%,${c.marca}1a,transparent 66%),${c.fundo}}`,
+    /* linha fina de luz no rodapé do topo, para a seção seguinte não
+       começar num corte seco */
+    `.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,${c.marca}55,transparent);z-index:3}`,
     /* com foto: ela vai atras, e a camada escura garante o contraste do
        texto — foto clara com texto branco e o jeito classico de a demo
        chegar ilegivel no celular do cliente */
@@ -116,27 +131,31 @@ function css(c: Cores): string {
     ".sobre{display:grid;gap:clamp(30px,5vw,64px);grid-template-columns:1fr;align-items:center}",
     "@media(min-width:900px){.sobre{grid-template-columns:1.05fr .95fr}}",
     `.sobre .corpo{font-size:17px;color:${c.suave}}`,
-    `.moldura{border-radius:16px;overflow:hidden;border:1px solid ${c.borda};box-shadow:0 24px 48px -32px rgba(0,0,0,.55)}`,
+    `.moldura{border-radius:${rc}px;overflow:hidden;border:${b}px solid ${c.borda};box-shadow:${f.sombra}}`,
     ".moldura img{width:100%;height:clamp(260px,36vw,400px);object-fit:cover}",
 
     /* ---------- servicos ---------- */
     ".grade{display:grid;gap:18px;grid-template-columns:1fr}",
     "@media(min-width:640px){.grade{grid-template-columns:repeat(2,1fr)}}",
     "@media(min-width:980px){.grade{grid-template-columns:repeat(3,1fr)}}",
-    `.card{background:${c.fundo};border:1px solid ${c.borda};border-radius:16px;padding:30px 28px;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}`,
-    `.card:hover{transform:translateY(-3px);border-color:${c.marca}66;box-shadow:0 20px 40px -28px rgba(0,0,0,.5)}`,
+    `.card{background:${c.fundo};border:${b}px solid ${c.borda};border-radius:${rc}px;padding:30px 28px;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}`,
+    `.card:hover{transform:translateY(-3px);border-color:${c.marca}66;box-shadow:0 22px 44px -26px ${c.marca}55}`,
     ".card h3{font-size:19px;margin-bottom:.35em}",
     `.card p{color:${c.suave};font-size:15px;margin:0}`,
-    `.num{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:${c.marca};color:${c.marcaTexto};font-weight:700;font-size:14px;margin-bottom:18px}`,
+    `.num{display:grid;place-items:center;width:38px;height:38px;border-radius:${Math.min(r,12)}px;background:${c.marca};color:${c.marcaTexto};font-weight:700;font-size:14px;margin-bottom:18px}`,
 
     /* ---------- como funciona ---------- */
-    ".passos{display:grid;gap:clamp(22px,3vw,30px);grid-template-columns:1fr;margin-top:38px;counter-reset:passo}",
+    ".passos{display:grid;gap:clamp(26px,3.4vw,36px);grid-template-columns:1fr;margin-top:44px;counter-reset:passo}",
     "@media(min-width:820px){.passos{grid-template-columns:repeat(3,1fr)}}",
-    ".passo{position:relative;padding-top:22px}",
-    /* numero grande e apagado atras do texto: da hierarquia sem pesar */
-    `.passo::before{counter-increment:passo;content:counter(passo,decimal-leading-zero);position:absolute;top:-14px;left:-4px;font-family:${c.fonteTitulo};font-weight:${c.pesoTitulo};font-size:60px;line-height:1;color:${c.marca};opacity:.16;pointer-events:none}`,
-    ".passo h3{position:relative;font-size:18px;margin-bottom:.3em}",
-    `.passo p{position:relative;color:${c.suave};font-size:15px;margin:0}`,
+    `.passo{position:relative;padding-top:26px;border-top:2px solid ${c.borda}}`,
+    /* A versao anterior punha o numero em `absolute` atras do texto, e ele
+       batia no titulo. Agora ele fica no fluxo, acima: ocupa o proprio
+       espaco e nao tem como colidir. */
+    `.passo .passo-n{display:block;font-family:${c.fonteTitulo};font-weight:${c.pesoTitulo};font-size:clamp(34px,4vw,44px);line-height:1;color:${c.marca};margin-bottom:14px;letter-spacing:-.03em}`,
+    /* a barra da cor da marca marca o comeco de cada passo */
+    `.passo::after{content:"";position:absolute;top:-2px;left:0;width:42px;height:2px;background:${c.marca}}`,
+    ".passo h3{font-size:18.5px;margin-bottom:.35em}",
+    `.passo p{color:${c.suave};font-size:15px;margin:0}`,
 
     /* ---------- perguntas ---------- */
     ".faq{max-width:760px;margin:34px auto 0}",
@@ -151,14 +170,21 @@ function css(c: Cores): string {
     /* ---------- galeria ---------- */
     ".galeria{display:grid;gap:14px;grid-template-columns:1fr}",
     "@media(min-width:700px){.galeria{grid-template-columns:repeat(3,1fr)}}",
-    `.galeria figure{margin:0;border-radius:14px;overflow:hidden;border:1px solid ${c.borda}}`,
+    `.galeria figure{margin:0;border-radius:${rc}px;overflow:hidden;border:${b}px solid ${c.borda}}`,
     ".galeria img{width:100%;height:clamp(180px,22vw,250px);object-fit:cover}",
 
-    /* ---------- diferenciais ---------- */
+    /* ---------- diferenciais ----------
+       Eram tres tiques soltos numa faixa vazia: muito espaco morto e nada
+       para o olho segurar. Viraram cartoes com o icone num circulo da cor
+       da marca, que e o que da peso a uma linha de texto curta. */
     ".dif{display:grid;gap:16px;grid-template-columns:1fr;list-style:none;padding:0;margin:0}",
     "@media(min-width:760px){.dif{grid-template-columns:repeat(3,1fr)}}",
-    ".dif li{display:flex;gap:12px;align-items:flex-start;font-weight:600;font-size:16.5px}",
-    ".dif svg{flex:none;margin-top:3px}",
+    `.dif li{display:flex;gap:16px;align-items:center;font-weight:600;font-size:16.5px;background:${c.fundo};border:${b}px solid ${c.borda};border-radius:${rc}px;padding:22px 24px;transition:border-color .2s ease,transform .2s ease}`,
+    `.dif li:hover{transform:translateY(-2px);border-color:${c.marca}66}`,
+    `.faixa-dif{padding:clamp(30px,4vw,46px) 0;border-top:1px solid ${c.borda};border-bottom:1px solid ${c.borda}}`,
+    ".faixa-dif::before{display:none}",
+    `.dif .marcador{flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:999px;background:${c.marca}1f;color:${c.marca}}`,
+    ".dif svg{flex:none}",
 
     /* ---------- fechamento ---------- */
     ".cta{text-align:center}",
@@ -166,7 +192,8 @@ function css(c: Cores): string {
     `.cta p{color:${c.suave};max-width:46ch;margin:0 auto 30px;font-size:17px}`,
     ".contato{display:grid;gap:14px;grid-template-columns:1fr;margin-top:38px;text-align:left}",
     "@media(min-width:700px){.contato{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}}",
-    `.contato a{display:block;text-decoration:none;padding:18px 20px;border:1px solid ${c.borda};border-radius:12px;background:${c.fundo}}`,
+    `.contato a{display:block;text-decoration:none;padding:18px 20px;border:${b}px solid ${c.borda};border-radius:${r}px;background:${c.fundo};transition:border-color .2s ease,transform .2s ease}`,
+    `.contato a:hover{border-color:${c.marca};transform:translateY(-2px)}`,
     `.contato .rot{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:${c.suave};margin-bottom:6px;font-weight:700}`,
     ".contato .val{font-weight:600;font-size:15px;word-break:break-word}",
 
@@ -177,7 +204,13 @@ function css(c: Cores): string {
     ".feito-por span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600}",
     ".feito-por img{height:38px;width:auto}",
 
-    ".zap{position:fixed;right:18px;bottom:18px;z-index:30;width:58px;height:58px;border-radius:50%;background:#25d366;display:grid;place-items:center;box-shadow:0 10px 26px -8px rgba(0,0,0,.55)}",
+    ".zap{position:fixed;right:18px;bottom:18px;z-index:30;width:58px;height:58px;border-radius:50%;background:#25d366;display:grid;place-items:center;box-shadow:0 10px 26px -8px rgba(0,0,0,.55);transition:transform .2s ease}",
+    ".zap:hover{transform:scale(1.06)}",
+    /* Anel que pulsa devagar: chama o olho para o unico botao que importa
+       sem virar aquele balao que fica saltando na tela. */
+    '.zap::before{content:"";position:absolute;inset:0;border-radius:50%;background:#25d366;opacity:.45;animation:pulso 2.6s ease-out infinite;z-index:-1}',
+    "@keyframes pulso{0%{transform:scale(1);opacity:.45}70%{transform:scale(1.6);opacity:0}100%{opacity:0}}",
+    "@media(prefers-reduced-motion:reduce){.zap::before{animation:none}}",
 
     /* Fita de demonstração: quem abre precisa saber que é uma proposta, não
        o site no ar. Some na impressão para não sujar um PDF da proposta. */
@@ -383,6 +416,7 @@ export function renderizarSite(
   opcoes: OpcoesRender = {}
 ): string {
   const c = cores(conteudo.paleta, conteudo.estilo, conteudo.cor_marca);
+  const f = forma(conteudo.tom);
   const zap = linkZap(briefing, conteudo);
   const assinatura =
     opcoes.assinatura === undefined ? FITA_PADRAO : opcoes.assinatura;
@@ -401,14 +435,35 @@ export function renderizarSite(
     )
     .join("");
 
+  /**
+   * Em que ordem as seções aparecem, por temperamento.
+   *
+   * É o que mais diferencia um ramo do outro, mais que cor ou canto: cada
+   * um vende por um argumento, e o argumento tem que vir primeiro.
+   *
+   * - `sobrio` abre pelo sobre: advocacia vende confiança na pessoa, e
+   *   listar serviço antes de dizer quem você é soa a balcão.
+   * - `caloroso` joga a galeria para cima: estética e restaurante vendem
+   *   pelo olho, e esperar a terceira rolagem para mostrar foto é perder.
+   * - `robusto` abre por serviço e processo: quem procura oficina quer
+   *   saber se você faz aquilo e como funciona, não a sua história.
+   * - `tecnico` mantém a ordem clássica, que é a mais neutra.
+   */
+  const ORDEM: Record<string, string[]> = {
+    sobrio: ["sobre", "servicos", "diferenciais", "faq", "passos", "galeria"],
+    caloroso: ["galeria", "servicos", "sobre", "diferenciais", "passos", "faq"],
+    robusto: ["servicos", "passos", "diferenciais", "sobre", "faq", "galeria"],
+    tecnico: ["sobre", "servicos", "galeria", "diferenciais", "passos", "faq"],
+  };
+
   const passos = conteudo.passos.length
     ? `<section class="sec" id="como"><div class="env rev">
   <p class="eyebrow">Como funciona</p>
   <h2 class="titulo-sec">${esc(conteudo.passos_titulo)}</h2>
   <div class="passos">${conteudo.passos
     .map(
-      (p) =>
-        `<article class="passo"><h3>${esc(p.titulo)}</h3><p>${esc(p.texto)}</p></article>`
+      (p, i) =>
+        `<article class="passo"><span class="passo-n">${String(i + 1).padStart(2, "0")}</span><h3>${esc(p.titulo)}</h3><p>${esc(p.texto)}</p></article>`
     )
     .join("")}</div>
 </div></section>`
@@ -417,7 +472,7 @@ export function renderizarSite(
   // <details> nativo: abre e fecha sem uma linha de JavaScript, e continua
   // funcionando se o script da animação não rodar.
   const faq = conteudo.faq.length
-    ? `<section class="sec alt" id="perguntas"><div class="env rev">
+    ? `<section class="sec" id="perguntas"><div class="env rev">
   <p class="eyebrow">Perguntas frequentes</p>
   <h2 class="titulo-sec">Antes de você perguntar</h2>
   <div class="faq">${conteudo.faq
@@ -429,14 +484,75 @@ export function renderizarSite(
 </div></section>`
     : "";
 
+  const blocoSobre = `<section class="sec" id="sobre"><div class="env sobre rev">
+  <div>
+    <p class="eyebrow">Sobre</p>
+    <h2 class="titulo-sec">${esc(conteudo.sobre_titulo)}</h2>
+    <div class="corpo">${sobre}</div>
+  </div>
+  ${sobreImg ? figura(sobreImg, "moldura") : ""}
+</div></section>`;
+
+  const blocoServicos = `<section class="sec" id="servicos"><div class="env rev">
+  <p class="eyebrow">O que fazemos</p>
+  <h2 class="titulo-sec">${esc(conteudo.servicos_titulo)}</h2>
+  <div class="grade" style="margin-top:38px">${servicos}</div>
+</div></section>`;
+
+  const blocoGaleria = galeria.length
+    ? `<section class="sec"><div class="env"><div class="galeria rev">${galeria
+        .map((i) => figura(i, "galeria"))
+        .join("")}</div></div></section>`
+    : "";
+
   const diferenciais = conteudo.diferenciais.length
     ? `<ul class="dif">${conteudo.diferenciais
         .map(
           (d) =>
-            `<li><span style="color:${c.marca}">${CHECK}</span><span>${esc(d)}</span></li>`
+            `<li><span class="marcador">${CHECK}</span><span>${esc(d)}</span></li>`
         )
         .join("")}</ul>`
     : "";
+
+  //  e nao : uma linha de conteudo dentro do respiro de
+  // uma secao inteira deixava 240px de vazio em volta, e a secao lia como
+  // esquecida. Aqui ela vira uma barra de reforco entre duas secoes
+  // grandes, com respiro proprio.
+  const blocoDiferenciais = diferenciais
+    ? `<section class="sec faixa-dif"><div class="env rev">${diferenciais}</div></section>`
+    : "";
+
+  /**
+   * As seções na ordem do temperamento, com as faixas de fundo alternando
+   * de verdade.
+   *
+   * A alternância é calculada aqui, e não escrita à mão em cada seção: com
+   * a ordem variando, `alt` fixo no HTML deixaria duas faixas iguais
+   * coladas em alguns tons e a página perderia o ritmo.
+   */
+  const disponiveis: Record<string, string> = {
+    sobre: blocoSobre,
+    servicos: blocoServicos,
+    galeria: blocoGaleria,
+    diferenciais: blocoDiferenciais,
+    passos,
+    faq,
+  };
+
+  const ordem = ORDEM[conteudo.tom] ?? ORDEM.tecnico;
+  let claraAgora = false;
+  const miolo = ordem
+    .map((nome) => disponiveis[nome])
+    .filter(Boolean)
+    .map((html) => {
+      // A galeria é só imagem: dar fundo a ela não muda nada e ainda
+      // gastaria uma alternância à toa.
+      const soImagem = html.includes('class="galeria');
+      if (soImagem) return html;
+      claraAgora = !claraAgora;
+      return claraAgora ? html.replace('class="sec"', 'class="sec alt"') : html;
+    })
+    .join("\n\n");
 
   const botao = zap
     ? `<a class="btn" href="${zap}" target="_blank" rel="noopener">${esc(conteudo.cta_botao)}</a>`
@@ -502,7 +618,7 @@ ${
 <link rel="icon" href="${favicon(conteudo.titulo, c)}">
 ${c.fontesLink}
 ${heroImg ? `<link rel="preconnect" href="https://images.pexels.com">` : ""}
-<style>${css(c)}</style>
+<style>${css(c, f)}</style>
 </head>
 <body>
 <span id="topo"></span>
@@ -521,34 +637,7 @@ ${assinatura ? `<div class="fita">${esc(assinatura)}</div>` : ""}
 
 ${topo}
 
-<section class="sec" id="sobre"><div class="env sobre rev">
-  <div>
-    <p class="eyebrow">Sobre</p>
-    <h2 class="titulo-sec">${esc(conteudo.sobre_titulo)}</h2>
-    <div class="corpo">${sobre}</div>
-  </div>
-  ${sobreImg ? figura(sobreImg, "moldura") : ""}
-</div></section>
-
-<section class="sec alt" id="servicos"><div class="env rev">
-  <p class="eyebrow">O que fazemos</p>
-  <h2 class="titulo-sec">${esc(conteudo.servicos_titulo)}</h2>
-  <div class="grade" style="margin-top:38px">${servicos}</div>
-</div></section>
-
-${
-  galeria.length
-    ? `<section class="sec"><div class="env"><div class="galeria rev">${galeria
-        .map((i) => figura(i, "galeria"))
-        .join("")}</div></div></section>`
-    : ""
-}
-
-${diferenciais ? `<section class="sec${galeria.length ? " alt" : ""}"><div class="env rev">${diferenciais}</div></section>` : ""}
-
-${passos}
-
-${faq}
+${miolo}
 
 <section class="sec" id="contato"><div class="env cta rev">
   <h2>${esc(conteudo.cta_titulo)}</h2>

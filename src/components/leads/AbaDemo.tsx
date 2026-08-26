@@ -11,7 +11,7 @@ import {
 } from "@/app/actions/site";
 import { montarBriefing, promptParaColar } from "@/lib/site/briefing";
 import { dataCurta } from "@/lib/format";
-import { ESTILOS, LAYOUTS, PALETAS } from "@/lib/site/tipos";
+import { ESTILOS, LAYOUTS, PALETAS, TONS } from "@/lib/site/tipos";
 import PreviaDemo from "./PreviaDemo";
 import TextoDemo from "./TextoDemo";
 import type { Demo, Lead, Projeto } from "@/lib/types";
@@ -79,7 +79,7 @@ const ETAPAS: [string, number][] = [
  */
 function versaoDemo(d: Demo): string {
   const c = d.conteudo;
-  return `${c?.paleta ?? ""}-${c?.estilo ?? ""}-${c?.layout ?? ""}-${c?.cor_marca ?? ""}`;
+  return `${c?.paleta ?? ""}-${c?.estilo ?? ""}-${c?.layout ?? ""}-${c?.tom ?? ""}-${c?.cor_marca ?? ""}`;
 }
 
 function Progresso() {
@@ -135,6 +135,13 @@ const NOME_LAYOUT: Record<string, string> = {
   centrado: "Centrado, foto abaixo",
 };
 
+const NOME_TOM: Record<string, string> = {
+  sobrio: "Sóbrio (advocacia, contabilidade)",
+  caloroso: "Caloroso (estética, salão, restaurante)",
+  robusto: "Robusto (mecânica, obra, oficina)",
+  tecnico: "Técnico (clínica, odonto, laboratório)",
+};
+
 const NOME_ESTILO: Record<string, string> = {
   escuro: "Escuro",
   claro: "Claro",
@@ -159,6 +166,7 @@ function Aparencia({
     paleta: string;
     estilo: string;
     layout: string;
+    tom: string;
     corMarca: string | null;
   }) => void;
 }) {
@@ -171,6 +179,7 @@ function Aparencia({
   const [layout, setLayout] = useState<string>(
     demo.conteudo?.layout ?? "classico"
   );
+  const [tom, setTom] = useState<string>(demo.conteudo?.tom ?? "tecnico");
   const [usarCor, setUsarCor] = useState(!!demo.conteudo?.cor_marca);
   const [cor, setCor] = useState(demo.conteudo?.cor_marca ?? "#f97316");
 
@@ -203,6 +212,28 @@ function Aparencia({
             ))}
           </select>
         </div>
+      </div>
+
+      <div>
+        <label className="label" htmlFor={`tom-${demo.id}`}>
+          Temperamento do ramo
+        </label>
+        <select
+          id={`tom-${demo.id}`}
+          className="input"
+          value={tom}
+          onChange={(e) => setTom(e.target.value)}
+        >
+          {TONS.map((t) => (
+            <option key={t} value={t}>
+              {NOME_TOM[t] ?? t}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1.5 text-[11.5px] leading-relaxed text-slate-500">
+          Muda a forma, o respiro, quantas fotos e a ordem das seções. É o que
+          faz mecânica não parecer clínica de estética.
+        </p>
       </div>
 
       <div>
@@ -261,7 +292,7 @@ function Aparencia({
         type="button"
         disabled={pendente}
         onClick={() =>
-          aoAplicar({ paleta, estilo, layout, corMarca: usarCor ? cor : null })
+          aoAplicar({ paleta, estilo, layout, tom, corMarca: usarCor ? cor : null })
         }
         className="btn-primary px-3 py-1.5 text-xs disabled:opacity-50"
       >
@@ -318,6 +349,7 @@ export default function AbaDemo({
       paleta: string;
       estilo: string;
       layout: string;
+      tom: string;
       corMarca: string | null;
     }
   ) {
