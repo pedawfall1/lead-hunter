@@ -50,6 +50,25 @@ export type ServicoSite = {
   descricao: string;
 };
 
+/** Um passo do "como funciona". Tira a dúvida de quem nunca contratou. */
+export type PassoSite = {
+  titulo: string;
+  texto: string;
+};
+
+/**
+ * Pergunta frequente do ramo.
+ *
+ * Repare que isto não viola a regra de não inventar fato: são as dúvidas
+ * que qualquer cliente daquele setor tem ("precisa agendar?", "atendem no
+ * fim de semana?"), respondidas sem citar número, prazo ou preço que a LLM
+ * não teria como saber.
+ */
+export type PerguntaSite = {
+  pergunta: string;
+  resposta: string;
+};
+
 export type ConteudoSite = {
   /** nome como deve aparecer no topo, sem Ltda/ME */
   titulo: string;
@@ -62,6 +81,9 @@ export type ConteudoSite = {
   servicos_titulo: string;
   servicos: ServicoSite[];
   diferenciais: string[];
+  passos_titulo: string;
+  passos: PassoSite[];
+  faq: PerguntaSite[];
   cta_titulo: string;
   cta_texto: string;
   cta_botao: string;
@@ -103,6 +125,9 @@ export const ESQUEMA_CONTEUDO = {
     "servicos_titulo",
     "servicos",
     "diferenciais",
+    "passos_titulo",
+    "passos",
+    "faq",
     "cta_titulo",
     "cta_texto",
     "cta_botao",
@@ -131,6 +156,31 @@ export const ESQUEMA_CONTEUDO = {
       },
     },
     diferenciais: { type: "array", items: { type: "string" } },
+    passos_titulo: { type: "string" },
+    passos: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["titulo", "texto"],
+        properties: {
+          titulo: { type: "string" },
+          texto: { type: "string" },
+        },
+      },
+    },
+    faq: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["pergunta", "resposta"],
+        properties: {
+          pergunta: { type: "string" },
+          resposta: { type: "string" },
+        },
+      },
+    },
     cta_titulo: { type: "string" },
     cta_texto: { type: "string" },
     cta_botao: { type: "string" },
@@ -169,6 +219,18 @@ export function saneiarConteudo(c: ConteudoSite): ConteudoSite {
       .slice(0, 4)
       .map((d) => corta(d, 70))
       .filter(Boolean),
+    passos_titulo: corta(c.passos_titulo, 60),
+    passos: (c.passos ?? [])
+      .slice(0, 4)
+      .map((x) => ({ titulo: corta(x?.titulo, 40), texto: corta(x?.texto, 160) }))
+      .filter((x) => x.titulo),
+    faq: (c.faq ?? [])
+      .slice(0, 5)
+      .map((x) => ({
+        pergunta: corta(x?.pergunta, 110),
+        resposta: corta(x?.resposta, 320),
+      }))
+      .filter((x) => x.pergunta && x.resposta),
     cta_titulo: corta(c.cta_titulo, 70),
     cta_texto: corta(c.cta_texto, 200),
     cta_botao: corta(c.cta_botao, 40),

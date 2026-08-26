@@ -330,27 +330,34 @@ export default function ModalLead({
         </div>
       )}
 
-      <div className="mb-4 flex gap-1 rounded-lg bg-ink-900 p-1">
-        {(
-          [
-            ["detalhes", "Detalhes"],
-            ["historico", `Histórico${interacoes.length ? ` (${interacoes.length})` : ""}`],
-            ["whatsapp", "WhatsApp"],
-            ["instagram", "Insta"],
-            ["demo", "Demo"],
-          ] as [Aba, string][]
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setAba(id)}
-            className={`flex-1 rounded-md px-2 py-1.5 text-[13px] font-medium transition-colors ${
-              aba === id ? "bg-ink-700 text-white" : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      {/* Cinco abas não cabem lado a lado no celular. Rolagem horizontal
+          com `shrink-0` mantém cada rótulo inteiro em vez de espremer todos
+          até o texto quebrar no meio. */}
+      <div className="-mx-1 mb-4 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex w-max min-w-full gap-1 rounded-lg bg-ink-900 p-1">
+          {(
+            [
+              ["detalhes", "Detalhes"],
+              ["historico", `Histórico${interacoes.length ? ` (${interacoes.length})` : ""}`],
+              ["whatsapp", "WhatsApp"],
+              ["instagram", "Instagram"],
+              ["demo", demos.length ? `Demo (${demos.length})` : "Demo"],
+            ] as [Aba, string][]
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setAba(id)}
+              className={`shrink-0 flex-1 whitespace-nowrap rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors ${
+                aba === id
+                  ? "bg-ink-700 text-white"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {erro && (

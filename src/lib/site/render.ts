@@ -43,24 +43,34 @@ function urlSegura(u: string | null | undefined): string | null {
 function css(c: Cores): string {
   return [
     "*,*::before,*::after{box-sizing:border-box}",
-    `body{margin:0;background:${c.fundo};color:${c.texto};font-family:${c.fonteCorpo};line-height:1.65;-webkit-font-smoothing:antialiased}`,
-    `h1,h2,h3{font-family:${c.fonteTitulo};line-height:1.12;margin:0 0 .5em;letter-spacing:-.022em}`,
+    "html{scroll-behavior:smooth}",
+    "@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}",
+    `body{margin:0;background:${c.fundo};color:${c.texto};font-family:${c.fonteCorpo};line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}`,
+    `h1,h2,h3{font-family:${c.fonteTitulo};font-weight:${c.pesoTitulo};line-height:1.1;margin:0 0 .5em;letter-spacing:-.025em}`,
     "p{margin:0 0 1em}",
     "a{color:inherit}",
     "img{max-width:100%;display:block}",
     ".env{width:min(1140px,90vw);margin:0 auto}",
     ".sec{padding:clamp(64px,10vw,120px) 0}",
     `.alt{background:${c.superficie}}`,
-    `.eyebrow{font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:${c.marca};font-weight:700;margin:0 0 14px}`,
-    ".titulo-sec{font-size:clamp(27px,4vw,42px);max-width:18ch}",
+    `.eyebrow{font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:${c.marca};font-weight:600;margin:0 0 14px}`,
+    ".titulo-sec{font-size:clamp(28px,4.2vw,44px);max-width:18ch}",
+    `.linha{height:1px;background:${c.borda};border:0;margin:0}`,
 
-    `header{position:sticky;top:0;z-index:20;background:${c.fundo};border-bottom:1px solid ${c.borda}}`,
-    "header .env{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:68px}",
-    `.marca{font-family:${c.fonteTitulo};font-weight:700;font-size:18px;letter-spacing:-.01em}`,
+    `header{position:sticky;top:0;z-index:20;background:${c.fundo}f2;backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid ${c.borda}}`,
+    "header .env{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:70px}",
+    `.marca{font-family:${c.fonteTitulo};font-weight:${c.pesoTitulo};font-size:18px;letter-spacing:-.02em;text-decoration:none}`,
+    /* Menu de ancoras: some no celular, onde so atrapalharia o botao. */
+    ".menu{display:none;gap:26px;margin-left:auto;margin-right:8px}",
+    "@media(min-width:860px){.menu{display:flex}}",
+    `.menu a{text-decoration:none;font-size:14.5px;font-weight:500;color:${c.suave};transition:color .2s}`,
+    `.menu a:hover{color:${c.texto}}`,
 
-    `.btn{display:inline-block;background:${c.marca};color:${c.marcaTexto};text-decoration:none;font-weight:700;padding:14px 26px;border-radius:10px;font-size:15px;white-space:nowrap;box-shadow:0 6px 18px -8px ${c.marca}}`,
-    `.btn.vazado{background:transparent;color:${c.texto};border:1px solid ${c.borda};font-weight:600;box-shadow:none}`,
-    `.btn.claro{background:#fff;color:#111}`,
+    `.btn{display:inline-block;background:${c.marca};color:${c.marcaTexto};text-decoration:none;font-weight:600;padding:14px 26px;border-radius:11px;font-size:15px;white-space:nowrap;box-shadow:0 8px 20px -10px ${c.marca};transition:transform .18s ease,box-shadow .18s ease}`,
+    `.btn:hover{transform:translateY(-2px);box-shadow:0 14px 28px -12px ${c.marca}}`,
+    `.btn.vazado{background:transparent;color:${c.texto};border:1px solid ${c.borda};font-weight:500;box-shadow:none}`,
+    `.btn.vazado:hover{box-shadow:none;border-color:${c.marca}}`,
+    `.btn.claro{background:#fff;color:#111;box-shadow:0 8px 20px -10px rgba(0,0,0,.5)}`,
 
     /* ---------- topo ---------- */
     ".hero{position:relative;isolation:isolate;overflow:hidden}",
@@ -104,10 +114,30 @@ function css(c: Cores): string {
     ".grade{display:grid;gap:18px;grid-template-columns:1fr}",
     "@media(min-width:640px){.grade{grid-template-columns:repeat(2,1fr)}}",
     "@media(min-width:980px){.grade{grid-template-columns:repeat(3,1fr)}}",
-    `.card{background:${c.fundo};border:1px solid ${c.borda};border-radius:14px;padding:28px 26px}`,
-    ".card h3{font-size:18.5px;margin-bottom:.35em}",
+    `.card{background:${c.fundo};border:1px solid ${c.borda};border-radius:16px;padding:30px 28px;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}`,
+    `.card:hover{transform:translateY(-3px);border-color:${c.marca}66;box-shadow:0 20px 40px -28px rgba(0,0,0,.5)}`,
+    ".card h3{font-size:19px;margin-bottom:.35em}",
     `.card p{color:${c.suave};font-size:15px;margin:0}`,
-    `.num{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:${c.marca};color:${c.marcaTexto};font-weight:700;font-size:14px;margin-bottom:18px}`,
+    `.num{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:${c.marca};color:${c.marcaTexto};font-weight:700;font-size:14px;margin-bottom:18px}`,
+
+    /* ---------- como funciona ---------- */
+    ".passos{display:grid;gap:clamp(22px,3vw,30px);grid-template-columns:1fr;margin-top:38px;counter-reset:passo}",
+    "@media(min-width:820px){.passos{grid-template-columns:repeat(3,1fr)}}",
+    ".passo{position:relative;padding-top:22px}",
+    /* numero grande e apagado atras do texto: da hierarquia sem pesar */
+    `.passo::before{counter-increment:passo;content:counter(passo,decimal-leading-zero);position:absolute;top:-14px;left:-4px;font-family:${c.fonteTitulo};font-weight:${c.pesoTitulo};font-size:60px;line-height:1;color:${c.marca};opacity:.16;pointer-events:none}`,
+    ".passo h3{position:relative;font-size:18px;margin-bottom:.3em}",
+    `.passo p{position:relative;color:${c.suave};font-size:15px;margin:0}`,
+
+    /* ---------- perguntas ---------- */
+    ".faq{max-width:760px;margin:34px auto 0}",
+    `.faq details{border-bottom:1px solid ${c.borda}}`,
+    ".faq summary{cursor:pointer;list-style:none;padding:20px 34px 20px 0;font-weight:600;font-size:16.5px;position:relative}",
+    ".faq summary::-webkit-details-marker{display:none}",
+    /* o + vira x quando abre; sem imagem, so tipografia girando */
+    `.faq summary::after{content:'+';position:absolute;right:4px;top:17px;font-size:24px;line-height:1;color:${c.marca};transition:transform .2s ease}`,
+    ".faq details[open] summary::after{transform:rotate(45deg)}",
+    `.faq p{color:${c.suave};font-size:15.5px;margin:0 0 22px;padding-right:34px}`,
 
     /* ---------- galeria ---------- */
     ".galeria{display:grid;gap:14px;grid-template-columns:1fr}",
@@ -333,6 +363,34 @@ export function renderizarSite(
     )
     .join("");
 
+  const passos = conteudo.passos.length
+    ? `<section class="sec" id="como"><div class="env rev">
+  <p class="eyebrow">Como funciona</p>
+  <h2 class="titulo-sec">${esc(conteudo.passos_titulo)}</h2>
+  <div class="passos">${conteudo.passos
+    .map(
+      (p) =>
+        `<article class="passo"><h3>${esc(p.titulo)}</h3><p>${esc(p.texto)}</p></article>`
+    )
+    .join("")}</div>
+</div></section>`
+    : "";
+
+  // <details> nativo: abre e fecha sem uma linha de JavaScript, e continua
+  // funcionando se o script da animação não rodar.
+  const faq = conteudo.faq.length
+    ? `<section class="sec alt" id="perguntas"><div class="env rev">
+  <p class="eyebrow">Perguntas frequentes</p>
+  <h2 class="titulo-sec">Antes de você perguntar</h2>
+  <div class="faq">${conteudo.faq
+    .map(
+      (f) =>
+        `<details><summary>${esc(f.pergunta)}</summary><p>${esc(f.resposta)}</p></details>`
+    )
+    .join("")}</div>
+</div></section>`
+    : "";
+
   const diferenciais = conteudo.diferenciais.length
     ? `<ul class="dif">${conteudo.diferenciais
         .map(
@@ -401,19 +459,28 @@ ${
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="${c.fundo}">
 <link rel="icon" href="${favicon(conteudo.titulo, c)}">
+${c.fontesLink}
 ${heroImg ? `<link rel="preconnect" href="https://images.pexels.com">` : ""}
 <style>${css(c)}</style>
 </head>
 <body>
+<span id="topo"></span>
 ${assinatura ? `<div class="fita">${esc(assinatura)}</div>` : ""}
 <header><div class="env">
-  <span class="marca">${esc(conteudo.titulo)}</span>
+  <a class="marca" href="#topo">${esc(conteudo.titulo)}</a>
+  <nav class="menu">
+    <a href="#sobre">Sobre</a>
+    <a href="#servicos">Serviços</a>
+    ${passos ? `<a href="#como">Como funciona</a>` : ""}
+    ${faq ? `<a href="#perguntas">Perguntas</a>` : ""}
+    <a href="#contato">Contato</a>
+  </nav>
   ${botao}
 </div></header>
 
 ${topo}
 
-<section class="sec"><div class="env sobre rev">
+<section class="sec" id="sobre"><div class="env sobre rev">
   <div>
     <p class="eyebrow">Sobre</p>
     <h2 class="titulo-sec">${esc(conteudo.sobre_titulo)}</h2>
@@ -438,7 +505,11 @@ ${
 
 ${diferenciais ? `<section class="sec${galeria.length ? " alt" : ""}"><div class="env rev">${diferenciais}</div></section>` : ""}
 
-<section class="sec${galeria.length ? "" : " alt"}"><div class="env cta rev">
+${passos}
+
+${faq}
+
+<section class="sec" id="contato"><div class="env cta rev">
   <h2>${esc(conteudo.cta_titulo)}</h2>
   <p>${esc(conteudo.cta_texto)}</p>
   ${botao}

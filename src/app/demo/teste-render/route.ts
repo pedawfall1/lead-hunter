@@ -7,8 +7,9 @@ import type { ConteudoSite } from "@/lib/site/tipos";
  * Bancada do template, só em desenvolvimento.
  *
  * `/demo/teste-render` renderiza uma demo de mentira com fotos reais do
- * Pexels; `?semfoto` mostra o caminho sem imagem, que é como a página sai
- * quando não há PEXELS_API_KEY. Serve para mexer no `render.ts` e ver o
+ * Pexels. Os parâmetros trocam o que quiser sem gerar nada:
+ * `?semfoto`, `?layout=dividido|centrado`, `?estilo=claro|elegante`,
+ * `?paleta=verde_natural`. Serve para mexer no `render.ts` e ver o
  * resultado na hora, sem gastar chamada de OpenAI nem criar linha no banco.
  */
 
@@ -111,6 +112,41 @@ const conteudo: ConteudoSite = {
     "Conversa direta com o arquiteto",
     "Prazo combinado antes",
   ],
+  passos_titulo: "Do primeiro contato à obra",
+  passos: [
+    {
+      titulo: "Conversa inicial",
+      texto:
+        "Você conta a ideia e mostra o terreno. A gente diz na hora se dá para fazer o que você quer.",
+    },
+    {
+      titulo: "Estudo e orçamento",
+      texto:
+        "Desenhamos as primeiras opções e fechamos escopo e valor antes de qualquer coisa começar.",
+    },
+    {
+      titulo: "Projeto e obra",
+      texto:
+        "Executivo detalhado e visitas periódicas até a última parede levantada.",
+    },
+  ],
+  faq: [
+    {
+      pergunta: "Vocês fazem projeto para reforma também?",
+      resposta:
+        "Fazemos. Manda uma foto do que existe hoje e o que você quer mudar, que a gente avalia.",
+    },
+    {
+      pergunta: "Precisa ter o terreno para começar?",
+      resposta:
+        "Ajuda muito, mas dá para começar pelo estudo de viabilidade antes da compra.",
+    },
+    {
+      pergunta: "Vocês acompanham a obra?",
+      resposta:
+        "Sim, com visitas periódicas. Combinamos a frequência junto com o escopo.",
+    },
+  ],
   cta_titulo: "Vamos tirar seu projeto do papel?",
   cta_texto:
     "Manda uma mensagem com a ideia e o terreno. A gente responde rápido e diz na hora se conseguimos ajudar.",
@@ -133,11 +169,16 @@ export async function GET(req: Request) {
   const semFoto = p.has("semfoto");
   // ?layout=dividido | centrado, para comparar as tres plantas na hora
   const layout = p.get("layout") as ConteudoSite["layout"] | null;
+  // ?estilo=claro | elegante, para conferir a tipografia de cada um
+  const estilo = p.get("estilo") as ConteudoSite["estilo"] | null;
+  const paleta = p.get("paleta") as ConteudoSite["paleta"] | null;
   const html = renderizarSite(
     {
       ...conteudo,
       ...(semFoto ? { imagens: [] } : {}),
       ...(layout ? { layout } : {}),
+      ...(estilo ? { estilo } : {}),
+      ...(paleta ? { paleta } : {}),
     },
     briefing
   );

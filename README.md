@@ -441,8 +441,31 @@ O Pexels não exige atribuição, mas pede — o rodapé traz o crédito dos
 fotógrafos, discreto.
 
 Para mexer no template sem gastar chamada nenhuma, rode `npm run dev` e abra
-`/demo/teste-render` (e `?semfoto` para ver o caminho sem imagem). A rota só
-existe em desenvolvimento.
+`/demo/teste-render`. Os parâmetros trocam o que quiser sem gerar nada:
+`?semfoto`, `?layout=dividido|centrado`, `?estilo=claro|elegante`,
+`?paleta=verde_natural`. A rota só existe em desenvolvimento.
+
+### O que a página tem
+
+Topo, sobre, serviços, galeria, diferenciais, **como funciona** (3 passos),
+**perguntas frequentes** e contato — com menu de âncoras no topo, que some no
+celular.
+
+O FAQ usa `<details>` nativo: abre e fecha sem uma linha de JavaScript, e
+continua funcionando se o script da animação não rodar.
+
+**Tipografia de verdade**, uma família por estilo (Sora, Plus Jakarta Sans,
+Fraunces) com Inter no corpo. A versão anterior usava só fonte de sistema por
+medo de atrasar a página no 4G — o medo estava mal calibrado: com
+`display=swap` o texto aparece na hora na fonte de sistema e troca quando a
+outra chega, sem momento em branco. E fonte é o que mais denuncia template:
+Arial no título entrega o jogo antes de a pessoa ler a primeira palavra.
+
+O FAQ é onde a regra de não inventar mais aperta. As **perguntas** podem ser
+específicas do ramo; as **respostas** não podem afirmar preço, prazo, horário
+ou forma de pagamento — nada disso está nos dados. O prompt manda responder
+pelo procedimento ("chame no WhatsApp que a gente confirma"), não pelo dado
+que a LLM não tem.
 
 ### Layout, cor e prévia
 

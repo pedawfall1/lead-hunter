@@ -59,7 +59,11 @@ TAMANHOS (respeite, o layout depende disso):
 - sobre: exatamente 2 parágrafos, 2 a 4 frases cada
 - servicos: 3 a 6 itens; descrição de até 180 caracteres
 - diferenciais: exatamente 3, no máximo 60 caracteres cada, sem ponto final
+- passos: exatamente 3, o caminho do primeiro contato até o serviço feito, do ponto de vista do cliente ("Você manda uma mensagem" → "A gente avalia e passa o orçamento" → "Combinamos o dia"). Título de até 32 caracteres, texto de até 140.
+- faq: 3 a 4 perguntas que QUALQUER cliente desse ramo faz antes de fechar. Resposta de até 280 caracteres.
 - cta_botao: até 30 caracteres, verbo no infinitivo
+
+FAQ SEM INVENTAR: as perguntas podem ser específicas do ramo ("precisa agendar?", "atendem convênio?", "fazem orçamento sem compromisso?"), mas a resposta não pode afirmar preço, prazo em número, horário de funcionamento nem forma de pagamento — nada disso está nos dados. Responda pelo procedimento ("é só chamar no WhatsApp que a gente confirma a disponibilidade"), não pelo dado que você não tem.
 
 busca_imagens: EXATAMENTE 3 buscas de banco de imagens, EM INGLÊS. O acervo é indexado em inglês — "barbearia" traz muito menos e pior que "barber shop". A ORDEM importa, cada posição tem um papel:
   1. AMBIENTE — o espaço do negócio, acolhedor e bem iluminado. Ex.: "modern beauty salon interior", "cozy coffee shop interior".

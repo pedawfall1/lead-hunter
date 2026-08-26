@@ -59,6 +59,38 @@ export function conteudoDeExemplo(b: Briefing): ConteudoSite {
       "Resposta no mesmo dia",
       "Orçamento sem compromisso",
     ],
+    passos_titulo: "Como funciona",
+    passos: [
+      {
+        titulo: "Você chama no WhatsApp",
+        texto: "Conta o que precisa, do jeito que der. A gente responde no mesmo dia útil.",
+      },
+      {
+        titulo: "A gente avalia",
+        texto: "Olhamos o caso antes de falar preço, e dizemos na hora se conseguimos ajudar.",
+      },
+      {
+        titulo: "Combinamos o dia",
+        texto: "Com valor fechado antes de começar. Sem surpresa no final.",
+      },
+    ],
+    faq: [
+      {
+        pergunta: "Precisa agendar?",
+        resposta:
+          "Chame no WhatsApp que a gente confirma a disponibilidade e reserva o melhor horário para você.",
+      },
+      {
+        pergunta: "Fazem orçamento sem compromisso?",
+        resposta:
+          "Fazemos. Você conta o que precisa, a gente avalia e passa o valor. Se não fizer sentido, ninguém fica devendo nada.",
+      },
+      {
+        pergunta: "Como é a forma de pagamento?",
+        resposta:
+          "Combinamos junto com o orçamento, antes de começar o trabalho.",
+      },
+    ],
     cta_titulo: "Vamos conversar?",
     cta_texto:
       "Manda uma mensagem contando o que você precisa. A gente responde rápido e diz na hora se conseguimos ajudar.",

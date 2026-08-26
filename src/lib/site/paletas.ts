@@ -21,6 +21,10 @@ export type Cores = {
   /** família tipográfica do título */
   fonteTitulo: string;
   fonteCorpo: string;
+  /** o `<link>` do Google Fonts deste estilo, ou "" se não usar nenhuma */
+  fontesLink: string;
+  /** peso dos títulos: cada família pede um peso diferente para o mesmo peso visual */
+  pesoTitulo: number;
 };
 
 /** O tom de cada paleta: o que muda entre um ramo e outro. */
@@ -34,13 +38,66 @@ const MARCAS: Record<Paleta, { claro: string; escuro: string }> = {
 };
 
 /*
- * Pilhas de fonte do sistema, sem Google Fonts de propósito: a página é
- * aberta pelo celular do dono do negócio, muitas vezes em 4G ruim, e fonte
- * externa é a diferença entre carregar em 1s e piscar em branco por 3s.
+ * Tipografia.
+ *
+ * A versão anterior usava só fonte de sistema, com medo de fonte externa
+ * atrasar a página no 4G do cliente. O medo estava mal calibrado: com
+ * `display=swap` o texto aparece na hora, na fonte de sistema, e troca
+ * quando a outra chega — não existe momento em branco. E a fonte é o que
+ * mais denuncia "template pronto": Arial no título entrega o jogo antes de
+ * a pessoa ler a primeira palavra.
+ *
+ * Uma família por estilo, só os pesos usados, e a pilha de sistema fica de
+ * fallback. Se o Google Fonts estiver fora do ar, a página sai como saía.
  */
 const SANS =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const SERIF = 'Georgia, "Times New Roman", "Iowan Old Style", serif';
+
+function googleFonts(familias: string): string {
+  return (
+    `<link rel="preconnect" href="https://fonts.googleapis.com">` +
+    `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>` +
+    `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?${familias}&amp;display=swap">`
+  );
+}
+
+/**
+ * Cada estilo tem sua letra:
+ * - escuro: Sora, geométrica e firme, boa em corpo grande
+ * - claro: Plus Jakarta Sans, redonda e amigável
+ * - elegante: Fraunces, serifada com contraste alto
+ *
+ * O corpo é Inter nos três: ela some, que é o trabalho de uma fonte de
+ * texto. Quem carrega a personalidade é o título.
+ */
+const TIPOGRAFIA: Record<
+  Estilo,
+  { titulo: string; corpo: string; link: string; peso: number }
+> = {
+  escuro: {
+    titulo: `Sora, ${SANS}`,
+    corpo: `Inter, ${SANS}`,
+    link: googleFonts("family=Sora:wght@600;700&family=Inter:wght@400;500;600"),
+    peso: 700,
+  },
+  claro: {
+    titulo: `"Plus Jakarta Sans", ${SANS}`,
+    corpo: `Inter, ${SANS}`,
+    link: googleFonts(
+      "family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;500;600"
+    ),
+    peso: 800,
+  },
+  elegante: {
+    titulo: `Fraunces, ${SERIF}`,
+    corpo: `Inter, ${SANS}`,
+    link: googleFonts(
+      "family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600"
+    ),
+    peso: 600,
+  },
+};
 
 /** "#RGB" ou "#RRGGBB" -> os três canais. Devolve null se não for cor. */
 function canais(hex: string): [number, number, number] | null {
@@ -109,6 +166,13 @@ export function cores(
   }
 
   const marca = MARCAS[paleta] ?? MARCAS.sobrio_azul;
+  const t = TIPOGRAFIA[estilo] ?? TIPOGRAFIA.escuro;
+  const letra = {
+    fonteTitulo: t.titulo,
+    fonteCorpo: t.corpo,
+    fontesLink: t.link,
+    pesoTitulo: t.peso,
+  };
 
   if (estilo === "escuro") {
     return {
@@ -119,8 +183,7 @@ export function cores(
       suave: "#94a3b8",
       marca: marca.escuro,
       marcaTexto: "#0b1017",
-      fonteTitulo: SANS,
-      fonteCorpo: SANS,
+      ...letra,
     };
   }
 
@@ -133,8 +196,7 @@ export function cores(
       suave: "#6b6259",
       marca: marca.claro,
       marcaTexto: "#ffffff",
-      fonteTitulo: SERIF,
-      fonteCorpo: SANS,
+      ...letra,
     };
   }
 
@@ -146,7 +208,6 @@ export function cores(
     suave: "#64748b",
     marca: marca.claro,
     marcaTexto: "#ffffff",
-    fonteTitulo: SANS,
-    fonteCorpo: SANS,
+    ...letra,
   };
 }
