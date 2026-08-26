@@ -39,6 +39,25 @@ function lerSinais(formData: FormData): Sinais {
   return sinais;
 }
 
+/**
+ * Campo numérico do formulário.
+ *
+ * `min`/`max` no input só valem no browser: o valor chega aqui como texto e
+ * pode vir de qualquer lugar. Fora da faixa vira `null` em vez de gravar
+ * uma nota de 9 estrelas no banco.
+ */
+function numero(
+  v: FormDataEntryValue | null,
+  min: number,
+  max: number
+): number | null {
+  const s = String(v ?? "").trim().replace(",", ".");
+  if (!s) return null;
+  const n = Number(s);
+  if (!Number.isFinite(n) || n < min || n > max) return null;
+  return n;
+}
+
 function ler(formData: FormData): DadosLead {
   const statusBruto = String(formData.get("status") ?? "novo");
   const instagram = limpar(formData.get("instagram"));
@@ -53,6 +72,8 @@ function ler(formData: FormData): DadosLead {
     status: ehStatus(statusBruto) ? statusBruto : "novo",
     nota: limpar(formData.get("nota")),
     proximo_contato: limpar(formData.get("proximo_contato")),
+    google_nota: numero(formData.get("google_nota"), 1, 5),
+    google_avaliacoes: numero(formData.get("google_avaliacoes"), 0, 1_000_000),
   };
 }
 

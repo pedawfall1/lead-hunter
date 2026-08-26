@@ -184,6 +184,8 @@ export type DadosLead = {
   status: LeadStatus;
   nota: string | null;
   proximo_contato: string | null;
+  google_nota: number | null;
+  google_avaliacoes: number | null;
 };
 
 export async function criarLeadDb(
@@ -194,8 +196,8 @@ export async function criarLeadDb(
     const lead: Lead = {
       id: novoId(),
       projeto_id: projetoId,
+      ...SEM_ENRIQUECIMENTO,
       ...dados,
-      ...SEM_INSTAGRAM,
       criado_em: agora(),
       atualizado_em: agora(),
     };
@@ -338,7 +340,14 @@ type LeadImportado = {
  */
 const VAZIOS_DO_CSV = { email: null };
 
-export const SEM_INSTAGRAM = {
+/**
+ * Campos que so ganham valor depois: a analise de Instagram preenche os
+ * ig_*, e a reputacao do Google vem da busca no Maps ou digitada na mao.
+ *
+ * Espalhe SEMPRE antes de . Depois, apagaria a nota que o
+ * usuario acabou de digitar no formulario.
+ */
+export const SEM_ENRIQUECIMENTO = {
   ig_dados: null,
   ig_run_id: null,
   ig_em: null,
@@ -356,9 +365,9 @@ export async function inserirLeadsDb(
     const novos: Lead[] = linhas.map((l) => ({
       id: novoId(),
       projeto_id: projetoId,
+      ...SEM_ENRIQUECIMENTO,
       ...l,
       email: null,
-      ...SEM_INSTAGRAM,
       status: "novo" as const,
       nota: null,
       proximo_contato: null,
@@ -680,7 +689,7 @@ export async function obterDemoDb(id: string): Promise<Demo | null> {
  */
 export async function reestilizarDemoDb(
   id: string,
-  dados: { conteudo: ConteudoSite; html: string }
+  dados: { conteudo: ConteudoSite; html: string; titulo?: string }
 ): Promise<Demo> {
   if (DEMO) {
     const d = estado().demos.find((x) => x.id === id);

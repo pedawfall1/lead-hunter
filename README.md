@@ -462,6 +462,11 @@ como argumento de venda um número que argumenta contra o cliente. No app o
 chip aparece sempre — verde quando serve de prova social, cinza quando é só
 informação para você qualificar o lead.
 
+Os dois campos também são **editáveis na aba Detalhes**. A busca do Maps só
+preenche isto em lead importado depois que as colunas existiram; sem o campo,
+todo lead antigo ficaria sem prova social para sempre. Olhe o Google do
+cliente e digite.
+
 ### O que a página tem
 
 Topo, sobre, serviços, galeria, diferenciais, **como funciona** (3 passos),
@@ -483,6 +488,20 @@ específicas do ramo; as **respostas** não podem afirmar preço, prazo, horári
 ou forma de pagamento — nada disso está nos dados. O prompt manda responder
 pelo procedimento ("chame no WhatsApp que a gente confirma"), não pelo dado
 que a LLM não tem.
+
+### Corrigir o texto
+
+O botão **Texto**, ao lado de Aparência, abre os campos da página: chamada,
+sobre, serviços, fechamento. Salvar re-renderiza em cima do JSON salvo —
+**não gasta token**.
+
+Existe porque a LLM acerta o tom mas erra o negócio às vezes: chama de
+"clínica" o que é consultório, lista um serviço que eles não fazem. Sem
+isso a única saída era gerar de novo e torcer, e o erro costuma aparecer
+justo na frente do cliente. Apagar o nome de um serviço tira ele da página.
+
+O texto editado passa pelo mesmo `saneiarConteudo` que apara a saída da
+LLM: os limites que protegem o layout dela protegem dele.
 
 ### Layout, cor e prévia
 

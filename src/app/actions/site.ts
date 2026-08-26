@@ -18,6 +18,7 @@ import {
   ESTILOS,
   LAYOUTS,
   PALETAS,
+  saneiarConteudo,
   type ConteudoSite,
   type Estilo,
   type Layout,
@@ -142,6 +143,64 @@ export async function reestilizarDemo(
 
     const html = renderizarSite(conteudo, montarBriefing(lead, projeto));
     const atualizada = await reestilizarDemoDb(id, { conteudo, html });
+
+    revalidatePath(`/demo/${demo.slug}`);
+    return { ok: true, data: atualizada };
+  } catch (e) {
+    return { ok: false, erro: mensagemDeErro(e) };
+  }
+}
+
+/**
+ * Corrige o texto da demo sem gerar de novo.
+ *
+ * A LLM acerta o tom mas erra o negócio às vezes — chama de "clínica" o que
+ * é consultório, inventa um serviço que eles não fazem. Sem isto a única
+ * saída era gerar de novo e torcer, e é justamente na frente do cliente que
+ * o erro aparece. Aqui você troca a frase e republica na hora, de graça.
+ *
+ * Só campos de texto: paleta, layout e imagens têm o próprio editor, e
+ * deixar a tela mandar `conteudo` inteiro abriria a porta para gravar
+ * qualquer coisa na linha.
+ */
+export async function reescreverDemo(
+  id: string,
+  texto: {
+    titulo?: string;
+    chamada?: string;
+    subchamada?: string;
+    sobre_titulo?: string;
+    sobre?: string[];
+    servicos_titulo?: string;
+    servicos?: { nome: string; descricao: string }[];
+    cta_titulo?: string;
+    cta_texto?: string;
+    cta_botao?: string;
+  }
+): Promise<ActionResult<Demo>> {
+  try {
+    const demo = await obterDemoDb(id);
+    if (!demo) return { ok: false, erro: "Demo não encontrada." };
+
+    const lead = await obterLead(demo.lead_id);
+    if (!lead) return { ok: false, erro: "Lead não encontrado." };
+
+    const projeto = await obterProjeto(lead.projeto_id);
+    if (!projeto) return { ok: false, erro: "Projeto não encontrado." };
+
+    // `saneiarConteudo` de novo: o texto agora vem da tela, e os mesmos
+    // limites que protegem o layout da LLM protegem dele.
+    const conteudo = saneiarConteudo({ ...demo.conteudo, ...texto });
+    if (!conteudo.chamada) {
+      return { ok: false, erro: "A chamada não pode ficar vazia." };
+    }
+
+    const html = renderizarSite(conteudo, montarBriefing(lead, projeto));
+    const atualizada = await reestilizarDemoDb(id, {
+      conteudo,
+      html,
+      titulo: conteudo.titulo,
+    });
 
     revalidatePath(`/demo/${demo.slug}`);
     return { ok: true, data: atualizada };

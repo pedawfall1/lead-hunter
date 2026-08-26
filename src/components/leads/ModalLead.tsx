@@ -424,6 +424,45 @@ export default function ModalLead({
             />
           </div>
 
+          {/* Editável na mão porque a busca do Maps só preenche isto em lead
+              importado depois que as colunas existiram. Sem o campo, todo
+              lead antigo ficaria sem prova social para sempre. */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label" htmlFor="google_nota">Nota no Google</label>
+              <input
+                id="google_nota"
+                name="google_nota"
+                type="number"
+                step="0.1"
+                min="1"
+                max="5"
+                className="input"
+                defaultValue={lead.google_nota ?? ""}
+                placeholder="4.8"
+              />
+            </div>
+            <div>
+              <label className="label" htmlFor="google_avaliacoes">
+                Avaliações
+              </label>
+              <input
+                id="google_avaliacoes"
+                name="google_avaliacoes"
+                type="number"
+                min="0"
+                className="input"
+                defaultValue={lead.google_avaliacoes ?? ""}
+                placeholder="127"
+              />
+            </div>
+          </div>
+          <p className="-mt-2 text-[11.5px] leading-relaxed text-slate-500">
+            Aparece como estrelas na demo de site — mas só a partir de 4,0 com
+            5 avaliações. Abaixo disso o número argumenta contra o cliente, e a
+            página não mostra.
+          </p>
+
           <div>
             <label className="label" htmlFor="endereco">Endereço</label>
             <input

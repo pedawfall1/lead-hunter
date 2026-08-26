@@ -6,12 +6,14 @@ import {
   excluirDemo,
   gerarDemo,
   reestilizarDemo,
+  reescreverDemo,
   publicarDemo,
 } from "@/app/actions/site";
 import { montarBriefing, promptParaColar } from "@/lib/site/briefing";
 import { dataCurta } from "@/lib/format";
 import { ESTILOS, LAYOUTS, PALETAS } from "@/lib/site/tipos";
 import PreviaDemo from "./PreviaDemo";
+import TextoDemo from "./TextoDemo";
 import type { Demo, Lead, Projeto } from "@/lib/types";
 
 type Props = {
@@ -279,7 +281,9 @@ export default function AbaDemo({
   const [erro, setErro] = useState<string | null>(null);
   const [pendente, iniciar] = useTransition();
   const [verPrompt, setVerPrompt] = useState(false);
+  // qual demo esta com painel aberto, e qual painel
   const [editando, setEditando] = useState<string | null>(null);
+  const [painel, setPainel] = useState<"aparencia" | "texto">("aparencia");
 
   const briefing = montarBriefing(lead, projeto);
   const prompt = promptParaColar(briefing);
@@ -320,6 +324,18 @@ export default function AbaDemo({
     setErro(null);
     iniciar(async () => {
       const r = await reestilizarDemo(demo.id, ajuste);
+      if (r.ok && r.data)
+        aoMudarDemos(
+          demos.map((d) => (d.id === demo.id ? (r.data as Demo) : d))
+        );
+      else if (!r.ok) setErro(r.erro);
+    });
+  }
+
+  function reescrever(demo: Demo, texto: Record<string, unknown>) {
+    setErro(null);
+    iniciar(async () => {
+      const r = await reescreverDemo(demo.id, texto);
       if (r.ok && r.data)
         aoMudarDemos(
           demos.map((d) => (d.id === demo.id ? (r.data as Demo) : d))
@@ -458,10 +474,27 @@ export default function AbaDemo({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setEditando(editando === d.id ? null : d.id)}
+                    onClick={() => {
+                      setPainel("aparencia");
+                      setEditando(
+                        editando === d.id && painel === "aparencia" ? null : d.id
+                      );
+                    }}
                     className="btn-sub px-2.5 py-1.5 text-xs"
                   >
-                    {editando === d.id ? "Fechar" : "Aparência"}
+                    Aparência
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPainel("texto");
+                      setEditando(
+                        editando === d.id && painel === "texto" ? null : d.id
+                      );
+                    }}
+                    className="btn-sub px-2.5 py-1.5 text-xs"
+                  >
+                    Texto
                   </button>
                   <button
                     type="button"
@@ -476,14 +509,23 @@ export default function AbaDemo({
 
                 {editando === d.id && (
                   <>
-                    <Aparencia
-                      // remonta o editor quando a demo muda, para os campos
-                      // refletirem o que acabou de ser aplicado
-                      key={`${d.id}-${versaoDemo(d)}`}
-                      demo={d}
-                      pendente={pendente}
-                      aoAplicar={(a) => reestilizar(d, a)}
-                    />
+                    {painel === "aparencia" ? (
+                      <Aparencia
+                        // remonta o editor quando a demo muda, para os campos
+                        // refletirem o que acabou de ser aplicado
+                        key={`${d.id}-${versaoDemo(d)}`}
+                        demo={d}
+                        pendente={pendente}
+                        aoAplicar={(a) => reestilizar(d, a)}
+                      />
+                    ) : (
+                      <TextoDemo
+                        key={`${d.id}-texto-${d.conteudo?.chamada ?? ""}`}
+                        demo={d}
+                        pendente={pendente}
+                        aoSalvar={(t) => reescrever(d, t)}
+                      />
+                    )}
                     {d.publicado ? (
                       <PreviaDemo slug={d.slug} versao={versaoDemo(d)} />
                     ) : (
