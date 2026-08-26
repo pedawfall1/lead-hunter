@@ -18,6 +18,8 @@ const SEM_INSTAGRAM = {
   ig_em: null,
   ig_erro: null,
   ig_bruto: null,
+  google_nota: null,
+  google_avaliacoes: null,
 } as const;
 
 /**
@@ -65,6 +67,23 @@ function instagramDeExemplo(usuario: string, dias: number) {
     ig_erro: null,
     ig_bruto: null,
   };
+}
+
+/**
+ * Reputacao no Google, coerente com os sinais que o seed declarou.
+ *
+ * Existe para o modo demo exercitar os dois caminhos da prova social: nota
+ * boa aparece na demo de site, nota baixa NAO aparece — nao adianta so ter
+ * o dado se a regra que decide mostrar nunca e testada.
+ */
+function googleDoSeed(sinais: string[]) {
+  if (sinais.includes("sem_google_negocio"))
+    return { google_nota: null, google_avaliacoes: null };
+  if (sinais.includes("nota_baixa"))
+    return { google_nota: 3.4, google_avaliacoes: 28 };
+  if (sinais.includes("poucas_avaliacoes"))
+    return { google_nota: 4.9, google_avaliacoes: 3 };
+  return { google_nota: 4.7, google_avaliacoes: 63 };
 }
 
 /**
@@ -239,6 +258,7 @@ function montar(
       ...(s.ig
         ? instagramDeExemplo(s.ig.replace(/^@/, ""), i % 3 === 0 ? 4 : 31 + i * 5)
         : SEM_INSTAGRAM),
+      ...googleDoSeed(s.sinais),
     };
   });
 }

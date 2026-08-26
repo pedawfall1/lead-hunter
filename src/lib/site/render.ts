@@ -79,6 +79,15 @@ function css(c: Cores): string {
     ".hero .sub{font-size:clamp(17px,2.2vw,21px);max-width:50ch;margin-bottom:34px;opacity:.92}",
     ".acoes{display:flex;flex-wrap:wrap;gap:12px}",
 
+    /* ---------- selo do Google ---------- */
+    ".selo{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:26px;font-size:14.5px}",
+    ".selo .estrelas{display:inline-flex;gap:1px}",
+    ".selo strong{font-weight:600;font-size:16px}",
+    `.selo-txt{color:${c.suave}}`,
+    /* no topo com foto, o texto de apoio e branco como o resto */
+    ".hero.foto .selo-txt{color:rgba(255,255,255,.82)}",
+    ".cta .selo{margin-top:0;margin-bottom:26px}",
+
     /* layout dividido: texto de um lado, foto do outro, sem veu por cima */
     ".hero.dividido .env{display:grid;gap:clamp(32px,5vw,56px);grid-template-columns:1fr;align-items:center;padding-top:clamp(56px,9vw,96px);padding-bottom:clamp(56px,9vw,96px)}",
     "@media(min-width:920px){.hero.dividido .env{grid-template-columns:1.05fr .95fr}}",
@@ -223,6 +232,35 @@ const SCRIPT_ANIMACAO = `<script>
   }
 })();
 </script>`;
+
+const ESTRELA =
+  '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="m12 17.27 5.18 3.13-1.37-5.89 4.57-3.96-6.02-.51L12 4.5 9.64 10.04l-6.02.51 4.57 3.96-1.37 5.89z"/></svg>';
+
+/**
+ * Nota do Google, com as estrelas preenchidas até onde ela chega.
+ *
+ * O único número da página que não é chute: veio da ficha do Google na
+ * importação do lead. É exatamente o que o prompt proíbe a LLM de escrever
+ * — e por isso quem estampa é o template, com dado de verdade.
+ */
+function selo(
+  google: { nota: number; avaliacoes: number },
+  c: Cores
+): string {
+  const cheias = Math.round(google.nota);
+  const estrelas = Array.from({ length: 5 }, (_, i) =>
+    i < cheias
+      ? `<span style="color:${c.marca}">${ESTRELA}</span>`
+      : `<span style="color:${c.suave};opacity:.35">${ESTRELA}</span>`
+  ).join("");
+
+  const nota = google.nota.toFixed(1).replace(".", ",");
+  return `<div class="selo">
+  <span class="estrelas">${estrelas}</span>
+  <strong>${nota}</strong>
+  <span class="selo-txt">${google.avaliacoes} avaliações no Google</span>
+</div>`;
+}
 
 const CHECK =
   '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -410,6 +448,8 @@ export function renderizarSite(
 
   const titulo = `${esc(conteudo.titulo)}${briefing.regiao ? ` — ${esc(briefing.regiao)}` : ""}`;
 
+  const provaSocial = briefing.google ? selo(briefing.google, c) : "";
+
   const eyebrow = briefing.regiao
     ? `<p class="eyebrow">${esc(briefing.regiao)}</p>`
     : "";
@@ -424,7 +464,8 @@ export function renderizarSite(
           ? ' style="color:#fff;border-color:rgba(255,255,255,.45)"'
           : ""
       }>Ver serviços</a>
-    </div>`;
+    </div>
+    ${provaSocial}`;
 
   // Cada layout usa a primeira foto de um jeito: ao fundo, ao lado, ou
   // numa faixa logo abaixo do texto.
@@ -512,6 +553,7 @@ ${faq}
 <section class="sec" id="contato"><div class="env cta rev">
   <h2>${esc(conteudo.cta_titulo)}</h2>
   <p>${esc(conteudo.cta_texto)}</p>
+  ${provaSocial}
   ${botao}
   ${blocoContato(briefing)}
 </div></section>

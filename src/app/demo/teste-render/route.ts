@@ -33,6 +33,7 @@ const briefing: Briefing = {
     "Arquitetura residencial e comercial em Videira. Projeto, interiores e obra.",
   temas: ["projeto", "obra", "interiores", "reforma"],
   seguidores: 1840,
+  google: { nota: 4.8, avaliacoes: 127 },
 };
 
 const imagens: ImagemSite[] = [

@@ -125,7 +125,7 @@ export async function excluirProjetoDb(id: string): Promise<void> {
 /* --------------------------------- leads -------------------------------- */
 
 const COLUNAS_LEAD =
-  "id, projeto_id, nome, telefone, endereco, instagram, email, sinais, status, nota, proximo_contato, ig_dados, ig_run_id, ig_em, ig_erro, ig_bruto, criado_em, atualizado_em";
+  "id, projeto_id, nome, telefone, endereco, instagram, email, sinais, status, nota, proximo_contato, ig_dados, ig_run_id, ig_em, ig_erro, ig_bruto, google_nota, google_avaliacoes, criado_em, atualizado_em";
 
 export async function listarLeads(projetoId?: string): Promise<Lead[]> {
   if (DEMO) {
@@ -344,6 +344,8 @@ export const SEM_INSTAGRAM = {
   ig_em: null,
   ig_erro: null,
   ig_bruto: null,
+  google_nota: null,
+  google_avaliacoes: null,
 } as const;
 
 export async function inserirLeadsDb(
@@ -956,6 +958,8 @@ export type LugarImportado = {
   email: string | null;
   sinais: Sinais;
   place_id: string | null;
+  google_nota: number | null;
+  google_avaliacoes: number | null;
 };
 
 export async function criarBuscaDb(

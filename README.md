@@ -445,6 +445,23 @@ Para mexer no template sem gastar chamada nenhuma, rode `npm run dev` e abra
 `?semfoto`, `?layout=dividido|centrado`, `?estilo=claro|elegante`,
 `?paleta=verde_natural`. A rota só existe em desenvolvimento.
 
+### Prova social do Google
+
+Nota e número de avaliações vêm da busca no Maps, ficam guardados no lead
+(`google_nota`, `google_avaliacoes`) e viram uma faixa de estrelas no topo e
+no fechamento da página: **4,7 · 63 avaliações no Google**.
+
+É o único número da página que não é chute. O prompt proíbe a LLM de
+escrever qualquer número — anos de mercado, clientes atendidos, nota — e é
+justamente por isso que este, sendo real, vale tanto. Quem estampa é o
+template, com o dado que veio da ficha do Google.
+
+**Nota baixa não aparece.** Abaixo de 4,0, ou com menos de 5 avaliações, a
+faixa simplesmente não é renderizada. Não é esconder defeito: é não usar
+como argumento de venda um número que argumenta contra o cliente. No app o
+chip aparece sempre — verde quando serve de prova social, cinza quando é só
+informação para você qualificar o lead.
+
 ### O que a página tem
 
 Topo, sobre, serviços, galeria, diferenciais, **como funciona** (3 passos),
@@ -590,6 +607,7 @@ supabase/
   migrations/002_demos.sql    # lh_demos: as demos de site geradas
   migrations/003_*.sql        # buscas, não perturbe e as colunas do disparo
   migrations/004_instagram.sql # ig_dados e a corrida no proprio lead
+  migrations/005_*.sql        # nota e avaliacoes do Google no lead
 ```
 
 **Instalação nova:** rode só o `schema.sql` — ele já contém tudo.
@@ -618,8 +636,6 @@ criar o usuário no painel do Supabase; nada muda no código.
    do Instagram expiram, entao apontar direto nao serve).
 3. Variável `{demo}` nos templates de WhatsApp, para a abordagem já sair com
    o link da proposta.
-4. Guardar nota e nº de avaliações do Google no lead: hoje viram sinal na
-   importação e são descartados, mas dariam prova social real na demo.
-5. Fila de disparo do dia, com intervalo aleatório e janela de horário.
-6. Valor por lead, para o kanban virar previsão de faturamento.
-7. Lista de não perturbe na interface (a tabela já existe).
+4. Fila de disparo do dia, com intervalo aleatório e janela de horário.
+5. Valor por lead, para o kanban virar previsão de faturamento.
+6. Lista de não perturbe na interface (a tabela já existe).

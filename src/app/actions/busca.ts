@@ -123,6 +123,11 @@ export async function conferirBusca(
         email: lugar.email,
         sinais: sinaisDoLugar(lugar, projeto?.criterios ?? []),
         place_id: lugar.placeId,
+        // Antes estes dois viravam sinal e eram jogados fora. Guardados,
+        // a demo de site ganha prova social de verdade em vez de número
+        // inventado — que é o que o prompt proíbe a LLM de escrever.
+        google_nota: lugar.nota,
+        google_avaliacoes: lugar.avaliacoes,
       });
     }
 

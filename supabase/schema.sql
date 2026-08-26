@@ -282,3 +282,10 @@ alter table public.lh_leads add column if not exists ig_bruto  jsonb;
 create index if not exists lh_leads_ig_run_idx
   on public.lh_leads (ig_run_id)
   where ig_run_id is not null;
+
+-- ---------- reputacao no Google ----------
+-- Chegam na busca do Maps, viram os sinais nota_baixa / poucas_avaliacoes e
+-- agora ficam guardados: e a unica prova social VERDADEIRA que a demo de
+-- site tem, num template onde a LLM e proibida de escrever numero.
+alter table public.lh_leads add column if not exists google_nota        numeric(2,1);
+alter table public.lh_leads add column if not exists google_avaliacoes  integer;

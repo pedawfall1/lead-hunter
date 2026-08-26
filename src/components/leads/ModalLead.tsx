@@ -322,6 +322,21 @@ export default function ModalLead({
             {lead.instagram.replace(/^@/, "")}
           </a>
         )}
+        {/* Nota do Google: verde quando serve de prova social na demo,
+            neutra quando é só informação. */}
+        {lead.google_nota !== null && (
+          <span
+            className={`chip ${
+              lead.google_nota >= 4
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                : "border-line bg-ink-700 text-slate-400"
+            }`}
+          >
+            ★ {lead.google_nota.toFixed(1).replace(".", ",")}
+            {lead.google_avaliacoes !== null &&
+              ` · ${lead.google_avaliacoes} avaliações`}
+          </span>
+        )}
       </div>
 
       {sinaisAtivos.length > 0 && (

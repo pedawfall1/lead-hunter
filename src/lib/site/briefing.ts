@@ -34,12 +34,37 @@ export type Briefing = {
   /** as palavras que mais aparecem nas legendas do perfil */
   temas: string[];
   seguidores: number | null;
+  /**
+   * Nota e avaliações do Google, e **só quando servem de prova social**.
+   *
+   * Um negócio com 3,2 de nota também tem nota — mas estampar isso na
+   * proposta prejudicaria o cliente em vez de ajudar. Não é esconder
+   * defeito: é não usar como argumento de venda um número que argumenta
+   * contra. Fica `null` abaixo do corte, e a página simplesmente não
+   * mostra a faixa.
+   */
+  google: { nota: number; avaliacoes: number } | null;
 };
+
+/** Abaixo disto o número não vende, então não entra na página. */
+const NOTA_MINIMA = 4;
+const AVALIACOES_MINIMAS = 5;
 
 export function montarBriefing(lead: Lead, projeto: Projeto): Briefing {
   const ig = lead.ig_dados;
 
+  const nota = lead.google_nota;
+  const avaliacoes = lead.google_avaliacoes;
+  const google =
+    nota !== null &&
+    avaliacoes !== null &&
+    nota >= NOTA_MINIMA &&
+    avaliacoes >= AVALIACOES_MINIMAS
+      ? { nota, avaliacoes }
+      : null;
+
   return {
+    google,
     // A bio é a melhor frase que existe sobre o negócio, escrita por quem o
     // conhece. Vale mais para o texto do site que qualquer palpite da LLM.
     bioInstagram: ig?.bio ?? null,
@@ -88,6 +113,14 @@ export function briefingComoTexto(b: Briefing): string {
     [
       "Assuntos que mais aparecem nos posts deles",
       b.temas.length ? b.temas.join(", ") : null,
+    ],
+    // Vai no prompt para a LLM saber que a reputação é boa e escrever
+    // condizente — mas o NÚMERO quem estampa é o template, não ela.
+    [
+      "Reputação no Google",
+      b.google
+        ? `nota ${b.google.nota} com ${b.google.avaliacoes} avaliações`
+        : null,
     ],
     ["Anotações minhas sobre este lead", b.observacoes],
   ]);

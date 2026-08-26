@@ -53,6 +53,9 @@ export type Lead = {
   ig_erro: string | null;
   /** o item cru do scraper, para conferir que campos ele devolveu */
   ig_bruto: Record<string, unknown> | null;
+  /** nota do Google (1 a 5), quando o lead veio da busca no Maps */
+  google_nota: number | null;
+  google_avaliacoes: number | null;
   criado_em: string;
   atualizado_em: string;
 };
