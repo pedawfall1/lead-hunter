@@ -6,6 +6,7 @@ import {
   IconCheck,
   IconCopy,
   IconInstagram,
+  IconMapa,
   IconTrash,
   IconWhatsapp,
 } from "@/components/ui/icons";
@@ -16,6 +17,7 @@ import {
   dataCurta,
   extrairBairro,
   formatarTelefone,
+  linkGoogleNegocio,
   linkInstagram,
   linkWhatsapp,
   nomeCurto,
@@ -323,6 +325,24 @@ export default function ModalLead({
             {lead.instagram.replace(/^@/, "")}
           </a>
         )}
+        {/* A ficha no Google, em um clique. Com place_id abre o
+            estabelecimento exato; sem ele, cai numa busca por nome e
+            endereço — melhor que abrir o Google e digitar. */}
+        <a
+          href={linkGoogleNegocio(lead)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="chip border-line bg-ink-700 text-slate-300 hover:bg-ink-600"
+          title={
+            lead.place_id
+              ? "Abrir a ficha exata no Google"
+              : "Buscar no Google pelo nome e endereço"
+          }
+        >
+          <IconMapa className="h-3.5 w-3.5" />
+          Google
+        </a>
+
         {/* Nota do Google: verde quando serve de prova social na demo,
             neutra quando é só informação. */}
         {lead.google_nota !== null && (

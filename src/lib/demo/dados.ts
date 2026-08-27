@@ -14,6 +14,7 @@ import type {
 
 /** Lead que ainda nao teve o Instagram analisado. */
 const SEM_INSTAGRAM = {
+  place_id: null,
   ig_dados: null,
   ig_run_id: null,
   ig_em: null,
@@ -256,9 +257,12 @@ function montar(
       // Todo lead com @ ja vem analisado no modo demo, para a aba
       // Instagram ter o que mostrar. Os dias sem postar variam para
       // aparecer tanto perfil parado quanto perfil em dia.
+      // A base vem sempre, e o exemplo por cima: assim um campo novo em
+      // Lead nao quebra o seed por estar so num dos dois ramos.
+      ...SEM_INSTAGRAM,
       ...(s.ig
         ? instagramDeExemplo(s.ig.replace(/^@/, ""), i % 3 === 0 ? 4 : 31 + i * 5)
-        : SEM_INSTAGRAM),
+        : {}),
       ...googleDoSeed(s.sinais),
     };
   });

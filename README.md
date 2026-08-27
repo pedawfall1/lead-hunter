@@ -294,6 +294,7 @@ registro. Conferir de novo depois disso é barato: não reimporta nada.
 | sem `website` | `sem_site` |
 | sem `website` mas com Instagram | `so_linktree` |
 | e-mail encontrado | preenche o campo de e-mail do lead |
+| `placeId` | vira o botão **Google** no lead, que abre a ficha exata |
 | sem Instagram | `sem_instagram` |
 | sem `placeId` | `sem_google_negocio` |
 | `imagesCount` igual a zero | `gmn_sem_foto` |

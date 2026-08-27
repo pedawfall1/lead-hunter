@@ -116,6 +116,34 @@ export function linkWhatsapp(tel: string | null | undefined, msg: string): strin
   return `https://wa.me/${numero}?text=${encodeURIComponent(msg)}`;
 }
 
+/**
+ * A ficha do lead no Google, em um clique.
+ *
+ * Com `place_id` abre exatamente aquele estabelecimento — é o identificador
+ * que a própria busca no Maps já trouxe e que o app guardava só para
+ * deduplicar importação.
+ *
+ * Sem ele (lead de CSV ou digitado na mão) cai numa busca por nome e
+ * endereço. Não é a ficha exata, mas cai em cima dela na quase totalidade
+ * dos casos — e é infinitamente melhor que abrir o Google e digitar.
+ */
+export function linkGoogleNegocio(lead: {
+  nome: string;
+  endereco?: string | null;
+  place_id?: string | null;
+}): string {
+  if (lead.place_id) {
+    return `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(
+      lead.place_id
+    )}`;
+  }
+
+  const busca = [lead.nome, lead.endereco].filter(Boolean).join(" ");
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    busca
+  )}`;
+}
+
 export function linkInstagram(handle: string | null | undefined): string {
   const h = (handle ?? "").trim();
   if (!h) return "";
