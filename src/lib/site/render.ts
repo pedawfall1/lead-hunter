@@ -44,6 +44,8 @@ function css(c: Cores, f: Forma): string {
   const r = f.raio;
   const rc = f.raioCard;
   const b = f.borda;
+  /** Aplica a escala do tom a um tamanho de título, em px ou vw. */
+  const t = (n: number) => Math.round(n * f.escalaTitulo * 10) / 10;
   return [
     "*,*::before,*::after{box-sizing:border-box}",
     "html{scroll-behavior:smooth}",
@@ -61,15 +63,22 @@ function css(c: Cores, f: Forma): string {
     `.alt::before{content:"";position:absolute;inset:0 0 auto;height:180px;background:linear-gradient(180deg,${c.marca}12,transparent);pointer-events:none}`,
     ".alt > *{position:relative}",
     `.eyebrow{font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:${c.marca};font-weight:600;margin:0 0 14px}`,
-    `.titulo-sec{font-size:clamp(28px,4.2vw,44px);max-width:18ch${f.caixaAlta ? ";text-transform:uppercase;letter-spacing:-.01em" : ""}}`,
+    `.titulo-sec{font-size:clamp(${t(28)}px,${t(4.2)}vw,${t(44)}px);max-width:18ch${f.caixaAlta ? ";text-transform:uppercase;letter-spacing:-.01em" : ""}}`,
     `.linha{height:1px;background:${c.borda};border:0;margin:0}`,
 
     `header{position:sticky;top:0;z-index:20;background:${c.fundo}f2;backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid ${c.borda}}`,
     "header .env{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:70px}",
-    `.marca{font-family:${c.fonteTitulo};font-weight:${c.pesoTitulo};font-size:18px;letter-spacing:-.02em;text-decoration:none}`,
-    /* Menu de ancoras: some no celular, onde so atrapalharia o botao. */
+    /* `nowrap`: nome comprido virava duas linhas e empurrava o header para
+       70px de altura logo na primeira dobra. */
+    `.marca{font-family:${c.fonteTitulo};font-weight:${c.pesoTitulo};font-size:18px;letter-spacing:-.02em;text-decoration:none;white-space:nowrap}`,
+    /* Menu de ancoras: some no celular, onde so atrapalharia o botao.
+       O corte e 1024 e nao 860 porque entre os dois o menu cabia mas
+       espremido — "Como funciona" quebrava no meio, ao lado de um nome de
+       negocio tambem quebrado. Sem o menu, sobra marca e botao, que e
+       exatamente o que a pessoa precisa no topo. */
     ".menu{display:none;gap:26px;margin-left:auto;margin-right:8px}",
-    "@media(min-width:860px){.menu{display:flex}}",
+    ".menu a{white-space:nowrap}",
+    "@media(min-width:1024px){.menu{display:flex}}",
     `.menu a{text-decoration:none;font-size:14.5px;font-weight:500;color:${c.suave};transition:color .2s}`,
     `.menu a:hover{color:${c.texto}}`,
 
@@ -82,7 +91,7 @@ function css(c: Cores, f: Forma): string {
     /* ---------- topo ---------- */
     ".hero{position:relative;isolation:isolate;overflow:hidden}",
     ".hero .env{position:relative;z-index:2;padding:clamp(80px,14vw,168px) 0 clamp(64px,11vw,132px)}",
-    ".hero h1{font-size:clamp(36px,6.6vw,64px);max-width:15ch}",
+    `.hero h1{font-size:clamp(${t(36)}px,${t(6.6)}vw,${t(64)}px);max-width:15ch}`,
     ".hero .sub{font-size:clamp(17px,2.2vw,21px);max-width:50ch;margin-bottom:34px;opacity:.92}",
     ".acoes{display:flex;flex-wrap:wrap;gap:12px}",
 
@@ -415,7 +424,12 @@ export function renderizarSite(
   briefing: Briefing,
   opcoes: OpcoesRender = {}
 ): string {
-  const c = cores(conteudo.paleta, conteudo.estilo, conteudo.cor_marca);
+  const c = cores(
+    conteudo.paleta,
+    conteudo.estilo,
+    conteudo.cor_marca,
+    conteudo.tom
+  );
   const f = forma(conteudo.tom);
   const zap = linkZap(briefing, conteudo);
   const assinatura =

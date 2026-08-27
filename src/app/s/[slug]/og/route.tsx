@@ -79,7 +79,8 @@ export async function GET(
   const paleta = cores(
     c?.paleta ?? "sobrio_azul",
     c?.estilo ?? "escuro",
-    c?.cor_marca
+    c?.cor_marca,
+    c?.tom ?? "tecnico"
   );
 
   try {

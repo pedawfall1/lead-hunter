@@ -1,4 +1,9 @@
-import { extrairBairro, formatarTelefone, nomeCurto } from "@/lib/format";
+import {
+  cidadeComUf,
+  extrairBairro,
+  formatarTelefone,
+  nomeCurto,
+} from "@/lib/format";
 import { acharServico, rotulosDosSinais } from "@/lib/servicos";
 import { temasDasLegendas } from "@/lib/instagram";
 import type { Lead, Projeto } from "@/lib/types";
@@ -15,6 +20,15 @@ export type Briefing = {
   /** nome sem Ltda/ME, que é como o site deve chamar o negócio */
   nomeCurto: string;
   nicho: string | null;
+  /**
+   * A praça que a página estampa — do endereço do lead, não do projeto.
+   *
+   * A região do projeto é onde você mandou buscar; o endereço é onde o
+   * negócio está. Um projeto chamado "Advogados Joaçaba" pode ter sido
+   * criado com a região errada, e aí a proposta chegaria ao cliente
+   * dizendo a cidade errada — o tipo de erro que encerra a conversa antes
+   * de ela começar. Quem manda é o endereço.
+   */
   regiao: string | null;
   bairro: string | null;
   endereco: string | null;
@@ -73,7 +87,7 @@ export function montarBriefing(lead: Lead, projeto: Projeto): Briefing {
     nome: lead.nome,
     nomeCurto: nomeCurto(lead.nome),
     nicho: projeto.nicho,
-    regiao: projeto.regiao,
+    regiao: cidadeComUf(lead.endereco, projeto.regiao) || null,
     bairro: extrairBairro(lead.endereco, projeto.regiao) || null,
     endereco: lead.endereco,
     telefone: lead.telefone,

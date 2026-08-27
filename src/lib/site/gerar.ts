@@ -78,7 +78,9 @@ Regras das três:
 - Escreva o ramo por extenso na busca: "clinic" sozinho traz hospital; "aesthetic clinic treatment" traz o que interessa.
 
 ESCOLHAS DE ESTILO:
-- paleta e estilo combinam com o ramo: advocacia e contabilidade pedem sobriedade; alimentação pede cor quente; saúde e estética pedem claro e limpo; oficina e construção pedem contraste forte.
+- paleta é a cor da marca e estilo é a LUZ da página ("claro" = fundo branco, "escuro" = fundo escuro, "elegante" = fundo bege quente). A letra da página NÃO vem daqui: vem do tom.
+- combine com o ramo: advocacia e contabilidade pedem sobriedade; alimentação pede cor quente; saúde e estética pedem claro e limpo; oficina e construção pedem contraste forte.
+- varie o estilo. Se todo negócio receber "claro", todas as demos saem com o mesmo fundo branco e uma parece cópia da outra.
 - layout é a estrutura do topo da página:
   - "classico": foto ocupando o fundo inteiro, texto por cima. Vale quando o ambiente impressiona — restaurante, salão, hotel, academia.
   - "dividido": texto de um lado, foto do outro. Bom para serviço técnico ou profissional, onde o texto pesa tanto quanto a imagem — advogado, contador, clínica, oficina.

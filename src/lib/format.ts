@@ -65,27 +65,62 @@ export function extrairBairro(
 /**
  * A cidade do lead.
  *
- * O endereço do Google vem sempre no mesmo desenho:
- * `R. Castelo Branco, 326 - Cibrazém, Videira - SC, 89564-001, Brasil`.
- * A cidade é o trecho logo antes da sigla do estado, e é isso que a regex
- * procura.
+ * A cidade é o trecho logo antes da sigla do estado. O Google separa os
+ * dois de duas formas, e as duas aparecem na mesma busca:
+ *   `... - Cibrazém, Videira - SC, 89564-001`   (hífen)
+ *   `R. Duque de Caxias, 215 - Joaçaba, SC`     (vírgula)
+ * Por isso os dois separadores entram na regex. Aceitar só o hífen fazia
+ * metade dos endereços cair no fallback sem ninguém perceber.
  *
  * Sem endereço, cai na região do projeto — que costuma ser "Videira - SC" e
  * também precisa perder a sigla, senão a mensagem sai com "aqui em Videira
  * - SC", que ninguém escreve.
  */
+const ANTES_DA_UF =
+  /[,–-]\s*([^,–-]{2,}?)\s*[,–-]\s*([A-Za-z]{2})\s*(?:,|$)/;
+
+/**
+ * Quando o Google omite a cidade, o que sobra antes da sigla é o bairro —
+ * e "Centro, SC" viraria a cidade "Centro". Nenhum município brasileiro se
+ * chama assim, então é seguro recusar e cair na região do projeto.
+ */
+const NAO_E_CIDADE = /^(centro|centro hist[oó]rico|bairro|distrito)$/i;
+
 export function extrairCidade(
   endereco: string | null | undefined,
   regiao?: string | null
 ): string {
-  const doEndereco = (endereco ?? "").match(
-    /,\s*([^,]+?)\s*[-–]\s*[A-Za-z]{2}\s*(?:,|$)/
-  );
-  if (doEndereco?.[1]) return doEndereco[1].trim();
+  const achada = (endereco ?? "").match(ANTES_DA_UF)?.[1]?.trim();
+  if (achada && !NAO_E_CIDADE.test(achada)) return achada;
 
-  return (regiao ?? "")
-    .replace(/\s*[-–]\s*[A-Za-z]{2}\s*$/, "")
-    .trim();
+  return (regiao ?? "").replace(/\s*[,–-]\s*[A-Za-z]{2}\s*$/, "").trim();
+}
+
+/** A sigla do estado, do endereço do lead ou da região do projeto. */
+export function extrairUf(...textos: (string | null | undefined)[]): string {
+  for (const t of textos) {
+    const m = (t ?? "").match(/[-–,]\s*([A-Za-z]{2})\s*(?:,|$)/);
+    if (m?.[1]) return m[1].toUpperCase();
+  }
+  return "";
+}
+
+/**
+ * "Joaçaba - SC" — a praça do lead, pronta para estampar na página.
+ *
+ * Sai do endereço do próprio lead, não da região do projeto. São coisas
+ * diferentes: a região é onde você mandou buscar, o endereço é onde o
+ * negócio está. Quando as duas discordam, quem manda é o endereço — é o
+ * que o dono vai ler na proposta dele.
+ */
+export function cidadeComUf(
+  endereco: string | null | undefined,
+  regiao?: string | null
+): string {
+  const cidade = extrairCidade(endereco, regiao);
+  if (!cidade) return (regiao ?? "").trim();
+  const uf = extrairUf(endereco, regiao);
+  return uf ? `${cidade} - ${uf}` : cidade;
 }
 
 export type VariaveisTemplate = {

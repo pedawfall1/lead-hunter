@@ -21,7 +21,7 @@ export type Cores = {
   /** família tipográfica do título */
   fonteTitulo: string;
   fonteCorpo: string;
-  /** o `<link>` do Google Fonts deste estilo, ou "" se não usar nenhuma */
+  /** o `<link>` do Google Fonts deste tom, ou "" se não usar nenhuma */
   fontesLink: string;
   /** peso dos títulos: cada família pede um peso diferente para o mesmo peso visual */
   pesoTitulo: number;
@@ -47,7 +47,7 @@ const MARCAS: Record<Paleta, { claro: string; escuro: string }> = {
  * mais denuncia "template pronto": Arial no título entrega o jogo antes de
  * a pessoa ler a primeira palavra.
  *
- * Uma família por estilo, só os pesos usados, e a pilha de sistema fica de
+ * Uma família por tom, só os pesos usados, e a pilha de sistema fica de
  * fallback. Se o Google Fonts estiver fora do ar, a página sai como saía.
  */
 const SANS =
@@ -63,25 +63,38 @@ function googleFonts(familias: string): string {
 }
 
 /**
- * Cada estilo tem sua letra:
- * - escuro: Sora, geométrica e firme, boa em corpo grande
- * - claro: Plus Jakarta Sans, redonda e amigável
- * - elegante: Fraunces, serifada com contraste alto
+ * A letra sai do **tom**, não do estilo. Esta é a diferença que faz um
+ * escritório de advocacia não sair irmão de uma clínica de estética.
  *
- * O corpo é Inter nos três: ela some, que é o trabalho de uma fonte de
+ * Antes a fonte vinha do estilo (claro/escuro/elegante). O estilo é só a
+ * luz da página — e como a LLM escolhia estilo quase por sorteio, dois
+ * ramos opostos que caíssem em "claro" saíam com a mesma tipografia, o
+ * mesmo fundo branco e a mesma cara. Cor e cantos mudavam, mas o olho não
+ * vê 8px contra 22px de raio; vê a letra do título, que é a primeira coisa
+ * que denuncia o ramo.
+ *
+ * Agora o tom manda na letra e o estilo manda no chão. As duas coisas são
+ * independentes de verdade, como deviam ser desde o começo.
+ *
+ * - sobrio: Lora, serifada e séria. Advocacia com serifa lê como escritório
+ * - caloroso: Plus Jakarta Sans, redonda e acolhedora
+ * - robusto: Archivo, larga e sólida — casa com a caixa alta do tom
+ * - tecnico: Sora, geométrica e precisa
+ *
+ * O corpo é Inter nos quatro: ela some, que é o trabalho de uma fonte de
  * texto. Quem carrega a personalidade é o título.
  */
 const TIPOGRAFIA: Record<
-  Estilo,
+  Tom,
   { titulo: string; corpo: string; link: string; peso: number }
 > = {
-  escuro: {
-    titulo: `Sora, ${SANS}`,
+  sobrio: {
+    titulo: `Lora, ${SERIF}`,
     corpo: `Inter, ${SANS}`,
-    link: googleFonts("family=Sora:wght@600;700&family=Inter:wght@400;500;600"),
+    link: googleFonts("family=Lora:wght@600;700&family=Inter:wght@400;500;600"),
     peso: 700,
   },
-  claro: {
+  caloroso: {
     titulo: `"Plus Jakarta Sans", ${SANS}`,
     corpo: `Inter, ${SANS}`,
     link: googleFonts(
@@ -89,13 +102,19 @@ const TIPOGRAFIA: Record<
     ),
     peso: 800,
   },
-  elegante: {
-    titulo: `Fraunces, ${SERIF}`,
+  robusto: {
+    titulo: `Archivo, ${SANS}`,
     corpo: `Inter, ${SANS}`,
     link: googleFonts(
-      "family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600"
+      "family=Archivo:wght@700;800&family=Inter:wght@400;500;600"
     ),
-    peso: 600,
+    peso: 800,
+  },
+  tecnico: {
+    titulo: `Sora, ${SANS}`,
+    corpo: `Inter, ${SANS}`,
+    link: googleFonts("family=Sora:wght@600;700&family=Inter:wght@400;500;600"),
+    peso: 700,
   },
 };
 
@@ -118,6 +137,14 @@ export type Forma = {
   caixaAlta: boolean;
   /** multiplicador do espaçamento vertical */
   respiro: number;
+  /**
+   * Multiplicador do tamanho dos títulos.
+   *
+   * Quem vende pelo olho grita; quem vende confiança fala baixo. Um título
+   * de advocacia do mesmo tamanho do de uma clínica de estética soa como
+   * anúncio, e advogado não anuncia.
+   */
+  escalaTitulo: number;
   /** quantas fotos a página pede ao Pexels */
   fotos: number;
 };
@@ -130,6 +157,7 @@ export const FORMAS: Record<Tom, Forma> = {
     sombra: "0 18px 36px -30px rgba(0,0,0,.5)",
     caixaAlta: false,
     respiro: 1.15,
+    escalaTitulo: 0.86,
     // Advocacia com galeria de fotos parece imobiliária. Duas bastam.
     fotos: 2,
   },
@@ -140,6 +168,7 @@ export const FORMAS: Record<Tom, Forma> = {
     sombra: "0 26px 50px -30px rgba(0,0,0,.45)",
     caixaAlta: false,
     respiro: 1,
+    escalaTitulo: 1.08,
     // Estética e restaurante vendem pelo olho: quanto mais foto, melhor.
     fotos: 5,
   },
@@ -151,6 +180,7 @@ export const FORMAS: Record<Tom, Forma> = {
     sombra: "none",
     caixaAlta: true,
     respiro: 0.9,
+    escalaTitulo: 1,
     fotos: 4,
   },
   tecnico: {
@@ -160,6 +190,7 @@ export const FORMAS: Record<Tom, Forma> = {
     sombra: "0 20px 40px -28px rgba(0,0,0,.5)",
     caixaAlta: false,
     respiro: 1,
+    escalaTitulo: 0.94,
     fotos: 4,
   },
 };
@@ -216,9 +247,9 @@ export function normalizarCor(hex: string | null | undefined): string | null {
 }
 
 /**
- * O estilo define o "chão" (fundo, texto, tipografia) e a paleta define a
- * marca. Seis paletas × três estilos = dezoito caras diferentes, sem
- * dezoito templates para manter.
+ * O estilo define o "chão" (fundo e texto), o tom define a letra e a
+ * paleta define a marca. Seis paletas × três estilos × quatro tons, sem
+ * setenta e dois templates para manter.
  *
  * `corMarca` atropela a paleta: é a cor que você pegou do Instagram do
  * cliente quando o palpite da LLM não bateu com a marca real.
@@ -226,16 +257,17 @@ export function normalizarCor(hex: string | null | undefined): string | null {
 export function cores(
   paleta: Paleta,
   estilo: Estilo,
-  corMarca?: string | null
+  corMarca?: string | null,
+  tom: Tom = "tecnico"
 ): Cores {
   const escolhida = normalizarCor(corMarca);
   if (escolhida) {
-    const base = cores(paleta, estilo);
+    const base = cores(paleta, estilo, null, tom);
     return { ...base, marca: escolhida, marcaTexto: textoSobre(escolhida) };
   }
 
   const marca = MARCAS[paleta] ?? MARCAS.sobrio_azul;
-  const t = TIPOGRAFIA[estilo] ?? TIPOGRAFIA.escuro;
+  const t = TIPOGRAFIA[tom] ?? TIPOGRAFIA.tecnico;
   const letra = {
     fonteTitulo: t.titulo,
     fonteCorpo: t.corpo,

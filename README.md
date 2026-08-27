@@ -510,9 +510,13 @@ celular.
 O FAQ usa `<details>` nativo: abre e fecha sem uma linha de JavaScript, e
 continua funcionando se o script da animação não rodar.
 
-**Tipografia de verdade**, uma família por estilo (Sora, Plus Jakarta Sans,
-Fraunces) com Inter no corpo. A versão anterior usava só fonte de sistema por
-medo de atrasar a página no 4G — o medo estava mal calibrado: com
+**Tipografia de verdade**, uma família por *tom* — Lora para `sobrio`, Plus
+Jakarta Sans para `caloroso`, Archivo para `robusto`, Sora para `tecnico` —
+com Inter no corpo. A letra sai do tom e não do estilo de propósito: o estilo
+é só a luz da página, e enquanto a fonte vinha dele, dois ramos opostos que
+caíssem em `claro` saíam com a mesma tipografia e a mesma cara. O olho não vê
+8px contra 22px de canto; vê a letra do título. A versão anterior usava só
+fonte de sistema por medo de atrasar a página no 4G — o medo estava mal calibrado: com
 `display=swap` o texto aparece na hora na fonte de sistema e troca quando a
 outra chega, sem momento em branco. E fonte é o que mais denuncia template:
 Arial no título entrega o jogo antes de a pessoa ler a primeira palavra.
