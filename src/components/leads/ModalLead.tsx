@@ -32,6 +32,7 @@ import {
 } from "@/app/actions/leads";
 import { dispararPeloN8n } from "@/app/actions/disparo";
 import { listarDemos } from "@/app/actions/site";
+import { urlDemo } from "@/lib/site/url";
 import type { Demo, Interacao, Lead, Projeto, Template } from "@/lib/types";
 import AbaDemo from "./AbaDemo";
 import AbaInstagram from "./AbaInstagram";
@@ -104,7 +105,7 @@ export default function ModalLead({
     const d = demos.find((x) => x.publicado);
     if (!d) return null;
     const origem = typeof window === "undefined" ? "" : window.location.origin;
-    return `${origem}/demo/${d.slug}`;
+    return urlDemo(d.slug, origem);
   }, [demos]);
 
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");

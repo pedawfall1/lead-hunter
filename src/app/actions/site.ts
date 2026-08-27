@@ -60,10 +60,9 @@ export async function gerarDemo(leadId: string): Promise<ActionResult<Demo>> {
     const { conteudo, modelo, tokens } = await gerarConteudo(briefing);
     const html = renderizarSite(conteudo, briefing);
 
-    // Colisão de slug é improvável (8 caracteres aleatórios), mas o slug é
-    // a URL: se colidir, a demo nova apareceria no link da antiga.
-    let slug = montarSlug(briefing.nomeCurto);
-    if (await slugEmUso(slug)) slug = montarSlug(briefing.nomeCurto);
+    // Sem sufixo aleatorio, dois negocios de nome parecido colidem — e o
+    // slug e unico no banco. `montarSlug` consulta e resolve com -2.
+    const slug = await montarSlug(briefing.nomeCurto, slugEmUso);
 
     const demo = await criarDemoDb({
       lead_id: lead.id,
@@ -150,7 +149,7 @@ export async function reestilizarDemo(
     const html = renderizarSite(conteudo, montarBriefing(lead, projeto));
     const atualizada = await reestilizarDemoDb(id, { conteudo, html });
 
-    revalidatePath(`/demo/${demo.slug}`);
+    revalidatePath(`/s/${demo.slug}`);
     return { ok: true, data: atualizada };
   } catch (e) {
     return { ok: false, erro: mensagemDeErro(e) };
@@ -208,7 +207,7 @@ export async function reescreverDemo(
       titulo: conteudo.titulo,
     });
 
-    revalidatePath(`/demo/${demo.slug}`);
+    revalidatePath(`/s/${demo.slug}`);
     return { ok: true, data: atualizada };
   } catch (e) {
     return { ok: false, erro: mensagemDeErro(e) };
@@ -222,7 +221,7 @@ export async function publicarDemo(
 ): Promise<ActionResult<Demo>> {
   try {
     const demo = await publicarDemoDb(id, publicado);
-    revalidatePath(`/demo/${demo.slug}`);
+    revalidatePath(`/s/${demo.slug}`);
     revalidatePath(`/projetos/${demo.projeto_id}`);
     return { ok: true, data: demo };
   } catch (e) {

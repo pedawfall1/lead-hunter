@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { caminhoDemo } from "@/lib/site/url";
 
 /**
  * A demo dentro do app, num aparelho de mentira.
@@ -66,7 +67,7 @@ export default function PreviaDemo({
           <iframe
             // `versao` no src força o recarregamento depois de trocar a
             // cor: sem isso o iframe mostra o HTML antigo em cache.
-            src={`/demo/${encodeURIComponent(slug)}?v=${versao}`}
+            src={`${caminhoDemo(slug)}?v=${versao}`}
             title="Prévia da demo"
             className="origin-top-left border-0"
             style={{

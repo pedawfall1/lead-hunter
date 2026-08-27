@@ -126,7 +126,7 @@ export type Demo = {
   id: string;
   lead_id: string;
   projeto_id: string;
-  /** parte pública da URL: /demo/<slug> */
+  /** parte pública da URL: /s/<slug> */
   slug: string;
   titulo: string;
   /** o JSON que a LLM escreveu, guardado para poder re-renderizar depois */

@@ -574,10 +574,29 @@ segurança revela tudo em 2,5s — página de venda não pode ficar em branco.
 
 ### O link
 
-A página fica em `/demo/<slug>`, fora da área logada — o cliente abre sem ter
-conta aqui. Quem protege é o slug, com 8 caracteres aleatórios no fim:
-`/demo/advocacia-silva` sozinho seria adivinhável e daria pra listar proposta
-dos outros chutando nome de negócio.
+A página fica em `/s/<slug>` — por exemplo
+`sites.arium-ia.cloud/s/gabriela-fachini`. Fora da área logada: o cliente
+abre sem ter conta aqui.
+
+O slug sai do nome do negócio, cortado nas primeiras palavras até caber em
+18 caracteres. Cortar por comprimento e não por contagem evita os dois
+extremos: "Odonto Sorriso" fica inteiro, e "AgroPet Bom Amigo" não vira
+"agropet-bom". Homônimo ganha `-2`.
+
+**A versão anterior colava 8 caracteres aleatórios no fim**, e eles eram a
+fechadura da página. Saíram por escolha: endereço curto e apresentável vale
+mais que obscuridade num link que vai por WhatsApp. O custo é real — quem
+souber o nome de um negócio consegue adivinhar o endereço da proposta dele.
+O que ainda protege é o `publicado` (despublicar tira do ar na hora) e o
+`noindex`. Voltar o sufixo é mexer só em `src/lib/site/slug.ts`.
+
+`/demo/<slug>`, o endereço antigo, redireciona com 308 e não tem prazo para
+sair: link de proposta fica no histórico da conversa para sempre.
+
+**Domínio.** `NEXT_PUBLIC_URL_DEMOS` fixa o domínio dos links copiados e da
+variável `{demo}`. O app atende em mais de um endereço — você trabalha no da
+Vercel e o cliente recebe o bonito. Sem ela, o link sai com o domínio de
+onde você está navegando.
 
 - O HTML fica **gravado** na linha da demo. A rota pública lê uma linha e
   serve, sem chegar perto de `lh_leads`. Efeito colateral bom: mexer no

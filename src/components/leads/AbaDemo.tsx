@@ -12,6 +12,7 @@ import {
 import { montarBriefing, promptParaColar } from "@/lib/site/briefing";
 import { dataCurta } from "@/lib/format";
 import { ESTILOS, LAYOUTS, PALETAS, TONS } from "@/lib/site/tipos";
+import { caminhoDemo, urlDemo } from "@/lib/site/url";
 import PreviaDemo from "./PreviaDemo";
 import TextoDemo from "./TextoDemo";
 import type { Demo, Lead, Projeto } from "@/lib/types";
@@ -458,7 +459,7 @@ export default function AbaDemo({
       ) : (
         <ul className="space-y-2">
           {demos.map((d) => {
-            const url = `${origem}/demo/${d.slug}`;
+            const url = urlDemo(d.slug, origem);
             return (
               <li
                 key={d.id}
@@ -488,7 +489,7 @@ export default function AbaDemo({
 
                 <div className="flex flex-wrap items-center gap-2">
                   <a
-                    href={`/demo/${d.slug}`}
+                    href={caminhoDemo(d.slug)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-sub px-2.5 py-1.5 text-xs"

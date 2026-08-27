@@ -9,9 +9,10 @@ const ROTAS_PUBLICAS = [
   // middleware devolve 307 para /login e o n8n nunca entrega evento.
   "/api/n8n",
   // Demo de site: o link vai pro cliente, que obviamente não tem login
-  // aqui. Quem protege é o slug aleatório, e a rota só serve linha
-  // publicada.
-  "/demo",
+  // aqui. A rota só serve linha publicada, e a página sai com noindex.
+  "/s/",
+  // endereço antigo das demos, que hoje só redireciona para /s
+  "/demo/",
 ];
 
 function ehPublica(pathname: string) {
