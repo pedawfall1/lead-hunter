@@ -598,6 +598,18 @@ variável `{demo}`. O app atende em mais de um endereço — você trabalha no d
 Vercel e o cliente recebe o bonito. Sem ela, o link sai com o domínio de
 onde você está navegando.
 
+A variável precisa do prefixo `NEXT_PUBLIC_` porque o link é montado no
+navegador. A Vercel avisa que isso expõe o valor — aqui é falso positivo: o
+valor é um domínio público que vai estampado em cada mensagem.
+
+**O link sai sem `https://`.** `sites.arium-ia.cloud/s/gabriela-fachini`
+respira melhor na tela do WhatsApp que a versão com o prefixo. O WhatsApp
+reconhece domínio sem protocolo e transforma em link clicável, mas isso é
+comportamento dele, não garantia nossa — se um dia chegar como texto morto
+no celular de alguém, devolver o protocolo é apagar uma linha em
+[`src/lib/site/url.ts`](src/lib/site/url.ts). Em `localhost` o protocolo
+fica, senão o link de teste não abre.
+
 - O HTML fica **gravado** na linha da demo. A rota pública lê uma linha e
   serve, sem chegar perto de `lh_leads`. Efeito colateral bom: mexer no
   template não muda uma demo que o cliente já recebeu.
