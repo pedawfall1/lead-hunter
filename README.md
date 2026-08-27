@@ -162,6 +162,28 @@ abre o WhatsApp com o texto pronto e **você** dá o último clique de enviar.
 - Ao abrir o WhatsApp, um lead que estava em **Novo** vira **Contatado** sozinho.
   Quem já respondeu/negociou/fechou não regride.
 
+## Copy de prospecção
+
+Os textos de abordagem vivem em [`src/lib/copy.ts`](src/lib/copy.ts) e são
+semeados no modo demo. No Supabase eles ficam em `lh_templates_mensagem` e
+são editáveis na tela de Templates — o arquivo é o ponto de partida, não a
+fonte da verdade.
+
+São onze: primeira abordagem, duas respostas (positiva e desconfiança),
+quatro objeções (preço, já tem quem cuida, só usa Instagram, é golpe?) e a
+cadência de silêncio em 3 → 7 → 14 → 30 dias, que é a mesma cadência que
+`agenda.ts` agenda sozinha.
+
+A lógica da abordagem: **não é pergunta, é entrega**. Em vez de "tem
+interesse em um site?", vai o link de um site que já existe, com o nome e os
+dados do negócio. Por isso a primeira mensagem usa `{demo}` — e a aba
+WhatsApp avisa quando o template pede a variável e o lead ainda não tem demo
+publicada.
+
+Os números que aparecem nas objeções (R$ 90/mês, 7 dias de prazo, 7 dias de
+garantia) são promessas comerciais, não algo que o sistema calcula. Se
+mudarem, mude no arquivo e nos templates já salvos.
+
 ## Integração com n8n (opcional)
 
 O Lead Hunter decide **quem** abordar, **com que texto** e **quando**. Quem envia

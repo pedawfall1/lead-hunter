@@ -71,9 +71,32 @@ export async function updateSession(request: NextRequest) {
   );
 
   // IMPORTANTE: nao coloque codigo entre createServerClient e getUser().
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getUser();
 
-  return redirecionar(request, !!user) ?? response;
+  /**
+   * Sessão que o servidor não consegue validar vale menos que sessão
+   * nenhuma: o cookie continua no navegador, o app acha que você está
+   * logado, e cada tela quebra num erro sem saída.
+   *
+   * Aconteceu de verdade em produção com "JWT issued at future" — um
+   * descompasso de relógio entre quem emitiu o token e quem validou. O
+   * app ficou numa tela de erro que não dizia o que fazer.
+   *
+   * Aqui o cookie ruim é apagado e a pessoa cai no login, que é a única
+   * ação que resolve. Entrar de novo emite um token limpo.
+   */
+  if (error && !ehPublica(request.nextUrl.pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("next", request.nextUrl.pathname);
+    url.searchParams.set("sessao", "expirada");
+
+    const saida = NextResponse.redirect(url);
+    for (const { name } of request.cookies.getAll()) {
+      if (name.startsWith("sb-")) saida.cookies.delete(name);
+    }
+    return saida;
+  }
+
+  return redirecionar(request, !!data.user) ?? response;
 }

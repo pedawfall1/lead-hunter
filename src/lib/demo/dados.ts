@@ -1,4 +1,5 @@
 import { criteriosSugeridos } from "@/lib/servicos";
+import { COPY_PROSPECCAO } from "@/lib/copy";
 
 import type {
   Criterio,
@@ -465,29 +466,14 @@ function semear(): Estado {
     "controle_no_papel", "sem_agendamento", "processo_manual", "sem_integracao",
   ]);
 
-  const templates: Template[] = [
-    {
-      id: novoId(),
-      nome: "Primeira abordagem",
-      texto:
-        "{Oi|Olá|Bom dia} {nome}, {tudo bem|como vai}? Vi que vocês atendem aqui no {bairro} e reparei que {motivo}. Trabalho com {servico} aqui na região. {Posso te mostrar rapidinho como ficaria|Quer que eu te mande uma prévia}?",
-      criado_em: diasAtras(24),
-    },
-    {
-      id: novoId(),
-      nome: "Follow-up 3 dias",
-      texto:
-        "{Oi|Olá} {nome}, passando aqui de novo. Chegou a ver minha mensagem sobre {servico}? Se fizer sentido eu te mando uma prévia sem compromisso.",
-      criado_em: diasAtras(18),
-    },
-    {
-      id: novoId(),
-      nome: "Última tentativa",
-      texto:
-        "Oi {nome}, não quero insistir à toa. Se agora não for o momento, sem problema — me avisa que eu tiro da lista. Se quiser, deixo a prévia pronta e te mando.",
-      criado_em: diasAtras(6),
-    },
-  ];
+  // A copy de verdade, a mesma que vai para o Supabase. O demo tinha
+  // tres textos de exemplo; agora mostra o roteiro completo de abordagem.
+  const templates: Template[] = COPY_PROSPECCAO.map((t, i) => ({
+    id: novoId(),
+    nome: t.nome,
+    texto: t.texto,
+    criado_em: diasAtras(24 - i),
+  }));
 
   const idsTemplates = templates.map((t) => t.id);
   const interacoes: Interacao[] = [];

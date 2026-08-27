@@ -7,9 +7,13 @@ export const metadata = { title: "Entrar - Lead Hunter" };
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: { next?: string };
+  searchParams: { next?: string; sessao?: string };
 }) {
   const proximo = searchParams?.next ?? "/";
+  // O middleware manda `sessao=expirada` quando apaga um cookie que o
+  // servidor não conseguiu validar. Sem esse aviso a pessoa cai no login
+  // do nada, achando que perdeu o trabalho.
+  const expirada = searchParams?.sessao === "expirada";
 
   return (
     <main className="flex min-h-screen items-center justify-center px-5 py-12">
@@ -25,6 +29,13 @@ export default function LoginPage({
             Prospecção de clientes, sem planilha bagunçada.
           </p>
         </div>
+
+        {expirada && (
+          <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-xs leading-relaxed text-amber-300">
+            Sua sessão expirou e precisou ser renovada. Entre de novo — nada
+            do que você cadastrou foi perdido.
+          </div>
+        )}
 
         {DEMO && (
           <div className="mb-4 rounded-lg border border-brand/30 bg-brand/10 px-3 py-2.5 text-xs leading-relaxed text-brand-soft">
