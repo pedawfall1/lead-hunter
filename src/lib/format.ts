@@ -62,6 +62,32 @@ export function extrairBairro(
   return candidato.replace(/^\d+\s+/, "").trim();
 }
 
+/**
+ * A cidade do lead.
+ *
+ * O endereço do Google vem sempre no mesmo desenho:
+ * `R. Castelo Branco, 326 - Cibrazém, Videira - SC, 89564-001, Brasil`.
+ * A cidade é o trecho logo antes da sigla do estado, e é isso que a regex
+ * procura.
+ *
+ * Sem endereço, cai na região do projeto — que costuma ser "Videira - SC" e
+ * também precisa perder a sigla, senão a mensagem sai com "aqui em Videira
+ * - SC", que ninguém escreve.
+ */
+export function extrairCidade(
+  endereco: string | null | undefined,
+  regiao?: string | null
+): string {
+  const doEndereco = (endereco ?? "").match(
+    /,\s*([^,]+?)\s*[-–]\s*[A-Za-z]{2}\s*(?:,|$)/
+  );
+  if (doEndereco?.[1]) return doEndereco[1].trim();
+
+  return (regiao ?? "")
+    .replace(/\s*[-–]\s*[A-Za-z]{2}\s*$/, "")
+    .trim();
+}
+
 export type VariaveisTemplate = {
   nome?: string | null;
   bairro?: string | null;
@@ -69,6 +95,8 @@ export type VariaveisTemplate = {
   servico?: string | null;
   /** a frase do sinal que qualificou o lead */
   motivo?: string | null;
+  /** a cidade do lead — quando citar o bairro é informação demais */
+  cidade?: string | null;
   /** o link da demo de site mais recente que está no ar */
   demo?: string | null;
 };
@@ -78,6 +106,7 @@ export const VARIAVEIS: { chave: keyof VariaveisTemplate; ajuda: string }[] = [
   { chave: "bairro", ajuda: "bairro do endereço, ou a região do projeto" },
   { chave: "servico", ajuda: "o serviço que o projeto vende" },
   { chave: "motivo", ajuda: "o sinal que qualificou o lead, em frase" },
+  { chave: "cidade", ajuda: "a cidade do lead, sem a sigla do estado" },
   { chave: "demo", ajuda: "link da demo de site (gere na aba Demo)" },
 ];
 
@@ -91,7 +120,7 @@ export function preencherTemplate(
   vars: VariaveisTemplate
 ): string {
   return texto.replace(
-    /\{\s*(nome|bairro|servico|serviço|motivo|demo)\s*\}/gi,
+    /\{\s*(nome|bairro|cidade|servico|serviço|motivo|demo)\s*\}/gi,
     (m, chave: string) => {
       const k = chave
         .toLowerCase()

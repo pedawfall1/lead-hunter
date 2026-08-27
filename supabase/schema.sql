@@ -289,3 +289,13 @@ create index if not exists lh_leads_ig_run_idx
 -- site tem, num template onde a LLM e proibida de escrever numero.
 alter table public.lh_leads add column if not exists google_nota        numeric(2,1);
 alter table public.lh_leads add column if not exists google_avaliacoes  integer;
+
+-- ---------- ordem dos templates ----------
+-- Decide qual template abre selecionado na aba WhatsApp do lead. Antes a
+-- ordem era a de criacao, o que colocava o follow-up mais novo na frente
+-- da primeira abordagem.
+alter table public.lh_templates_mensagem
+  add column if not exists ordem integer not null default 0;
+
+create index if not exists lh_templates_ordem_idx
+  on public.lh_templates_mensagem (user_id, ordem);

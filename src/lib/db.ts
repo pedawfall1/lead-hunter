@@ -517,11 +517,17 @@ export async function excluirInteracaoDb(id: string): Promise<void> {
 /* ------------------------------- templates ------------------------------ */
 
 export async function listarTemplates(): Promise<Template[]> {
-  if (DEMO) return [...estado().templates].sort(porCriacaoAsc);
+  const porOrdem = (a: Template, b: Template) =>
+    a.ordem - b.ordem || a.criado_em.localeCompare(b.criado_em);
 
+  if (DEMO) return [...estado().templates].sort(porOrdem);
+
+  // Desempate por criacao: dois templates com a mesma ordem nao podem
+  // trocar de lugar a cada carregamento da tela.
   const { data, error } = await createClient()
     .from(T.templates)
     .select("*")
+    .order("ordem", { ascending: true })
     .order("criado_em", { ascending: true });
   checar(error);
   return (data ?? []) as Template[];
@@ -531,8 +537,17 @@ type DadosTemplate = { nome: string; texto: string };
 
 export async function criarTemplateDb(dados: DadosTemplate): Promise<Template> {
   if (DEMO) {
-    const template: Template = { id: novoId(), ...dados, criado_em: agora() };
-    estado().templates.push(template);
+    // Entra no fim da lista: template novo nao rouba o lugar do primeiro,
+    // que e o que abre selecionado na aba WhatsApp.
+    const lista = estado().templates;
+    const ultimo = Math.max(0, ...lista.map((t) => t.ordem));
+    const template: Template = {
+      id: novoId(),
+      ...dados,
+      ordem: ultimo + 10,
+      criado_em: agora(),
+    };
+    lista.push(template);
     return template;
   }
 
@@ -564,6 +579,36 @@ export async function atualizarTemplateDb(
     .single();
   checar(error);
   return data as Template;
+}
+
+/**
+ * Troca a posicao de dois templates.
+ *
+ * Se os dois estiverem com a mesma  — possivel em base antiga —
+ * trocar os valores nao mexeria em nada. Por isso o empate e desfeito
+ * antes, dando ao de baixo uma posicao a mais.
+ */
+export async function trocarOrdemTemplatesDb(
+  a: Template,
+  b: Template
+): Promise<void> {
+  const [ordemA, ordemB] =
+    a.ordem === b.ordem ? [b.ordem + 1, b.ordem] : [b.ordem, a.ordem];
+
+  if (DEMO) {
+    const lista = estado().templates;
+    const ta = lista.find((t) => t.id === a.id);
+    const tb = lista.find((t) => t.id === b.id);
+    if (ta) ta.ordem = ordemA;
+    if (tb) tb.ordem = ordemB;
+    return;
+  }
+
+  const supabase = createClient();
+  const um = await supabase.from(T.templates).update({ ordem: ordemA }).eq("id", a.id);
+  checar(um.error);
+  const dois = await supabase.from(T.templates).update({ ordem: ordemB }).eq("id", b.id);
+  checar(dois.error);
 }
 
 export async function excluirTemplateDb(id: string): Promise<void> {

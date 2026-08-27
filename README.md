@@ -151,6 +151,10 @@ abre o WhatsApp com o texto pronto e **você** dá o último clique de enviar.
 - `{nome}` usa o nome do lead sem sufixos de razão social (Ltda, ME, EPP...).
 - `{bairro}` sai do endereço do lead (segundo trecho, ex.: `Rua Brasil, 120 - Centro` → `Centro`);
   se o endereço não tiver bairro, cai na **região do projeto**.
+- `{cidade}` é a cidade do lead, sem a sigla do estado. Sai do endereço do
+  Google (o trecho antes de " - SC"); sem endereço, cai na região do projeto
+  e a sigla é removida — senão a mensagem sairia "aqui em Videira - SC".
+  Use no lugar de `{bairro}` quando citar o bairro for informação demais.
 - `{servico}` é o serviço do projeto ("social mídia", "tráfego pago"...).
 - `{motivo}` é o primeiro sinal ativo virado frase: `sem_site` → "não encontrei o
   site de vocês", `parado_30d` → "o Instagram de vocês está parado faz um tempo".
@@ -163,6 +167,11 @@ abre o WhatsApp com o texto pronto e **você** dá o último clique de enviar.
   Quem já respondeu/negociou/fechou não regride.
 
 ## Copy de prospecção
+
+A **ordem** da lista de Templates decide qual abre selecionado na aba
+WhatsApp do lead — use as setas para subir e descer. Antes a ordem era a de
+criação, o que colocava o follow-up mais recente na frente da primeira
+abordagem.
 
 Os textos de abordagem vivem em [`src/lib/copy.ts`](src/lib/copy.ts) e são
 semeados no modo demo. No Supabase eles ficam em `lh_templates_mensagem` e
@@ -707,6 +716,7 @@ supabase/
   migrations/003_*.sql        # buscas, não perturbe e as colunas do disparo
   migrations/004_instagram.sql # ig_dados e a corrida no proprio lead
   migrations/005_*.sql        # nota e avaliacoes do Google no lead
+  migrations/006_*.sql        # ordem dos templates de mensagem
 ```
 
 **Instalação nova:** rode só o `schema.sql` — ele já contém tudo.

@@ -16,6 +16,7 @@ import { rotuloPrazo, somarDias } from "@/lib/agenda";
 import {
   dataCurta,
   extrairBairro,
+  extrairCidade,
   formatarTelefone,
   linkGoogleNegocio,
   linkInstagram,
@@ -120,6 +121,10 @@ export default function ModalLead({
     () => extrairBairro(lead.endereco, projeto.regiao),
     [lead.endereco, projeto.regiao]
   );
+  const cidade = useMemo(
+    () => extrairCidade(lead.endereco, projeto.regiao),
+    [lead.endereco, projeto.regiao]
+  );
   const servicoLabel = acharServico(projeto.servico)?.label ?? "";
   const motivo = useMemo(
     () => motivoDoLead(lead.sinais, projeto.criterios),
@@ -142,11 +147,12 @@ export default function ModalLead({
         bairro,
         servico: servicoLabel.toLowerCase(),
         motivo,
+        cidade,
         demo: linkDemo,
       })
     );
     // `semente` entra de proposito: mexer nela sorteia outra variacao
-  }, [templateAtual, lead.nome, bairro, servicoLabel, motivo, linkDemo, semente]);
+  }, [templateAtual, lead.nome, bairro, cidade, servicoLabel, motivo, linkDemo, semente]);
 
   const numero = telefoneWhatsapp(lead.telefone);
   const link = numero ? linkWhatsapp(lead.telefone, mensagem) : "";
@@ -493,9 +499,21 @@ export default function ModalLead({
               defaultValue={lead.endereco ?? ""}
               placeholder="Rua Brasil, 120 - Centro"
             />
-            {bairro && (
+            {(bairro || cidade) && (
               <p className="mt-1 text-xs text-slate-500">
-                {"{bairro}"} = <span className="text-brand-soft">{bairro}</span>
+                {bairro && (
+                  <>
+                    {"{bairro}"} ={" "}
+                    <span className="text-brand-soft">{bairro}</span>
+                  </>
+                )}
+                {bairro && cidade && "   "}
+                {cidade && (
+                  <>
+                    {"{cidade}"} ={" "}
+                    <span className="text-brand-soft">{cidade}</span>
+                  </>
+                )}
               </p>
             )}
           </div>
@@ -675,6 +693,7 @@ export default function ModalLead({
             <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
               <span>nome: <span className="text-slate-400">{nomeCurto(lead.nome)}</span></span>
               {bairro && <span>bairro: <span className="text-slate-400">{bairro}</span></span>}
+              {cidade && <span>cidade: <span className="text-slate-400">{cidade}</span></span>}
               {servicoLabel && <span>serviço: <span className="text-slate-400">{servicoLabel.toLowerCase()}</span></span>}
               {motivo && <span>motivo: <span className="text-slate-400">{motivo}</span></span>}
             </div>

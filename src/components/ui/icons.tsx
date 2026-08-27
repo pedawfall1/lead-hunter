@@ -94,6 +94,14 @@ export const IconInstagram = (p: P) => (
   </Svg>
 );
 
+/** Seta para cima. Girada 180 graus, serve para descer. */
+export const IconSeta = (p: P) => (
+  <Svg {...p}>
+    <path d="M12 19V5" />
+    <path d="m5.5 11.5 6.5-6.5 6.5 6.5" />
+  </Svg>
+);
+
 /** Alfinete de mapa: a ficha do lead no Google. */
 export const IconMapa = (p: P) => (
   <Svg {...p}>

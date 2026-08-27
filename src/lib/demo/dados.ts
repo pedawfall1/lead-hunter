@@ -476,6 +476,7 @@ function semear(): Estado {
     id: novoId(),
     nome: t.nome,
     texto: t.texto,
+    ordem: (i + 1) * 10,
     criado_em: diasAtras(24 - i),
   }));
 

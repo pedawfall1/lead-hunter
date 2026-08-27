@@ -8,6 +8,7 @@ import {
   IconCopy,
   IconPencil,
   IconPlus,
+  IconSeta,
   IconTrash,
   IconWhatsapp,
 } from "@/components/ui/icons";
@@ -15,6 +16,7 @@ import {
   atualizarTemplate,
   criarTemplate,
   excluirTemplate,
+  moverTemplate,
 } from "@/app/actions/templates";
 import {
   contarVariacoes,
@@ -23,7 +25,11 @@ import {
 } from "@/lib/format";
 import type { Template } from "@/lib/types";
 
-const EXEMPLO = { nome: "Advocacia Silva", bairro: "Centro" };
+const EXEMPLO = {
+  nome: "Advocacia Silva",
+  bairro: "Centro",
+  cidade: "Videira",
+};
 
 export default function GerenciadorTemplates({
   templates,
@@ -97,6 +103,14 @@ export default function GerenciadorTemplates({
     });
   }
 
+  function mover(id: string, direcao: "cima" | "baixo") {
+    iniciar(async () => {
+      const r = await moverTemplate(id, direcao);
+      if (!r.ok) window.alert(r.erro);
+      router.refresh();
+    });
+  }
+
   function remover(t: Template) {
     if (!window.confirm(`Excluir o template "${t.nome}"?`)) return;
     iniciar(async () => {
@@ -136,11 +150,15 @@ export default function GerenciadorTemplates({
             <code className="rounded bg-ink-800 px-1 py-0.5 text-brand-soft">
               {"{nome}"}
             </code>{" "}
-            e{" "}
+            ,{" "}
             <code className="rounded bg-ink-800 px-1 py-0.5 text-brand-soft">
               {"{bairro}"}
             </code>{" "}
-            no texto.
+            e{" "}
+            <code className="rounded bg-ink-800 px-1 py-0.5 text-brand-soft">
+              {"{cidade}"}
+            </code>{" "}
+            no texto. O primeiro da lista é o que abre selecionado no lead.
           </p>
         </div>
         <button className="btn-primary" onClick={abrirNovo}>
@@ -167,7 +185,7 @@ export default function GerenciadorTemplates({
         </div>
       ) : (
         <ul className="space-y-3">
-          {templates.map((t) => {
+          {templates.map((t, i) => {
             const usaNome = /\{\s*nome\s*\}/i.test(t.texto);
             const usaBairro = /\{\s*bairro\s*\}/i.test(t.texto);
             return (
@@ -188,6 +206,11 @@ export default function GerenciadorTemplates({
                           {"{bairro}"}
                         </span>
                       )}
+                      {/\{\s*cidade\s*\}/i.test(t.texto) && (
+                        <span className="chip border-line bg-ink-700 text-slate-400">
+                          {"{cidade}"}
+                        </span>
+                      )}
                       <span className="chip border-line bg-ink-700 text-slate-500">
                         {t.texto.length} caracteres
                       </span>
@@ -195,6 +218,27 @@ export default function GerenciadorTemplates({
                   </div>
 
                   <div className="flex shrink-0 gap-1">
+                    {/* A ordem decide qual template abre selecionado na aba
+                        WhatsApp do lead — por isso subir e descer fica aqui,
+                        junto do resto, e não escondido numa tela de ajuste. */}
+                    <button
+                      onClick={() => mover(t.id, "cima")}
+                      disabled={i === 0 || pendente}
+                      className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-ink-600 hover:text-slate-200 disabled:opacity-25 disabled:hover:bg-transparent"
+                      aria-label={`Subir ${t.nome}`}
+                      title="Subir"
+                    >
+                      <IconSeta className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => mover(t.id, "baixo")}
+                      disabled={i === templates.length - 1 || pendente}
+                      className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-ink-600 hover:text-slate-200 disabled:opacity-25 disabled:hover:bg-transparent"
+                      aria-label={`Descer ${t.nome}`}
+                      title="Descer"
+                    >
+                      <IconSeta className="h-4 w-4 rotate-180" />
+                    </button>
                     <button
                       onClick={() => copiar(t)}
                       className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-ink-600 hover:text-slate-200"

@@ -115,6 +115,12 @@ export type Template = {
   id: string;
   nome: string;
   texto: string;
+  /**
+   * Posicao na lista, e portanto qual template vem selecionado por padrao
+   * na aba WhatsApp. Antes a ordem era a de criacao, o que colocava o
+   * follow-up mais novo na frente da primeira abordagem.
+   */
+  ordem: number;
   criado_em: string;
 };
 
