@@ -17,34 +17,22 @@ export function caminhoDemo(slug: string): string {
 }
 
 /**
- * O link como ele aparece na mensagem: sem `https://`.
- *
- * `https://sites.arium-ia.cloud/s/gabriela-fachini` ocupa um terço da tela
- * do WhatsApp com um prefixo que não diz nada. Sem ele o link respira.
- *
- * O WhatsApp reconhece domínio sem protocolo e transforma em link
- * clicável — mas isso é comportamento dele, não garantia nossa. Se um dia
- * chegar como texto morto no celular de alguém, é aqui que se volta atrás:
- * devolver o protocolo é apagar esta linha.
- *
- * Vale só para exibição. O `og:url` e o iframe da prévia continuam com URL
- * completa, montada em outro lugar, porque ali protocolo não é enfeite.
- */
-function semProtocolo(url: string): string {
-  return url.replace(/^https?:\/\//, "");
-}
-
-/**
  * A URL para copiar e para a variável {demo} da mensagem.
+ *
+ * **Com `https://`, e é de propósito.** Uma versão anterior tirava o
+ * protocolo porque ele come um terço da largura no WhatsApp sem dizer
+ * nada. Só que no celular o link chegava como texto morto — o WhatsApp do
+ * telefone não faz o autolink de domínio sem protocolo que o WhatsApp Web
+ * faz. E um link que não abre no toque não é um link: é uma tarefa que o
+ * cliente não vai executar, justamente na mensagem cujo trabalho inteiro é
+ * fazer ele abrir a demo sem esforço.
+ *
+ * Feio e clicável ganha de bonito e morto.
  *
  * `origem` é o fallback quando não há domínio configurado — em geral
  * `window.location.origin`.
  */
 export function urlDemo(slug: string, origem = ""): string {
   const base = BASE || origem;
-  // Em desenvolvimento o endereço é `localhost:3000`, que sem protocolo
-  // vira texto sem sentido em alguns lugares. Fora dele, tira.
-  const ehLocal = /localhost|127\.0\.0\.1/.test(base);
-  const completa = `${base}${caminhoDemo(slug)}`;
-  return ehLocal ? completa : semProtocolo(completa);
+  return `${base}${caminhoDemo(slug)}`;
 }

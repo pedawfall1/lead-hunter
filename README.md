@@ -616,13 +616,12 @@ A variável precisa do prefixo `NEXT_PUBLIC_` porque o link é montado no
 navegador. A Vercel avisa que isso expõe o valor — aqui é falso positivo: o
 valor é um domínio público que vai estampado em cada mensagem.
 
-**O link sai sem `https://`.** `sites.arium-ia.cloud/s/gabriela-fachini`
-respira melhor na tela do WhatsApp que a versão com o prefixo. O WhatsApp
-reconhece domínio sem protocolo e transforma em link clicável, mas isso é
-comportamento dele, não garantia nossa — se um dia chegar como texto morto
-no celular de alguém, devolver o protocolo é apagar uma linha em
-[`src/lib/site/url.ts`](src/lib/site/url.ts). Em `localhost` o protocolo
-fica, senão o link de teste não abre.
+**O link sai com `https://`.** Uma versão tirava o protocolo, porque ele
+come um terço da largura na tela do WhatsApp sem dizer nada — e no teste
+em celular o link chegou como texto morto. O WhatsApp Web faz autolink de
+domínio sem protocolo; o do telefone não faz. Um link que não abre no
+toque não é um link, é uma tarefa que o cliente não vai executar, e é a
+mensagem inteira perdida. Feio e clicável ganha de bonito e morto.
 
 - O HTML fica **gravado** na linha da demo. A rota pública lê uma linha e
   serve, sem chegar perto de `lh_leads`. Efeito colateral bom: mexer no
