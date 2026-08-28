@@ -278,6 +278,19 @@ por colega. No modal do lead, um seletor passa o lead adiante.
 As abas e o seletor só aparecem quando há mais de uma pessoa na equipe:
 sozinho, seriam ruído.
 
+**Abordar lead de outro pede confirmação.** Abrir a aba WhatsApp de um lead
+do colega mostra um aviso, e enviar pergunta antes. Não bloqueia — às vezes é
+exatamente o que se quer, o colega pediu ou está de folga — mas obriga a
+decidir de olhos abertos, em vez de o cliente receber duas mensagens da mesma
+agência e a conversa começar perdida. Lead **sem dono** não avisa: ele está lá
+para quem pegar.
+
+**O Painel filtra por pessoa.** Ao contrário do kanban, ele abre em "A equipe
+toda": o painel é para enxergar a operação, o kanban é para trabalhar a
+própria fila. O filtro corta os leads primeiro e as interações pelo que
+sobrou — sem isso o funil seria de um vendedor e os disparos, da equipe
+inteira.
+
 ## Integração com n8n (opcional)
 
 O Lead Hunter decide **quem** abordar, **com que texto** e **quando**. Quem envia

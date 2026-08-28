@@ -7,7 +7,7 @@ import {
   computarRelatorio,
   type Periodo,
 } from "@/lib/relatorios";
-import type { Interacao, Lead, Projeto, Template } from "@/lib/types";
+import type { Interacao, Lead, Projeto, Template, Membro } from "@/lib/types";
 import Funil from "./Funil";
 import SerieTemporal from "./SerieTemporal";
 import Ranking from "./Ranking";
@@ -19,23 +19,49 @@ export default function PainelRelatorios({
   interacoes,
   projetos,
   templates,
+  membros,
+  euId,
 }: {
   leads: Lead[];
   interacoes: Interacao[];
   projetos: Projeto[];
   templates: Template[];
+  membros: Membro[];
+  euId: string | null;
 }) {
   const [periodo, setPeriodo] = useState<Periodo>(30);
   const [projetoId, setProjetoId] = useState("todos");
 
-  const r = useMemo(
-    () =>
-      computarRelatorio(leads, interacoes, projetos, templates, {
-        periodo,
-        projetoId,
-      }),
-    [leads, interacoes, projetos, templates, periodo, projetoId]
-  );
+  /**
+   * De quem é o número. Começa em "todos" — ao contrário do kanban, onde o
+   * padrão é "meus": o painel é para enxergar a operação, e o kanban é
+   * para trabalhar a própria fila.
+   */
+  const [responsavel, setResponsavel] = useState("todos");
+
+  const r = useMemo(() => {
+    // Filtra os leads primeiro e as interações pelo que sobrou. Sem isso o
+    // funil seria de um vendedor e os disparos, da equipe inteira.
+    const meus =
+      responsavel === "todos"
+        ? leads
+        : leads.filter((l) =>
+            responsavel === "sem"
+              ? !l.responsavel_id
+              : l.responsavel_id === responsavel
+          );
+
+    const ids = new Set(meus.map((l) => l.id));
+    const delas =
+      responsavel === "todos"
+        ? interacoes
+        : interacoes.filter((i) => ids.has(i.lead_id));
+
+    return computarRelatorio(meus, delas, projetos, templates, {
+      periodo,
+      projetoId,
+    });
+  }, [leads, interacoes, projetos, templates, periodo, projetoId, responsavel]);
 
   const vazio = r.totalLeads === 0;
 
@@ -81,6 +107,26 @@ export default function PainelRelatorios({
             </option>
           ))}
         </select>
+
+        {/* Só com equipe: sozinho, filtrar por responsável não separa nada. */}
+        {membros.length > 1 && (
+          <select
+            className="input w-auto min-w-[9rem] py-1.5 text-xs"
+            value={responsavel}
+            onChange={(e) => setResponsavel(e.target.value)}
+            aria-label="Filtrar por responsável"
+          >
+            <option value="todos">A equipe toda</option>
+            {membros.map((m) => (
+              <option key={m.user_id} value={m.user_id}>
+                {m.user_id === euId
+                  ? "Meus números"
+                  : (m.email ?? m.user_id).split("@")[0]}
+              </option>
+            ))}
+            <option value="sem">Sem dono</option>
+          </select>
+        )}
       </div>
 
       {vazio ? (

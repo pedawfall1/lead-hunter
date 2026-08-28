@@ -1,18 +1,22 @@
 import {
   interacoesPorLead,
   listarLeads,
+  listarMembros,
   listarProjetos,
   listarTemplates,
+  usuarioAtual,
 } from "@/lib/db";
 import PainelRelatorios from "@/components/relatorios/PainelRelatorios";
 
 export const dynamic = "force-dynamic";
 
 export default async function PainelPage() {
-  const [leads, projetos, templates] = await Promise.all([
+  const [leads, projetos, templates, membros, euId] = await Promise.all([
     listarLeads(),
     listarProjetos(),
     listarTemplates(),
+    listarMembros(),
+    usuarioAtual(),
   ]);
 
   const porLead = await interacoesPorLead(leads.map((l) => l.id));
@@ -24,6 +28,8 @@ export default async function PainelPage() {
       interacoes={interacoes}
       projetos={projetos}
       templates={templates}
+      membros={membros}
+      euId={euId}
     />
   );
 }

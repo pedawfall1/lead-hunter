@@ -166,6 +166,70 @@ export async function estadoDaInstancia(
 }
 
 /**
+ * Um telefone plausível: 10 a 15 dígitos.
+ *
+ * O piso corta id de sessão curto e o teto corta os números compridos que
+ * a Evolution usa como identificador interno de dispositivo.
+ */
+function pareceTelefone(digitos: string): boolean {
+  return digitos.length >= 10 && digitos.length <= 15;
+}
+
+/**
+ * Varre o objeto inteiro atrás do dono da instância.
+ *
+ * A busca é por FORMA, não por nome de campo: cada versão da Evolution
+ * chama isso de um jeito (`owner`, `ownerJid`, `number`, `wuid`, dentro de
+ * `instance`, dentro de `connectionState`...), e caçar nome por nome é
+ * garantir que a próxima versão quebre de novo. Um JID de WhatsApp é
+ * reconhecível — `5549999999999@s.whatsapp.net` — então procuro por isso.
+ *
+ * Mesmo padrão de `postsDe` em `instagram.ts`, e pela mesma razão.
+ */
+function garimparNumero(valor: unknown, fundo = 0): string | null {
+  if (fundo > 6 || valor == null) return null;
+
+  if (typeof valor === "string") {
+    // JID: o número vem antes do @, e o sufixo confirma que é WhatsApp.
+    if (valor.includes("@")) {
+      const antes = valor.split("@")[0] ?? "";
+      const d = soDigitos(antes);
+      if (pareceTelefone(d)) return d;
+      return null;
+    }
+    const d = soDigitos(valor);
+    return pareceTelefone(d) && d === valor.trim() ? d : null;
+  }
+
+  if (Array.isArray(valor)) {
+    for (const item of valor) {
+      const achado = garimparNumero(item, fundo + 1);
+      if (achado) return achado;
+    }
+    return null;
+  }
+
+  if (typeof valor === "object") {
+    const o = valor as Record<string, unknown>;
+    // Os nomes conhecidos primeiro: quando existem, são a resposta certa,
+    // e evitam pegar um número de telefone que esteja em outro campo.
+    for (const chave of ["ownerJid", "owner", "wuid", "number", "phone"]) {
+      const achado = garimparNumero(o[chave], fundo + 1);
+      if (achado) return achado;
+    }
+    for (const [chave, v] of Object.entries(o)) {
+      if (["ownerJid", "owner", "wuid", "number", "phone"].includes(chave)) {
+        continue;
+      }
+      const achado = garimparNumero(v, fundo + 1);
+      if (achado) return achado;
+    }
+  }
+
+  return null;
+}
+
+/**
  * O número que atendeu ao QR.
  *
  * Vale para mostrar na tela qual WhatsApp está ligado — sem isso o vendedor
@@ -177,19 +241,18 @@ export async function numeroDaInstancia(
   const r = await chamar<unknown>(
     `/instance/fetchInstances?instanceName=${encodeURIComponent(instancia)}`
   );
-  if (!r.ok) return null;
-
-  const lista = Array.isArray(r.data) ? r.data : [r.data];
-  for (const item of lista) {
-    const o = (item ?? {}) as Record<string, unknown>;
-    const dentro = (o.instance ?? o) as Record<string, unknown>;
-    const bruto = dentro?.owner ?? dentro?.number ?? dentro?.ownerJid;
-    if (typeof bruto === "string") {
-      const digitos = soDigitos(bruto.split("@")[0] ?? "");
-      if (digitos) return digitos;
-    }
+  if (r.ok) {
+    const achado = garimparNumero(r.data);
+    if (achado) return achado;
   }
-  return null;
+
+  // Algumas versões não filtram por `instanceName` e devolvem tudo; outras
+  // só expõem o dono no connectionState. Uma segunda tentativa é barata e
+  // evita a tela dizer "Conectado" sem dizer qual número.
+  const estado = await chamar<unknown>(
+    `/instance/connectionState/${encodeURIComponent(instancia)}`
+  );
+  return estado.ok ? garimparNumero(estado.data) : null;
 }
 
 /** Desliga o WhatsApp da instância, sem apagá-la. */

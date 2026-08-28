@@ -214,7 +214,40 @@ export default function ModalLead({
     });
   }
 
+  /**
+   * O lead é de outra pessoa da equipe?
+   *
+   * Lead sem dono não conta: ele está lá para quem pegar. O que preocupa é
+   * abordar quem o colega já está trabalhando — o cliente recebe duas
+   * mensagens da mesma agência e a conversa começa perdida.
+   */
+  const donoOutro =
+    lead.responsavel_id && euId && lead.responsavel_id !== euId
+      ? membros.find((m) => m.user_id === lead.responsavel_id) ?? null
+      : null;
+
+  const nomeDoDono = donoOutro
+    ? (donoOutro.email ?? donoOutro.user_id).split("@")[0]
+    : "";
+
+  /**
+   * Confirma antes de falar com lead de outro.
+   *
+   * Não bloqueia: às vezes é exatamente o que se quer (o colega pediu, ou
+   * está de folga). Só obriga a decidir de olhos abertos, em vez de
+   * descobrir depois que dois abordaram o mesmo cliente.
+   */
+  function podeAbordar(): boolean {
+    if (!donoOutro) return true;
+    return window.confirm(
+      `Este lead é do ${nomeDoDono}.\n\n` +
+        `Se ele já falou com ${nomeCurto(lead.nome)}, o cliente vai receber ` +
+        `duas mensagens da mesma agência.\n\nMandar mesmo assim?`
+    );
+  }
+
   function aoAbrirWhatsapp() {
+    if (!podeAbordar()) return;
     const texto = mensagem;
     const statusAtual = lead.status;
     iniciar(async () => {
@@ -248,6 +281,7 @@ export default function ModalLead({
   }
 
   function dispararAutomatico() {
+    if (!podeAbordar()) return;
     setErro(null);
     const texto = mensagem;
     iniciar(async () => {
@@ -664,6 +698,16 @@ export default function ModalLead({
 
       {aba === "whatsapp" && (
         <div className="space-y-4">
+          {/* Aviso antes de escrever, e não só na hora de enviar: quem
+              descobre que o lead é do colega depois de montar a mensagem
+              já perdeu o tempo de montar. */}
+          {donoOutro && (
+            <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-300">
+              Este lead é do <strong>{nomeDoDono}</strong>. Confira com ele
+              antes de mandar, ou assuma o lead no seletor lá em cima.
+            </p>
+          )}
+
           {templates.length === 0 ? (
             <p className="rounded-lg border border-line bg-ink-900 px-3 py-4 text-sm text-slate-400">
               Você ainda não tem templates. Crie um em{" "}
