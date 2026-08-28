@@ -206,6 +206,10 @@ function css(c: Cores, f: Forma): string {
     `.contato .rot{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:${c.suave};margin-bottom:6px;font-weight:700}`,
     ".contato .val{font-weight:600;font-size:15px;word-break:break-word}",
 
+    ".mapa{margin-top:26px}",
+    `.mapa iframe{width:100%;height:clamp(260px,32vw,380px);display:block;border:${b}px solid ${c.borda};border-radius:${rc}px;box-shadow:${f.sombra}}`,
+    ".mapa .btn{margin-top:18px}",
+
     `footer{border-top:1px solid ${c.borda};padding:34px 0;color:${c.suave};font-size:14px}`,
     "footer .env{display:flex;flex-wrap:wrap;gap:14px 20px;justify-content:space-between;align-items:center}",
     ".feito-por{display:flex;align-items:center;gap:10px;text-decoration:none;opacity:.75}",
@@ -355,6 +359,45 @@ function blocoContato(b: Briefing): string {
 
   if (!itens.length) return "";
   return `<div class="contato">${itens.join("")}</div>`;
+}
+
+/**
+ * O mapa do negócio, no fim da página.
+ *
+ * Busca pelo NOME junto do endereço quando a reputação ajuda: aí o Google
+ * abre a ficha do estabelecimento sobre o mapa, com o nome e a nota, e o
+ * dono vê a própria placa em vez de um alfinete anônimo numa rua.
+ *
+ * **Quando a reputação NÃO ajuda, busca só pelo endereço.** O card do
+ * Google estampa a nota sem perguntar, e uma demo com "3,2 ★" no rodapé
+ * argumenta contra o cliente dentro da proposta que deveria vendê-lo — a
+ * mesma razão pela qual `briefing.google` já corta o selo abaixo de 4,0.
+ * Sem o nome na busca não há ficha, e sobra o mapa fazendo o trabalho que
+ * interessa: mostrar onde fica.
+ *
+ * Sem chave de API. O `output=embed` é o caminho que o Google atende sem
+ * cadastro nenhum — em troca, é rota não documentada: se um dia parar de
+ * responder, o iframe fica em branco e o resto da página segue igual,
+ * porque nada aqui depende dele. O botão "Como chegar" continua valendo
+ * de qualquer forma, já que é link normal.
+ *
+ * `loading="lazy"` não é detalhe: o iframe carrega o Maps inteiro, e ele
+ * fica no fim da página. Sem isso, uma demo aberta no 4G do cliente
+ * gastaria o carregamento com um mapa que ainda está fora da tela.
+ */
+function blocoMapa(b: Briefing): string {
+  if (!b.endereco) return "";
+
+  const busca = b.google ? `${b.nomeCurto}, ${b.endereco}` : b.endereco;
+  const alvo = encodeURIComponent(busca);
+  const destino = encodeURIComponent(b.endereco);
+
+  return `<div class="mapa rev">
+  <iframe src="https://maps.google.com/maps?q=${alvo}&amp;output=embed" title="Localização de ${esc(
+    b.nomeCurto
+  )} no mapa" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+  <a class="btn vazado" href="https://www.google.com/maps/dir/?api=1&amp;destination=${destino}" target="_blank" rel="noopener">Como chegar</a>
+</div>`;
 }
 
 function figura(img: ImagemSite, papel: "moldura" | "galeria"): string {
@@ -659,6 +702,7 @@ ${miolo}
   ${provaSocial}
   ${botao}
   ${blocoContato(briefing)}
+  ${blocoMapa(briefing)}
 </div></section>
 
 <footer><div class="env">

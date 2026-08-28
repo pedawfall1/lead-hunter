@@ -501,11 +501,34 @@ preenche isto em lead importado depois que as colunas existiram; sem o campo,
 todo lead antigo ficaria sem prova social para sempre. Olhe o Google do
 cliente e digite.
 
+### O mapa no fim da página
+
+O rodapé mostra o negócio no Google Maps, num iframe, com um botão **Como
+chegar** ao lado. É a mesma ficha que o dono já tem no Google, agora dentro
+da proposta dele.
+
+**Sem chave de API.** O `output=embed` é o caminho que o Google atende sem
+cadastro nenhum. Em troca é rota não documentada: se um dia parar de
+responder, o iframe fica vazio e o resto da página segue igual, porque nada
+depende dele — e o botão "Como chegar" é link comum, continua valendo.
+
+**A busca muda conforme a reputação, e isso é a mesma regra da faixa.**
+Acima do corte, busca por nome + endereço: o Google abre a ficha sobre o
+mapa, com o nome e a nota, e o pin sai com a placa do negócio. Abaixo do
+corte, busca **só pelo endereço** — porque o card do Google estampa a nota
+sem perguntar, e um "3,2 ★" no rodapé argumentaria contra o cliente dentro
+da peça que deveria vendê-lo. Sem o nome não há ficha, e sobra o mapa
+fazendo o que interessa: mostrar onde fica.
+
+O iframe é `loading="lazy"`. Ele carrega o Maps inteiro e fica no fim da
+página; sem isso, uma demo aberta no 4G gastaria o carregamento com um mapa
+ainda fora da tela.
+
 ### O que a página tem
 
 Topo, sobre, serviços, galeria, diferenciais, **como funciona** (3 passos),
-**perguntas frequentes** e contato — com menu de âncoras no topo, que some no
-celular.
+**perguntas frequentes**, contato e **mapa** — com menu de âncoras no topo,
+que some no celular.
 
 O FAQ usa `<details>` nativo: abre e fecha sem uma linha de JavaScript, e
 continua funcionando se o script da animação não rodar.
