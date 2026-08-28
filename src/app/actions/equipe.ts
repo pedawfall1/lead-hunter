@@ -5,6 +5,7 @@ import {
   atribuirLeadDb,
   obterConexao,
   salvarConexaoDb,
+  salvarWebhookDb,
   usuarioAtual,
 } from "@/lib/db";
 import {
@@ -18,6 +19,7 @@ import {
   type EstadoConexao,
   type Qr,
 } from "@/lib/evolution";
+import { webhookValido } from "@/lib/n8n";
 import { mensagemDeErro } from "@/lib/erros";
 import type { ActionResult } from "@/lib/types";
 
@@ -167,6 +169,35 @@ export async function atribuirLead(
     await atribuirLeadDb(leadId, responsavelId);
     revalidatePath("/projetos");
     revalidatePath("/hoje");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, erro: mensagemDeErro(e) };
+  }
+}
+
+/**
+ * Guarda o webhook do n8n desta pessoa.
+ *
+ * Cada vendedor aponta para o fluxo dele, para o disparo de um não cair na
+ * fila do outro. Vazio limpa e faz voltar ao webhook do ambiente.
+ */
+export async function salvarWebhook(url: string): Promise<ActionResult> {
+  const eu = await euOuErro();
+  if (!eu.ok) return eu;
+
+  const limpo = url.trim();
+  if (limpo && !webhookValido(limpo)) {
+    return {
+      ok: false,
+      erro: "Use uma URL https pública (endereço interno não vale).",
+    };
+  }
+
+  try {
+    await salvarWebhookDb(eu.userId, nomeInstancia(eu.userId), limpo || null);
+    revalidatePath("/equipe");
+    revalidatePath("/hoje");
+    revalidatePath("/projetos");
     return { ok: true };
   } catch (e) {
     return { ok: false, erro: mensagemDeErro(e) };

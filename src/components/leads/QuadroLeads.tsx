@@ -23,6 +23,7 @@ import type {
   Interacao,
   Lead,
   LeadStatus,
+  Membro,
   Projeto,
   Template,
 } from "@/lib/types";
@@ -57,6 +58,8 @@ export default function QuadroLeads({
   openaiAtivo,
   buscaAtiva,
   ultimaBusca,
+  membros,
+  euId,
 }: {
   projeto: Projeto;
   leadsIniciais: Lead[];
@@ -66,6 +69,8 @@ export default function QuadroLeads({
   openaiAtivo: boolean;
   buscaAtiva: boolean;
   ultimaBusca: Busca | null;
+  membros: Membro[];
+  euId: string | null;
 }) {
   const router = useRouter();
   const [, iniciar] = useTransition();
@@ -74,6 +79,14 @@ export default function QuadroLeads({
   const [interacoes, setInteracoes] = useState(interacoesIniciais);
   const [busca, setBusca] = useState("");
   const [sinaisFiltro, setSinaisFiltro] = useState<string[]>([]);
+
+  /**
+   * De quem é o lead: "eu" (o padrão), "todos", "livres" ou o id de um
+   * colega. Começa em "eu" de propósito — com dois vendedores na mesma
+   * carteira, abrir o quadro na lista inteira é o caminho mais curto para
+   * um abordar o lead que o outro já está trabalhando.
+   */
+  const [dono, setDono] = useState<string>(euId ? "eu" : "todos");
 
   const [selecionado, setSelecionado] = useState<{
     id: string;
@@ -104,6 +117,13 @@ export default function QuadroLeads({
     const digitos = soDigitos(busca);
 
     return leads.filter((l) => {
+      // de quem é o lead
+      if (dono === "eu" && l.responsavel_id !== euId) return false;
+      if (dono === "livres" && l.responsavel_id) return false;
+      if (dono !== "eu" && dono !== "todos" && dono !== "livres") {
+        if (l.responsavel_id !== dono) return false;
+      }
+
       // filtro de sinais: mostra quem tem qualquer um dos marcados
       if (sinaisFiltro.length && !sinaisFiltro.some((c) => l.sinais?.[c])) {
         return false;
@@ -115,7 +135,7 @@ export default function QuadroLeads({
       if (digitos.length >= 3 && soDigitos(l.telefone).includes(digitos)) return true;
       return false;
     });
-  }, [leads, busca, sinaisFiltro]);
+  }, [leads, busca, sinaisFiltro, dono, euId]);
 
   const porStatus = useMemo(() => {
     const mapa: Record<LeadStatus, Lead[]> = {
@@ -236,6 +256,50 @@ export default function QuadroLeads({
 
       {/* ---------- filtros ---------- */}
       <div className="space-y-2">
+        {/* De quem é o lead. Só aparece quando há mais de uma pessoa na
+            equipe: sozinho, a aba seria uma linha de ruído. */}
+        {membros.length > 1 && (
+          <div className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0">
+            {[
+              { chave: "eu", label: "Meus leads" },
+              { chave: "todos", label: "Todos" },
+              { chave: "livres", label: "Sem dono" },
+              ...membros
+                .filter((m) => m.user_id !== euId)
+                .map((m) => ({
+                  chave: m.user_id,
+                  label: (m.email ?? m.user_id).split("@")[0] ?? m.user_id,
+                })),
+            ].map((aba) => {
+              const ativo = dono === aba.chave;
+              const quantos = leads.filter((l) =>
+                aba.chave === "eu"
+                  ? l.responsavel_id === euId
+                  : aba.chave === "todos"
+                    ? true
+                    : aba.chave === "livres"
+                      ? !l.responsavel_id
+                      : l.responsavel_id === aba.chave
+              ).length;
+
+              return (
+                <button
+                  key={aba.chave}
+                  onClick={() => setDono(aba.chave)}
+                  className={`chip shrink-0 whitespace-nowrap transition-colors ${
+                    ativo
+                      ? "border-brand/50 bg-brand/15 text-brand-soft"
+                      : "border-line bg-ink-800 text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  {aba.label}
+                  <span className="text-[10px] opacity-70">{quantos}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         <div className="relative sm:max-w-xs">
           <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <input
@@ -369,6 +433,8 @@ export default function QuadroLeads({
           n8nAtivo={n8nAtivo}
           openaiAtivo={openaiAtivo}
           buscaAtiva={buscaAtiva}
+          membros={membros}
+          euId={euId}
           abaInicial={selecionado.aba}
           aoFechar={() => setSelecionado(null)}
           aoAtualizar={(atualizado) =>

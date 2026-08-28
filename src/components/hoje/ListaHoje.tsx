@@ -8,7 +8,7 @@ import { montarAgenda, rotuloPrazo, somarDias, type Balde } from "@/lib/agenda";
 import { formatarTelefone } from "@/lib/format";
 import { rotulosDosSinais } from "@/lib/servicos";
 import { STATUS_META } from "@/lib/status";
-import type { Interacao, Lead, Projeto, Template } from "@/lib/types";
+import type { Interacao, Lead, Projeto, Template, Membro } from "@/lib/types";
 import { IconCheck, IconChevron, IconWhatsapp } from "@/components/ui/icons";
 import { TagsSinais } from "@/components/leads/Sinais";
 import ModalLead from "@/components/leads/ModalLead";
@@ -27,6 +27,8 @@ export default function ListaHoje({
   n8nAtivo,
   openaiAtivo,
   buscaAtiva,
+  membros,
+  euId,
 }: {
   leads: Lead[];
   projetos: Projeto[];
@@ -35,6 +37,8 @@ export default function ListaHoje({
   n8nAtivo: boolean;
   openaiAtivo: boolean;
   buscaAtiva: boolean;
+  membros: Membro[];
+  euId: string | null;
 }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
@@ -215,6 +219,8 @@ export default function ListaHoje({
           n8nAtivo={n8nAtivo}
           openaiAtivo={openaiAtivo}
           buscaAtiva={buscaAtiva}
+          membros={membros}
+          euId={euId}
           abaInicial={aberto.aba}
           aoFechar={() => {
             setAberto(null);

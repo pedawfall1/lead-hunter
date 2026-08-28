@@ -248,6 +248,36 @@ pergunta de 3 em 3 segundos e desiste em 2 minutos, que é quando o QR vence.
 O **disparo continua indo pelo n8n** — o app só resolve de qual número sai, e
 manda isso no campo `instancia`.
 
+### O fluxo de cada um
+
+Ainda em **Equipe**, cada pessoa cola o webhook do próprio fluxo do n8n. Sem
+isso o disparo de um cairia na fila do outro. Vazio volta para o
+`N8N_WEBHOOK_URL` do ambiente.
+
+A URL é validada: só `https`, e nada de `localhost` nem faixa de IP privada.
+Ela vira um `fetch` feito pelo servidor, e sem essa checagem um endereço
+interno faria o servidor bater em algo que ninguém de fora alcança — o
+desenho clássico de SSRF.
+
+### Template é de cada um
+
+Lead é da equipe; **template não**. Template é a voz de quem escreve, e
+compartilhado significaria um editando a copy que o outro está usando naquele
+momento. A policy de `lh_templates_mensagem` é `user_id = auth.uid()`.
+
+Quem entra na equipe recebe uma **cópia** dos templates do dono, para não
+começar sem nada para trabalhar. A partir daí cada um edita a sua.
+
+### De quem é o lead
+
+O quadro abre em **Meus leads**, não em Todos — com dois vendedores na mesma
+carteira, abrir na lista inteira é o caminho mais curto para um abordar quem
+o outro já está trabalhando. As abas são: Meus leads, Todos, Sem dono, e uma
+por colega. No modal do lead, um seletor passa o lead adiante.
+
+As abas e o seletor só aparecem quando há mais de uma pessoa na equipe:
+sozinho, seriam ruído.
+
 ## Integração com n8n (opcional)
 
 O Lead Hunter decide **quem** abordar, **com que texto** e **quando**. Quem envia

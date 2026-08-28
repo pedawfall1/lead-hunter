@@ -2,9 +2,12 @@ import { notFound } from "next/navigation";
 import {
   interacoesPorLead,
   listarLeads,
+  listarMembros,
   listarTemplates,
+  minhaConexao,
   obterProjeto,
   ultimaBuscaDb,
+  usuarioAtual,
 } from "@/lib/db";
 import QuadroLeads from "@/components/leads/QuadroLeads";
 import { n8nConfigurado } from "@/lib/n8n";
@@ -26,11 +29,15 @@ export default async function ProjetoPage({
   const projeto = await obterProjeto(params.id);
   if (!projeto) notFound();
 
-  const [leads, templates, ultimaBusca] = await Promise.all([
-    listarLeads(params.id),
-    listarTemplates(),
-    ultimaBuscaDb(params.id),
-  ]);
+  const [leads, templates, ultimaBusca, conexao, membros, euId] =
+    await Promise.all([
+      listarLeads(params.id),
+      listarTemplates(),
+      ultimaBuscaDb(params.id),
+      minhaConexao(),
+      listarMembros(),
+      usuarioAtual(),
+    ]);
 
   const interacoes = await interacoesPorLead(leads.map((l) => l.id));
 
@@ -40,10 +47,12 @@ export default async function ProjetoPage({
       leadsIniciais={leads}
       templates={templates}
       interacoesIniciais={interacoes}
-      n8nAtivo={n8nConfigurado()}
+      n8nAtivo={n8nConfigurado() || !!conexao?.webhook_url}
       openaiAtivo={openaiConfigurado()}
       buscaAtiva={apifyConfigurado()}
       ultimaBusca={ultimaBusca}
+      membros={membros}
+      euId={euId}
     />
   );
 }

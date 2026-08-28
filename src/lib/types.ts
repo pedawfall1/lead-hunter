@@ -179,5 +179,7 @@ export type Conexao = {
   instancia: string;
   numero: string | null;
   status: "open" | "connecting" | "close";
+  /** o webhook do n8n desta pessoa; null cai no do ambiente */
+  webhook_url: string | null;
   atualizado_em: string;
 };

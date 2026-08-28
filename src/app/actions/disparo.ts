@@ -60,21 +60,26 @@ export async function dispararPeloN8n(
       template_id: dados.templateId,
     });
 
-    const envio = await enviarParaN8n({
-      interacao_id: interacao.id,
-      lead_id: lead.id,
-      projeto_id: lead.projeto_id,
-      // Só manda a instância se ela está de fato no ar: nome de instância
-      // desconectada faria o n8n tentar enviar por um WhatsApp desligado.
-      instancia: conexao?.status === "open" ? conexao.instancia : null,
-      usuario_id: userId,
-      telefone,
-      nome: lead.nome,
-      mensagem: dados.mensagem,
-      template_id: dados.templateId,
-      projeto: dados.projeto,
-      servico: dados.servico,
-    });
+    const envio = await enviarParaN8n(
+      {
+        interacao_id: interacao.id,
+        lead_id: lead.id,
+        projeto_id: lead.projeto_id,
+        // Só manda a instância se ela está de fato no ar: nome de instância
+        // desconectada faria o n8n tentar enviar por um WhatsApp desligado.
+        instancia: conexao?.status === "open" ? conexao.instancia : null,
+        usuario_id: userId,
+        telefone,
+        nome: lead.nome,
+        mensagem: dados.mensagem,
+        template_id: dados.templateId,
+        projeto: dados.projeto,
+        servico: dados.servico,
+      },
+      // Cada vendedor tem o fluxo dele no n8n; sem webhook próprio cai no
+      // do ambiente, que era o desenho de quando havia uma conta só.
+      conexao?.webhook_url
+    );
 
     if (!envio.ok) {
       await atualizarInteracaoDb(interacao.id, { erro: envio.erro });

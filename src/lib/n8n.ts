@@ -51,14 +51,54 @@ export type RespostaDisparo =
   | { ok: true; externoId: string | null }
   | { ok: false; erro: string };
 
-/** Manda um disparo para a fila do n8n. */
+/**
+ * Só https, e só para fora.
+ *
+ * A URL do webhook é digitada por quem usa o app e vira um `fetch` feito
+ * pelo servidor. Sem esta checagem, um endereço interno (`localhost`, um
+ * IP de rede privada) faria o servidor bater em algo que ninguém de fora
+ * alcança — que é o desenho clássico de SSRF.
+ */
+export function webhookValido(url: string): boolean {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== "https:") return false;
+
+    const host = u.hostname.toLowerCase();
+    if (host === "localhost" || host.endsWith(".localhost")) return false;
+    if (/^\[?::1\]?$/.test(host)) return false;
+    if (/^127\./.test(host)) return false;
+    if (/^10\./.test(host)) return false;
+    if (/^192\.168\./.test(host)) return false;
+    if (/^172\.(1[6-9]|2\d|3[01])\./.test(host)) return false;
+    if (/^169\.254\./.test(host)) return false;
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Manda um disparo para a fila do n8n.
+ *
+ * `url` é o webhook de quem está disparando — cada vendedor tem o seu, para
+ * o disparo de um não cair na fila do outro. Sem ele cai no
+ * `N8N_WEBHOOK_URL` do ambiente, que é o comportamento de quando havia uma
+ * conta só.
+ */
 export async function enviarParaN8n(
-  payload: PayloadDisparo
+  payload: PayloadDisparo,
+  url?: string | null
 ): Promise<RespostaDisparo> {
-  if (!N8N_URL) return { ok: false, erro: "n8n não configurado." };
+  const destino = (url ?? "").trim() || N8N_URL;
+  if (!destino) return { ok: false, erro: "n8n não configurado." };
+  if (url && !webhookValido(url)) {
+    return { ok: false, erro: "Webhook inválido: use uma URL https pública." };
+  }
 
   try {
-    const resposta = await fetch(N8N_URL, {
+    const resposta = await fetch(destino, {
       method: "POST",
       headers: {
         "content-type": "application/json",

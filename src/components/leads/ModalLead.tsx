@@ -34,9 +34,17 @@ import {
   registrarDisparo,
 } from "@/app/actions/leads";
 import { dispararPeloN8n } from "@/app/actions/disparo";
+import { atribuirLead } from "@/app/actions/equipe";
 import { listarDemos } from "@/app/actions/site";
 import { urlDemo } from "@/lib/site/url";
-import type { Demo, Interacao, Lead, Projeto, Template } from "@/lib/types";
+import type {
+  Demo,
+  Interacao,
+  Lead,
+  Membro,
+  Projeto,
+  Template,
+} from "@/lib/types";
 import AbaDemo from "./AbaDemo";
 import AbaInstagram from "./AbaInstagram";
 import { EditorSinais, TagsSinais } from "./Sinais";
@@ -55,6 +63,9 @@ type Props = {
   openaiAtivo?: boolean;
   /** APIFY_TOKEN existe no servidor? liga a análise de Instagram */
   buscaAtiva?: boolean;
+  /** a equipe, para passar o lead adiante */
+  membros?: Membro[];
+  euId?: string | null;
   abaInicial: Aba;
   aoFechar: () => void;
   aoAtualizar: (lead: Lead) => void;
@@ -77,6 +88,8 @@ export default function ModalLead({
   n8nAtivo,
   openaiAtivo,
   buscaAtiva,
+  membros = [],
+  euId = null,
   abaInicial,
   aoFechar,
   aoAtualizar,
@@ -302,6 +315,34 @@ export default function ModalLead({
           <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
           {meta.label}
         </span>
+
+        {/* De quem é o lead. Só com mais de uma pessoa na equipe: sozinho,
+            este seletor não decide nada. */}
+        {membros.length > 1 && (
+          <select
+            value={lead.responsavel_id ?? ""}
+            onChange={(e) => {
+              const novo = e.target.value || null;
+              iniciar(async () => {
+                const r = await atribuirLead(lead.id, novo);
+                if (r.ok) aoAtualizar({ ...lead, responsavel_id: novo });
+                else setErro(r.erro);
+              });
+            }}
+            disabled={pendente}
+            className="chip border-line bg-ink-700 text-slate-300 disabled:opacity-50"
+            title="Quem cuida deste lead"
+          >
+            <option value="">sem dono</option>
+            {membros.map((m) => (
+              <option key={m.user_id} value={m.user_id}>
+                {m.user_id === euId
+                  ? "eu"
+                  : (m.email ?? m.user_id).split("@")[0]}
+              </option>
+            ))}
+          </select>
+        )}
         {lead.proximo_contato && (
           <span className="chip border-line bg-ink-700 text-slate-300">
             retorno {rotuloPrazo(lead.proximo_contato)}

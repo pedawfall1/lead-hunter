@@ -6,6 +6,7 @@ import {
   conectarWhatsapp,
   desconectarWhatsapp,
   estadoWhatsapp,
+  salvarWebhook,
   type EstadoWhatsapp,
 } from "@/app/actions/equipe";
 import { formatarTelefone } from "@/lib/format";
@@ -40,15 +41,21 @@ export default function PainelEquipe({
   membros,
   euId,
   evolutionPronta,
+  webhook,
 }: {
   membros: Membro[];
   euId: string | null;
   evolutionPronta: boolean;
+  webhook: string | null;
 }) {
   const [estado, setEstado] = useState<EstadoWhatsapp | null>(null);
   const [erro, setErro] = useState("");
   const [pendente, iniciar] = useTransition();
   const desdeRef = useRef(0);
+
+  const [url, setUrl] = useState(webhook ?? "");
+  const [avisoWebhook, setAvisoWebhook] = useState("");
+  const [salvandoWebhook, salvarUrl] = useTransition();
 
   const eu = membros.find((m) => m.user_id === euId);
 
@@ -197,6 +204,54 @@ export default function PainelEquipe({
             </code>
           </p>
         )}
+      </section>
+
+      {/* ------------------------- meu webhook ------------------------- */}
+      <section className="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
+        <h2 className="font-medium text-slate-100">Meu fluxo no n8n</h2>
+        <p className="mt-1 text-sm text-slate-400">
+          O webhook que recebe os seus disparos. Cada um aponta para o fluxo
+          dele, para o seu envio não cair na fila do outro.
+        </p>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://webhook.arium-ia.cloud/webhook/lead-..."
+            spellCheck={false}
+            className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-sm text-slate-200 outline-none focus:border-brand"
+          />
+          <button
+            onClick={() => {
+              setAvisoWebhook("");
+              salvarUrl(async () => {
+                const r = await salvarWebhook(url);
+                setAvisoWebhook(r.ok ? "Salvo." : r.erro);
+              });
+            }}
+            disabled={salvandoWebhook}
+            className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 transition hover:border-slate-500 disabled:opacity-50"
+          >
+            {salvandoWebhook ? "Salvando..." : "Salvar"}
+          </button>
+        </div>
+
+        {avisoWebhook && (
+          <p
+            className={`mt-3 text-sm ${
+              avisoWebhook === "Salvo." ? "text-emerald-400" : "text-red-400"
+            }`}
+          >
+            {avisoWebhook}
+          </p>
+        )}
+
+        <p className="mt-3 text-xs text-slate-500">
+          Vazio faz o disparo voltar para o webhook do ambiente. O fluxo
+          precisa estar <strong>ativo</strong> no n8n — a URL de produção não
+          responde com ele desligado.
+        </p>
       </section>
 
       {/* --------------------------- membros --------------------------- */}

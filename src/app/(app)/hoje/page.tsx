@@ -1,8 +1,11 @@
 import {
   interacoesPorLead,
   listarAgendados,
+  listarMembros,
   listarProjetos,
   listarTemplates,
+  minhaConexao,
+  usuarioAtual,
 } from "@/lib/db";
 import ListaHoje from "@/components/hoje/ListaHoje";
 import { n8nConfigurado } from "@/lib/n8n";
@@ -13,11 +16,15 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Hoje - Lead Hunter" };
 
 export default async function HojePage() {
-  const [leads, projetos, templates] = await Promise.all([
-    listarAgendados(),
-    listarProjetos(),
-    listarTemplates(),
-  ]);
+  const [leads, projetos, templates, conexao, membros, euId] =
+    await Promise.all([
+      listarAgendados(),
+      listarProjetos(),
+      listarTemplates(),
+      minhaConexao(),
+      listarMembros(),
+      usuarioAtual(),
+    ]);
 
   const interacoes = await interacoesPorLead(leads.map((l) => l.id));
 
@@ -27,9 +34,11 @@ export default async function HojePage() {
       projetos={projetos}
       templates={templates}
       interacoesIniciais={interacoes}
-      n8nAtivo={n8nConfigurado()}
+      n8nAtivo={n8nConfigurado() || !!conexao?.webhook_url}
       openaiAtivo={openaiConfigurado()}
       buscaAtiva={apifyConfigurado()}
+      membros={membros}
+      euId={euId}
     />
   );
 }

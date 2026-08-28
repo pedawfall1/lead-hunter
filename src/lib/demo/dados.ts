@@ -265,6 +265,13 @@ function montar(
         ? instagramDeExemplo(s.ig.replace(/^@/, ""), i % 3 === 0 ? 4 : 31 + i * 5)
         : {}),
       ...googleDoSeed(s.sinais),
+      // Depois dos spreads de propósito: `SEM_INSTAGRAM` carrega
+      // `responsavel_id: null` e apagaria isto se viesse por cima.
+      //
+      // Espalha a carteira entre as três pessoas de `listarMembros` e
+      // deixa alguns sem dono — é o que dá o que ver nas abas "Meus
+      // leads", "Sem dono" e a de cada colega.
+      responsavel_id: ["demo", "demo-2", null, "demo", "demo-3"][i % 5] ?? null,
     };
   });
 }

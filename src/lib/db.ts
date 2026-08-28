@@ -1180,11 +1180,27 @@ export async function importarLugaresDb(
  */
 export async function listarMembros(): Promise<Membro[]> {
   if (DEMO) {
+    // Três pessoas, e não uma: as abas de responsável e o seletor do modal
+    // só aparecem em equipe de verdade, e o modo demo é a vitrine.
     return [
       {
         user_id: "demo",
         email: "voce@exemplo.com",
         papel: "dono",
+        conectado: true,
+        numero: "5549999318232",
+      },
+      {
+        user_id: "demo-2",
+        email: "alexandre@exemplo.com",
+        papel: "vendedor",
+        conectado: true,
+        numero: "5549998770033",
+      },
+      {
+        user_id: "demo-3",
+        email: "henrique@exemplo.com",
+        papel: "vendedor",
         conectado: false,
         numero: null,
       },
@@ -1216,7 +1232,7 @@ export async function obterConexao(userId: string): Promise<Conexao | null> {
 
   const { data, error } = await createClient()
     .from(T.conexoes)
-    .select("user_id, instancia, numero, status, atualizado_em")
+    .select("user_id, instancia, numero, status, webhook_url, atualizado_em")
     .eq("user_id", userId)
     .maybeSingle();
   checar(error);
@@ -1262,5 +1278,34 @@ export async function atribuirLeadDb(
     .from(T.leads)
     .update({ responsavel_id: responsavelId })
     .eq("id", leadId);
+  checar(error);
+}
+
+/**
+ * Por onde o disparo de quem está logado sai: webhook próprio e instância.
+ *
+ * Uma consulta só, porque toda tela que mostra o botão de disparo precisa
+ * das duas coisas.
+ */
+export async function minhaConexao(): Promise<Conexao | null> {
+  const userId = await usuarioAtual();
+  if (!userId) return null;
+  return obterConexao(userId);
+}
+
+/** Guarda o webhook do n8n desta pessoa. */
+export async function salvarWebhookDb(
+  userId: string,
+  instancia: string,
+  webhook: string | null
+): Promise<void> {
+  if (DEMO) return;
+
+  const { error } = await createClient()
+    .from(T.conexoes)
+    .upsert(
+      { user_id: userId, instancia, webhook_url: webhook },
+      { onConflict: "user_id" }
+    );
   checar(error);
 }
