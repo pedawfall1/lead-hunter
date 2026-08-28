@@ -7,6 +7,8 @@ import {
   criarInteracaoDb,
   listarInteracoes,
   listarNaoPerturbe,
+  obterConexao,
+  usuarioAtual,
 } from "@/lib/db";
 import { cadenciaSugerida, somarDias } from "@/lib/agenda";
 import { mensagemDeErro } from "@/lib/erros";
@@ -46,6 +48,12 @@ export async function dispararPeloN8n(
       };
     }
 
+    // De qual WhatsApp esta mensagem sai. Cada vendedor tem o seu, então
+    // isto se resolve a cada disparo — não uma vez no arranque do servidor.
+    const userId = await usuarioAtual();
+    if (!userId) return { ok: false, erro: "Sessão expirada. Entre de novo." };
+    const conexao = await obterConexao(userId);
+
     const interacao = await criarInteracaoDb(lead.id, {
       tipo: "whatsapp",
       texto: dados.mensagem,
@@ -56,6 +64,10 @@ export async function dispararPeloN8n(
       interacao_id: interacao.id,
       lead_id: lead.id,
       projeto_id: lead.projeto_id,
+      // Só manda a instância se ela está de fato no ar: nome de instância
+      // desconectada faria o n8n tentar enviar por um WhatsApp desligado.
+      instancia: conexao?.status === "open" ? conexao.instancia : null,
+      usuario_id: userId,
       telefone,
       nome: lead.nome,
       mensagem: dados.mensagem,

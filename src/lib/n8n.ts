@@ -26,6 +26,18 @@ export type PayloadDisparo = {
   interacao_id: string;
   lead_id: string;
   projeto_id: string;
+  /**
+   * De qual WhatsApp esta mensagem sai.
+   *
+   * É o nome da instância na Evolution, do vendedor que apertou o botão.
+   * Sem isto os dois sairiam do mesmo número e a resposta do lead cairia
+   * no telefone errado. Vem `null` quando a pessoa ainda não conectou o
+   * WhatsApp dela — aí cabe ao fluxo do n8n decidir se usa uma instância
+   * padrão ou recusa.
+   */
+  instancia: string | null;
+  /** quem disparou, para o n8n registrar e para você auditar depois */
+  usuario_id: string;
   /** DDI + DDD + número, só dígitos, pronto para a Evolution */
   telefone: string;
   nome: string;

@@ -193,6 +193,61 @@ Os números que aparecem nas objeções (R$ 90/mês, 7 dias de prazo, 7 dias de
 garantia) são promessas comerciais, não algo que o sistema calcula. Se
 mudarem, mude no arquivo e nos templates já salvos.
 
+## Equipe: mais de um vendendo
+
+A posse dos dados é da **equipe**, não da pessoa. `lh_equipes` e `lh_membros`
+guardam quem é quem; `lh_projetos`, `lh_templates_mensagem` e
+`lh_nao_perturbe` carregam `equipe_id`, e leads, demos, buscas e interações
+herdam pelo projeto. `user_id` continua nas tabelas, mas agora significa
+**quem criou**, não quem pode ver.
+
+Cada lead tem `responsavel_id`, preenchido pelo banco com quem o importou
+(`default auth.uid()`). Nulo quer dizer da equipe, ninguém pegou.
+
+### As policies são `to authenticated`, e isso não é detalhe
+
+As policies de equipe chamam `lh_minhas_equipes()`, uma função
+`SECURITY DEFINER` — necessária porque uma policy de `lh_membros` que
+consultasse `lh_membros` entraria em recursão de RLS.
+
+Como `anon` não pode executar essa função, uma policy `to public` faria o
+visitante que abre uma demo bater em `permission denied for function` — ou
+seja, **a página que o cliente recebe pararia de abrir**. Com
+`to authenticated`, o visitante só é avaliado pela policy
+`publicada e pública`, que é a única que lhe diz respeito. Se você criar
+outra policy usando essas funções, ela precisa ser `to authenticated`.
+
+### Adicionar alguém
+
+Não há tela de convite: criar credencial é coisa que passa pela sua mão, não
+pela do app.
+
+1. Supabase, Authentication, Users, **Invite user** com o e-mail da pessoa.
+   Ela recebe o link e define a própria senha.
+2. Inclua na equipe:
+
+```sql
+insert into public.lh_membros (equipe_id, user_id, papel)
+select (select id from public.lh_equipes limit 1),
+       id, 'vendedor'
+from auth.users where email = 'pessoa@exemplo.com';
+```
+
+A partir daí ela vê os mesmos projetos e leads que você.
+
+### O WhatsApp de cada um
+
+Em **Equipe** cada pessoa conecta o próprio WhatsApp por QR code. O app fala
+direto com a Evolution para criar a instância (`lh-<8 primeiros do user_id>`,
+derivado e não sorteado, para não virar instância órfã se a linha do banco
+sumir), pegar o QR e ler o status.
+
+A Evolution não avisa ninguém quando o celular lê o código, então a tela
+pergunta de 3 em 3 segundos e desiste em 2 minutos, que é quando o QR vence.
+
+O **disparo continua indo pelo n8n** — o app só resolve de qual número sai, e
+manda isso no campo `instancia`.
+
 ## Integração com n8n (opcional)
 
 O Lead Hunter decide **quem** abordar, **com que texto** e **quando**. Quem envia
@@ -210,6 +265,8 @@ Sem `N8N_WEBHOOK_URL` configurada o botão nem aparece e o app segue no `wa.me`.
 | `N8N_TOKEN` | vai no header `x-lh-token` quando o app chama o n8n |
 | `LH_WEBHOOK_TOKEN` | exigido no header `x-lh-token` quando o n8n chama de volta |
 | `SUPABASE_SERVICE_ROLE_KEY` | o callback chega sem sessão e grava pelo dono do lead |
+| `EVOLUTION_URL` | a sua Evolution, para o app gerar o QR e ver o status |
+| `EVOLUTION_API_KEY` | a `apikey` global da Evolution |
 
 Nenhuma tem `NEXT_PUBLIC_`: são segredos e ficam só no servidor. A
 `service_role` ignora RLS — ela é usada apenas em `src/app/api/n8n/route.ts`.
@@ -228,9 +285,17 @@ Nenhuma tem `NEXT_PUBLIC_`: são segredos e ficam só no servidor. A
   "mensagem": "Oi Cão & Cia, tudo bem? Vi que vocês atendem aqui no Berger...",
   "template_id": "42f61df4-...",
   "projeto": "Petshops - Caçador",
-  "servico": "Social mídia"
+  "servico": "Social mídia",
+  "instancia": "lh-28b327d9",
+  "usuario_id": "28b327d9-..."
 }
 ```
+
+`instancia` é **de qual WhatsApp a mensagem sai** — a instância da Evolution
+do vendedor que apertou o botão. Sem ela os dois sairiam do mesmo número e a
+resposta do lead cairia no telefone errado. Vem `null` quando a pessoa ainda
+não conectou o WhatsApp dela; aí o fluxo decide se usa uma instância padrão
+ou recusa o envio.
 
 O `telefone` já vem normalizado (DDI + DDD + número, só dígitos) e a `mensagem`
 já vem com as variáveis preenchidas e a variação sorteada — o n8n não precisa
@@ -755,13 +820,16 @@ mão não quebra nada.
 
 ## Isolamento por conta
 
-O RLS já é por dono: cada linha pertence a quem a criou (`user_id = auth.uid()`),
-e `lh_leads` / `lh_interacoes` herdam o dono via projeto. Isso importa porque o
-projeto Supabase é compartilhado — sem essas policies, um usuário de outro
-sistema do mesmo projeto leria os leads.
+O RLS é por **equipe**: cada linha pertence a uma `equipe_id`, e `lh_leads`,
+`lh_demos`, `lh_buscas` e `lh_interacoes` herdam pelo projeto. Isso importa
+porque o projeto Supabase é compartilhado com outros sistemas — sem essas
+policies, um usuário de outro app do mesmo projeto leria os leads.
 
-Efeito colateral bom: multi-usuário já funciona. Adicionar uma segunda conta é
-criar o usuário no painel do Supabase; nada muda no código.
+Conferido: com a sessão de um usuário de outro sistema, todas as tabelas do
+Lead Hunter devolvem zero linhas.
+
+Antes era por dono (`user_id = auth.uid()`). Ver [Equipe](#equipe-mais-de-um-vendendo)
+para o que mudou e por que as policies precisam ser `to authenticated`.
 
 ## Próximos passos (quando estiver no PC)
 

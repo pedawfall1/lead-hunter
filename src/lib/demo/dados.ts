@@ -22,6 +22,7 @@ const SEM_INSTAGRAM = {
   ig_bruto: null,
   google_nota: null,
   google_avaliacoes: null,
+  responsavel_id: null,
 } as const;
 
 /**

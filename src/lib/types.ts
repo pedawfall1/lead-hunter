@@ -61,6 +61,13 @@ export type Lead = {
   /** nota do Google (1 a 5), quando o lead veio da busca no Maps */
   google_nota: number | null;
   google_avaliacoes: number | null;
+  /**
+   * Quem cuida deste lead. Nulo = da equipe, ninguem pegou ainda.
+   *
+   * O banco preenche com quem importou (`default auth.uid()`), entao o
+   * lead ja nasce com dono e ninguem precisa distribuir na mao.
+   */
+  responsavel_id: string | null;
   criado_em: string;
   atualizado_em: string;
 };
@@ -155,3 +162,22 @@ export type Demo = {
 export type ActionResult<T = undefined> =
   | { ok: true; data?: T }
   | { ok: false; erro: string };
+
+/** Um vendedor da equipe. */
+export type Membro = {
+  user_id: string;
+  email: string | null;
+  papel: "dono" | "vendedor";
+  /** o WhatsApp dele esta ligado? */
+  conectado: boolean;
+  numero: string | null;
+};
+
+/** O WhatsApp de um vendedor, do lado do nosso banco. */
+export type Conexao = {
+  user_id: string;
+  instancia: string;
+  numero: string | null;
+  status: "open" | "connecting" | "close";
+  atualizado_em: string;
+};

@@ -8,6 +8,7 @@ import { acharServico } from "@/lib/servicos";
 import type { ProjetoNav } from "@/lib/db";
 import {
   IconChevron,
+  IconEquipe,
   IconFolder,
   IconLogout,
   IconMessage,
@@ -21,6 +22,7 @@ const LINKS = [
   { href: "/", label: "Painel", Icone: IconRelatorio, exato: true },
   { href: "/projetos", label: "Projetos", Icone: IconFolder, exato: false },
   { href: "/templates", label: "Templates", Icone: IconMessage, exato: false },
+  { href: "/equipe", label: "Equipe", Icone: IconEquipe, exato: false },
 ];
 
 function ativo(pathname: string, href: string, exato: boolean) {

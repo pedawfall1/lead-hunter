@@ -4,11 +4,13 @@ import { createClient } from "./supabase/server";
 import type { ConteudoSite } from "./site/tipos";
 import type {
   Busca,
+  Conexao,
   Criterio,
   Demo,
   Interacao,
   Lead,
   LeadStatus,
+  Membro,
   Projeto,
   Sinais,
   Template,
@@ -32,6 +34,8 @@ const T = {
   interacoes: "lh_interacoes",
   templates: "lh_templates_mensagem",
   demos: "lh_demos",
+  conexoes: "lh_conexoes",
+  membros: "lh_membros",
 } as const;
 
 function checar(error: { message: string } | null) {
@@ -125,7 +129,7 @@ export async function excluirProjetoDb(id: string): Promise<void> {
 /* --------------------------------- leads -------------------------------- */
 
 const COLUNAS_LEAD =
-  "id, projeto_id, nome, telefone, endereco, instagram, email, sinais, status, nota, proximo_contato, ig_dados, ig_run_id, ig_em, ig_erro, ig_bruto, place_id, google_nota, google_avaliacoes, criado_em, atualizado_em";
+  "id, projeto_id, nome, telefone, endereco, instagram, email, sinais, status, nota, proximo_contato, ig_dados, ig_run_id, ig_em, ig_erro, ig_bruto, place_id, google_nota, google_avaliacoes, responsavel_id, criado_em, atualizado_em";
 
 export async function listarLeads(projetoId?: string): Promise<Lead[]> {
   if (DEMO) {
@@ -356,6 +360,9 @@ export const SEM_ENRIQUECIMENTO = {
   ig_bruto: null,
   google_nota: null,
   google_avaliacoes: null,
+  // Lead novo nasce sem dono no modo demo; em producao quem o importou
+  // fica responsavel, por conta do default do banco.
+  responsavel_id: null,
 } as const;
 
 export async function inserirLeadsDb(
@@ -1160,4 +1167,100 @@ export async function importarLugaresDb(
   }
 
   return { inseridos, duplicados, qualificados };
+}
+
+/* ------------------------- equipe e conexões ------------------------- */
+
+/**
+ * Quem está na minha equipe, com e-mail e estado do WhatsApp.
+ *
+ * Vem de uma função SECURITY DEFINER porque o e-mail mora em `auth.users`,
+ * fora do alcance das policies do app. A função só devolve membros das
+ * equipes de quem chama.
+ */
+export async function listarMembros(): Promise<Membro[]> {
+  if (DEMO) {
+    return [
+      {
+        user_id: "demo",
+        email: "voce@exemplo.com",
+        papel: "dono",
+        conectado: false,
+        numero: null,
+      },
+    ];
+  }
+
+  const { data, error } = await createClient().rpc("lh_equipe_membros");
+  checar(error);
+
+  return ((data ?? []) as Record<string, unknown>[]).map((m) => ({
+    user_id: String(m.user_id),
+    email: (m.email as string) ?? null,
+    papel: m.papel === "dono" ? "dono" : "vendedor",
+    conectado: m.status === "open",
+    numero: (m.numero as string) ?? null,
+  }));
+}
+
+/** O id do usuário logado, ou null fora de uma sessão. */
+export async function usuarioAtual(): Promise<string | null> {
+  if (DEMO) return "demo";
+  const { data } = await createClient().auth.getUser();
+  return data.user?.id ?? null;
+}
+
+/** A conexão de WhatsApp de um usuário — a minha, por padrão. */
+export async function obterConexao(userId: string): Promise<Conexao | null> {
+  if (DEMO) return null;
+
+  const { data, error } = await createClient()
+    .from(T.conexoes)
+    .select("user_id, instancia, numero, status, atualizado_em")
+    .eq("user_id", userId)
+    .maybeSingle();
+  checar(error);
+  return (data as Conexao) ?? null;
+}
+
+/**
+ * Grava o estado da conexão.
+ *
+ * `equipe_id` fica por conta do default do banco (`lh_minha_equipe()`),
+ * pela mesma razão que `user_id` sempre ficou: é o banco que sabe de que
+ * equipe é quem está escrevendo.
+ */
+export async function salvarConexaoDb(dados: {
+  user_id: string;
+  instancia: string;
+  status: string;
+  numero?: string | null;
+}): Promise<void> {
+  if (DEMO) return;
+
+  const { error } = await createClient()
+    .from(T.conexoes)
+    .upsert(
+      { ...dados, atualizado_em: new Date().toISOString() },
+      { onConflict: "user_id" }
+    );
+  checar(error);
+}
+
+/** Passa o lead para outra pessoa da equipe (ou solta, com null). */
+export async function atribuirLeadDb(
+  leadId: string,
+  responsavelId: string | null
+): Promise<void> {
+  if (DEMO) {
+    const lead = estado().leads.find((l) => l.id === leadId);
+    if (lead) lead.responsavel_id = responsavelId;
+    return;
+  }
+
+  const { error } = await createClient()
+    .from(T.leads)
+    .update({ responsavel_id: responsavelId })
+    .eq("id", leadId);
+  checar(error);
 }

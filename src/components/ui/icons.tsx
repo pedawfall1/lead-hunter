@@ -184,3 +184,13 @@ export const IconRelatorio = (p: P) => (
     <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
   </Svg>
 );
+
+/** Duas pessoas: a equipe que vende junto. */
+export const IconEquipe = (p: P) => (
+  <Svg {...p}>
+    <circle cx="9" cy="8" r="3.2" />
+    <path d="M3.5 19.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5" />
+    <path d="M16 5.6a3.2 3.2 0 0 1 0 6.1" />
+    <path d="M17.5 14.9c1.9.6 3 2.4 3 4.6" />
+  </Svg>
+);
