@@ -514,16 +514,29 @@ export default function ModalLead({
             </div>
           </div>
 
-          <div>
-            <label className="label" htmlFor="email">E-mail</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              className="input"
-              defaultValue={lead.email ?? ""}
-              placeholder="contato@empresa.com.br"
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="label" htmlFor="email">E-mail</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                className="input"
+                defaultValue={lead.email ?? ""}
+                placeholder="contato@empresa.com.br"
+              />
+            </div>
+            <div>
+              <label className="label" htmlFor="site_url">Site</label>
+              <input
+                id="site_url"
+                name="site_url"
+                type="url"
+                className="input"
+                defaultValue={lead.site_url ?? ""}
+                placeholder="https://empresa.com.br"
+              />
+            </div>
           </div>
 
           {/* Editável na mão porque a busca do Maps só preenche isto em lead

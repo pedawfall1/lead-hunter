@@ -129,7 +129,7 @@ export async function excluirProjetoDb(id: string): Promise<void> {
 /* --------------------------------- leads -------------------------------- */
 
 const COLUNAS_LEAD =
-  "id, projeto_id, nome, telefone, endereco, instagram, email, sinais, status, nota, proximo_contato, ig_dados, ig_run_id, ig_em, ig_erro, ig_bruto, place_id, google_nota, google_avaliacoes, responsavel_id, lat, lng, site_conteudo, site_em, site_erro, criado_em, atualizado_em";
+  "id, projeto_id, nome, telefone, endereco, instagram, email, site_url, sinais, status, nota, proximo_contato, ig_dados, ig_run_id, ig_em, ig_erro, ig_bruto, place_id, google_nota, google_avaliacoes, responsavel_id, lat, lng, site_conteudo, site_em, site_erro, criado_em, atualizado_em";
 
 export async function listarLeads(projetoId?: string): Promise<Lead[]> {
   if (DEMO) {
@@ -184,6 +184,7 @@ export type DadosLead = {
   endereco: string | null;
   instagram: string | null;
   email: string | null;
+  site_url: string | null;
   sinais: Sinais;
   status: LeadStatus;
   nota: string | null;
@@ -368,6 +369,7 @@ export const SEM_ENRIQUECIMENTO = {
   site_conteudo: null,
   site_em: null,
   site_erro: null,
+  site_url: null,
 } as const;
 
 export async function inserirLeadsDb(
@@ -1023,6 +1025,7 @@ export type LugarImportado = {
   endereco: string | null;
   instagram: string | null;
   email: string | null;
+  site_url: string | null;
   sinais: Sinais;
   place_id: string | null;
   google_nota: number | null;

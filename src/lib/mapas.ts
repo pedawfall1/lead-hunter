@@ -52,6 +52,8 @@ export type LugarNormalizado = {
   instagram: string | null;
   placeId: string | null;
   email: string | null;
+  /** null quando nao ha site, ou quando o scraper devolveu o link do proprio Google Maps */
+  site: string | null;
   temSite: boolean;
   nota: number | null;
   avaliacoes: number | null;
@@ -115,7 +117,11 @@ export function normalizarLugar(bruto: LugarBruto): LugarNormalizado | null {
   if (!nome) return null;
 
   const telBruto = texto(bruto.phoneUnformatted, bruto.phone, bruto.telefone);
-  const site = texto(bruto.website);
+  const siteBruto = texto(bruto.website);
+  // "url" de scraper de mapa costuma ser o link do próprio Google, não o
+  // site — guardar sem filtrar faria o leitor de site raspar o Google Maps.
+  const site =
+    siteBruto && !/google\.[a-z.]+\/maps/i.test(siteBruto) ? siteBruto : null;
 
   return {
     nome,
@@ -124,8 +130,8 @@ export function normalizarLugar(bruto: LugarBruto): LugarNormalizado | null {
     instagram: instagramDe(bruto),
     placeId: texto(bruto.placeId, bruto.place_id),
     email: texto(bruto.email, primeiro(bruto.emails))?.toLowerCase() ?? null,
-    // "url" de scraper de mapa costuma ser o link do próprio Google, não o site
-    temSite: !!site && !/google\.[a-z.]+\/maps/i.test(site),
+    site,
+    temSite: !!site,
     nota: numero(bruto.totalScore, bruto.rating),
     avaliacoes: numero(bruto.reviewsCount, bruto.userRatingsTotal),
     fotos: numero(bruto.imagesCount),

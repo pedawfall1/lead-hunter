@@ -41,6 +41,8 @@ export type Lead = {
   endereco: string | null;
   instagram: string | null;
   email: string | null;
+  /** null quando o lead nao tem site, ou quando o scraper so achou o link do proprio Google Maps */
+  site_url: string | null;
   sinais: Sinais;
   status: LeadStatus;
   nota: string | null;

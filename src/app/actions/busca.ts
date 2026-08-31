@@ -121,6 +121,7 @@ export async function conferirBusca(
         endereco: lugar.endereco,
         instagram: lugar.instagram,
         email: lugar.email,
+        site_url: lugar.site,
         sinais: sinaisDoLugar(lugar, projeto?.criterios ?? []),
         place_id: lugar.placeId,
         // Antes estes dois viravam sinal e eram jogados fora. Guardados,

@@ -68,6 +68,7 @@ function ler(formData: FormData): DadosLead {
     endereco: limpar(formData.get("endereco")),
     instagram: instagram ? instagram.replace(/^@/, "") : null,
     email: limpar(formData.get("email")),
+    site_url: limpar(formData.get("site_url")),
     sinais: lerSinais(formData),
     status: ehStatus(statusBruto) ? statusBruto : "novo",
     nota: limpar(formData.get("nota")),

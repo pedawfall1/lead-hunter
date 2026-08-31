@@ -28,6 +28,7 @@ const SEM_INSTAGRAM = {
   site_conteudo: null,
   site_em: null,
   site_erro: null,
+  site_url: null,
 } as const;
 
 /**
