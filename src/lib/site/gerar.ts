@@ -54,6 +54,10 @@ REGRA PRINCIPAL — não invente fato:
 - Se você não sabe algo do negócio, escreva a frase sem esse dado. É melhor genérico e verdadeiro do que específico e falso.
 - Esta página será mostrada ao dono do negócio, que sabe a verdade sobre ele.
 
+CONTEÚDO DO SITE DO NEGÓCIO:
+- Quando o briefing trouxer conteúdo real extraído do site, trate-o como fato adicional e priorize os serviços reais descritos ali, em vez de completar a lista com serviços genéricos do ramo.
+- Esse conteúdo não abre exceção à regra principal: nunca complete com números, depoimentos, prêmios, certificações, prazos ou preços que não estejam nos dados.
+
 TAMANHOS (respeite, o layout depende disso):
 - chamada: até 60 caracteres, uma frase de impacto
 - subchamada: até 140 caracteres

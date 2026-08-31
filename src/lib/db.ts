@@ -1362,3 +1362,28 @@ export async function contarDisparosHoje(userId: string): Promise<number> {
   checar(error);
   return count ?? 0;
 }
+
+/**
+ * Guarda a leitura do site separada do restante do lead porque uma falha na
+ * página externa não pode apagar os dados já confirmados pelo vendedor.
+ */
+export async function salvarSiteDoLeadDb(
+  id: string,
+  campos: Pick<Lead, "site_conteudo" | "site_em" | "site_erro">
+): Promise<Lead> {
+  if (DEMO) {
+    const lead = estado().leads.find((l) => l.id === id);
+    if (!lead) throw new Error("Lead não encontrado.");
+    Object.assign(lead, campos, { atualizado_em: agora() });
+    return { ...lead };
+  }
+
+  const { data, error } = await createClient()
+    .from(T.leads)
+    .update(campos)
+    .eq("id", id)
+    .select(COLUNAS_LEAD)
+    .single();
+  checar(error);
+  return data as Lead;
+}

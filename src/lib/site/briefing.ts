@@ -48,6 +48,8 @@ export type Briefing = {
   /** as palavras que mais aparecem nas legendas do perfil */
   temas: string[];
   seguidores: number | null;
+  /** texto real extraído do site próprio do negócio */
+  conteudoSite?: Record<string, unknown> | null;
   /**
    * Nota e avaliações do Google, e **só quando servem de prova social**.
    *
@@ -84,6 +86,7 @@ export function montarBriefing(lead: Lead, projeto: Projeto): Briefing {
     bioInstagram: ig?.bio ?? null,
     temas: ig ? temasDasLegendas(ig, 8) : [],
     seguidores: ig?.seguidores ?? null,
+    conteudoSite: lead.site_conteudo,
     nome: lead.nome,
     nomeCurto: nomeCurto(lead.nome),
     nicho: projeto.nicho,
@@ -122,6 +125,10 @@ export function briefingComoTexto(b: Briefing): string {
     ["Telefone", b.telefoneVisivel],
     ["Instagram", b.instagram ? `@${b.instagram}` : null],
     ["E-mail", b.email],
+    [
+      "Conteúdo real do site do negócio",
+      b.conteudoSite ? JSON.stringify(b.conteudoSite) : null,
+    ],
     // A bio é o negócio se descrevendo com as próprias palavras.
     ["Como eles se descrevem no Instagram", b.bioInstagram],
     [
