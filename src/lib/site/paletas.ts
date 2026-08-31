@@ -89,9 +89,11 @@ const TIPOGRAFIA: Record<
   { titulo: string; corpo: string; link: string; peso: number }
 > = {
   sobrio: {
-    titulo: `Lora, ${SERIF}`,
+    titulo: `"Crimson Pro", ${SERIF}`,
     corpo: `Inter, ${SANS}`,
-    link: googleFonts("family=Lora:wght@600;700&family=Inter:wght@400;500;600"),
+    link: googleFonts(
+      "family=Crimson+Pro:wght@600;700&family=Inter:wght@400;500;600"
+    ),
     peso: 700,
   },
   caloroso: {
@@ -147,6 +149,16 @@ export type Forma = {
   escalaTitulo: number;
   /** quantas fotos a página pede ao Pexels */
   fotos: number;
+  /**
+   * O tratamento "editorial de escritório": borda de cartão, moldura e
+   * quadro tingida na cor da marca em vez de cinza neutro, CTA do topo
+   * contornado em vez de preenchido, menu em caixa alta rastreada, e um
+   * selo em losango com a inicial ao lado do nome no cabeçalho.
+   *
+   * Só `sobrio` liga isto — é o que aproxima advocacia/contabilidade do
+   * institucional "preto e dourado" sem tocar nos outros temperamentos.
+   */
+  refinado: boolean;
 };
 
 export const FORMAS: Record<Tom, Forma> = {
@@ -160,6 +172,7 @@ export const FORMAS: Record<Tom, Forma> = {
     escalaTitulo: 0.86,
     // Advocacia com galeria de fotos parece imobiliária. Duas bastam.
     fotos: 2,
+    refinado: true,
   },
   caloroso: {
     raio: 22,
@@ -171,6 +184,7 @@ export const FORMAS: Record<Tom, Forma> = {
     escalaTitulo: 1.08,
     // Estética e restaurante vendem pelo olho: quanto mais foto, melhor.
     fotos: 5,
+    refinado: false,
   },
   robusto: {
     raio: 3,
@@ -182,6 +196,7 @@ export const FORMAS: Record<Tom, Forma> = {
     respiro: 0.9,
     escalaTitulo: 1,
     fotos: 4,
+    refinado: false,
   },
   tecnico: {
     raio: 12,
@@ -192,6 +207,7 @@ export const FORMAS: Record<Tom, Forma> = {
     respiro: 1,
     escalaTitulo: 0.94,
     fotos: 4,
+    refinado: false,
   },
 };
 

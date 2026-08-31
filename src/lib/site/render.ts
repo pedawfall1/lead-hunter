@@ -46,6 +46,15 @@ function css(c: Cores, f: Forma): string {
   const b = f.borda;
   /** Aplica a escala do tom a um tamanho de título, em px ou vw. */
   const t = (n: number) => Math.round(n * f.escalaTitulo * 10) / 10;
+  /**
+   * Borda de cartão, moldura, faixa e quadro do topo dividido.
+   *
+   * No tratamento `refinado` ela sai tingida na cor da marca em vez de
+   * cinza neutro — é a borda dourada do institucional de advocacia. O
+   * cabeçalho e os divisores de seção continuam com `c.borda` puro: só o
+   * que emoldura conteúdo ganha o tom da marca, não o cromo da página.
+   */
+  const bordaViva = f.refinado ? `${c.marca}38` : c.borda;
   return [
     "*,*::before,*::after{box-sizing:border-box}",
     "html{scroll-behavior:smooth}",
@@ -63,14 +72,52 @@ function css(c: Cores, f: Forma): string {
     `.alt::before{content:"";position:absolute;inset:0 0 auto;height:180px;background:linear-gradient(180deg,${c.marca}12,transparent);pointer-events:none}`,
     ".alt > *{position:relative}",
     `.eyebrow{font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:${c.marca};font-weight:600;margin:0 0 14px}`,
+    /* traço dourado antes do rótulo: assinatura do tratamento refinado */
+    f.refinado
+      ? `.eyebrow::before{content:"";display:inline-block;width:26px;height:1px;background:${c.marca};margin-right:10px;vertical-align:middle}`
+      : "",
     `.titulo-sec{font-size:clamp(${t(28)}px,${t(4.2)}vw,${t(44)}px);max-width:18ch${f.caixaAlta ? ";text-transform:uppercase;letter-spacing:-.01em" : ""}}`,
     `.linha{height:1px;background:${c.borda};border:0;margin:0}`,
 
-    `header{position:sticky;top:0;z-index:20;background:${c.fundo}f2;backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid ${c.borda}}`,
-    "header .env{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:70px}",
+    /* introdução de seção centralizada com divisor dourado embaixo — só
+       nas seções de coluna única (serviços, perguntas, como funciona). As
+       de duas colunas (sobre, contato) ficam à esquerda, como no site de
+       referência. */
+    f.refinado
+      ? `.intro-centro{text-align:center;max-width:620px;margin:0 auto}`
+      : "",
+    f.refinado
+      ? `.intro-centro .eyebrow::before{display:none}`
+      : "",
+    f.refinado
+      ? `.intro-centro .titulo-sec{margin:0 auto;max-width:24ch}`
+      : "",
+    f.refinado
+      ? `.divisor-centro{width:64px;height:2px;background:${c.marca};margin:22px auto 0}`
+      : "",
+
+    `header{position:sticky;top:0;z-index:20;background:${c.fundo}f2;backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid ${c.borda};transition:box-shadow .25s ease}`,
+    "header .env{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:70px;transition:min-height .25s ease}",
+    /* cabeçalho que encolhe ao rolar — só no tratamento refinado, ativado
+       pelo `SCRIPT_ENCOLHE` lá embaixo. Sem JS (ou se ele falhar) o
+       cabeçalho fica no tamanho normal, que já funciona sozinho. */
+    f.refinado
+      ? `header.encolhido .env{min-height:52px}`
+      : "",
+    f.refinado
+      ? `header.encolhido{box-shadow:0 10px 30px -20px rgba(0,0,0,.6)}`
+      : "",
     /* `nowrap`: nome comprido virava duas linhas e empurrava o header para
        70px de altura logo na primeira dobra. */
-    `.marca{font-family:${c.fonteTitulo};font-weight:${c.pesoTitulo};font-size:18px;letter-spacing:-.02em;text-decoration:none;white-space:nowrap}`,
+    `.marca{font-family:${c.fonteTitulo};font-weight:${c.pesoTitulo};font-size:18px;letter-spacing:-.02em;text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:10px}`,
+    /* selo em losango com a inicial do negócio, ao lado do nome — só no
+       tratamento refinado. Gira de volta por dentro para a letra ficar reta. */
+    f.refinado
+      ? `.marca-selo{flex:none;width:28px;height:28px;border:1.5px solid ${c.marca};display:grid;place-items:center;transform:rotate(45deg)}`
+      : "",
+    f.refinado
+      ? `.marca-selo span{display:block;transform:rotate(-45deg);font-family:${c.fonteTitulo};font-weight:${c.pesoTitulo};font-size:12.5px;color:${c.marca}}`
+      : "",
     /* Menu de ancoras: some no celular, onde so atrapalharia o botao.
        O corte e 1024 e nao 860 porque entre os dois o menu cabia mas
        espremido — "Como funciona" quebrava no meio, ao lado de um nome de
@@ -81,12 +128,22 @@ function css(c: Cores, f: Forma): string {
     "@media(min-width:1024px){.menu{display:flex}}",
     `.menu a{text-decoration:none;font-size:14.5px;font-weight:500;color:${c.suave};transition:color .2s}`,
     `.menu a:hover{color:${c.texto}}`,
+    /* menu em caixa alta rastreada: a leitura institucional do tratamento
+       refinado, igual à navegação de um site de escritório sério. */
+    f.refinado
+      ? ".menu.refinado a{text-transform:uppercase;font-size:12px;font-weight:700;letter-spacing:.12em}"
+      : "",
 
     `.btn{display:inline-block;background:${c.marca};color:${c.marcaTexto};text-decoration:none;font-weight:600;padding:14px 26px;border-radius:${r}px;font-size:15px;white-space:nowrap;box-shadow:0 8px 20px -10px ${c.marca};transition:transform .18s ease,box-shadow .18s ease}`,
     `.btn:hover{transform:translateY(-2px);box-shadow:0 14px 28px -12px ${c.marca}}`,
     `.btn.vazado{background:transparent;color:${c.texto};border:1px solid ${c.borda};font-weight:500;box-shadow:none}`,
     `.btn.vazado:hover{box-shadow:none;border-color:${c.marca}}`,
     `.btn.claro{background:#fff;color:#111;box-shadow:0 8px 20px -10px rgba(0,0,0,.5)}`,
+    /* CTA do topo no tratamento refinado: contornado, preenche só no hover.
+       Sóbrio demais para vir preenchido de cara — é o botão que abre a
+       página, não o que fecha venda. */
+    `.btn.contorno{background:transparent;color:${c.marca};border:1.5px solid ${c.marca};box-shadow:none}`,
+    `.btn.contorno:hover{background:${c.marca};color:${c.marcaTexto};transform:translateY(-2px);box-shadow:0 14px 28px -12px ${c.marca}}`,
 
     /* ---------- topo ---------- */
     ".hero{position:relative;isolation:isolate;overflow:hidden}",
@@ -111,7 +168,22 @@ function css(c: Cores, f: Forma): string {
     ".hero.dividido .env{display:grid;gap:clamp(32px,5vw,56px);grid-template-columns:1fr;align-items:center;padding-top:clamp(56px,9vw,96px);padding-bottom:clamp(56px,9vw,96px)}",
     "@media(min-width:920px){.hero.dividido .env{grid-template-columns:1.05fr .95fr}}",
     ".hero.dividido h1{max-width:none}",
-    `.hero.dividido .lado{border-radius:${rc}px;overflow:hidden;border:${b}px solid ${c.borda};box-shadow:${f.sombra}}`,
+    `.hero.dividido .lado{position:relative;border-radius:${rc}px;overflow:hidden;border:${b}px solid ${bordaViva};box-shadow:${f.sombra}}`,
+    /* cartão flutuante com a reputação real do Google sobre a foto do
+       topo — o mesmo lugar do selo de confiança do site de referência,
+       mas com o único número que não é chute (ver `blocoMapa` acima). */
+    f.refinado
+      ? `.flutuante{position:absolute;left:20px;bottom:-20px;max-width:220px;padding:22px 24px;background:${c.fundo}f2;backdrop-filter:blur(14px);border:${b}px solid ${c.marca}45;border-radius:${rc}px;box-shadow:${f.sombra};z-index:2}`
+      : "",
+    f.refinado
+      ? `.flutuante-nota{font-family:${c.fonteTitulo};font-weight:${c.pesoTitulo};font-size:38px;color:${c.marca};line-height:1;margin-bottom:8px}`
+      : "",
+    f.refinado
+      ? `.flutuante-txt{font-size:12px;line-height:1.5;color:${c.suave}}`
+      : "",
+    f.refinado
+      ? "@media(max-width:640px){.flutuante{position:static;margin-top:16px;max-width:none}}"
+      : "",
     ".hero.dividido .lado img{width:100%;height:clamp(280px,40vw,460px);object-fit:cover}",
 
     /* layout centrado: sem foto atras do texto; ela entra logo abaixo */
@@ -119,7 +191,7 @@ function css(c: Cores, f: Forma): string {
     ".hero.centrado h1{max-width:20ch;margin-left:auto;margin-right:auto}",
     ".hero.centrado .sub{margin-left:auto;margin-right:auto}",
     ".hero.centrado .acoes{justify-content:center}",
-    `.faixa{width:min(1140px,90vw);margin:0 auto clamp(56px,9vw,104px);border-radius:${rc}px;overflow:hidden;border:${b}px solid ${c.borda};box-shadow:${f.sombra}}`,
+    `.faixa{width:min(1140px,90vw);margin:0 auto clamp(56px,9vw,104px);border-radius:${rc}px;overflow:hidden;border:${b}px solid ${bordaViva};box-shadow:${f.sombra}}`,
     ".faixa img{width:100%;height:clamp(240px,34vw,420px);object-fit:cover}",
     /* Sem foto o topo era um gradiente diagonal chapado. Agora leva dois
        focos de luz da cor da marca, que dão profundidade sem custar
@@ -140,14 +212,14 @@ function css(c: Cores, f: Forma): string {
     ".sobre{display:grid;gap:clamp(30px,5vw,64px);grid-template-columns:1fr;align-items:center}",
     "@media(min-width:900px){.sobre{grid-template-columns:1.05fr .95fr}}",
     `.sobre .corpo{font-size:17px;color:${c.suave}}`,
-    `.moldura{border-radius:${rc}px;overflow:hidden;border:${b}px solid ${c.borda};box-shadow:${f.sombra}}`,
+    `.moldura{border-radius:${rc}px;overflow:hidden;border:${b}px solid ${bordaViva};box-shadow:${f.sombra}}`,
     ".moldura img{width:100%;height:clamp(260px,36vw,400px);object-fit:cover}",
 
     /* ---------- servicos ---------- */
     ".grade{display:grid;gap:18px;grid-template-columns:1fr}",
     "@media(min-width:640px){.grade{grid-template-columns:repeat(2,1fr)}}",
     "@media(min-width:980px){.grade{grid-template-columns:repeat(3,1fr)}}",
-    `.card{background:${c.fundo};border:${b}px solid ${c.borda};border-radius:${rc}px;padding:30px 28px;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}`,
+    `.card{background:${c.fundo};border:${b}px solid ${bordaViva};border-radius:${rc}px;padding:30px 28px;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}`,
     `.card:hover{transform:translateY(-3px);border-color:${c.marca}66;box-shadow:0 22px 44px -26px ${c.marca}55}`,
     ".card h3{font-size:19px;margin-bottom:.35em}",
     `.card p{color:${c.suave};font-size:15px;margin:0}`,
@@ -179,7 +251,7 @@ function css(c: Cores, f: Forma): string {
     /* ---------- galeria ---------- */
     ".galeria{display:grid;gap:14px;grid-template-columns:1fr}",
     "@media(min-width:700px){.galeria{grid-template-columns:repeat(3,1fr)}}",
-    `.galeria figure{margin:0;border-radius:${rc}px;overflow:hidden;border:${b}px solid ${c.borda}}`,
+    `.galeria figure{margin:0;border-radius:${rc}px;overflow:hidden;border:${b}px solid ${bordaViva}}`,
     ".galeria img{width:100%;height:clamp(180px,22vw,250px);object-fit:cover}",
 
     /* ---------- diferenciais ----------
@@ -188,7 +260,7 @@ function css(c: Cores, f: Forma): string {
        da marca, que e o que da peso a uma linha de texto curta. */
     ".dif{display:grid;gap:16px;grid-template-columns:1fr;list-style:none;padding:0;margin:0}",
     "@media(min-width:760px){.dif{grid-template-columns:repeat(3,1fr)}}",
-    `.dif li{display:flex;gap:16px;align-items:center;font-weight:600;font-size:16.5px;background:${c.fundo};border:${b}px solid ${c.borda};border-radius:${rc}px;padding:22px 24px;transition:border-color .2s ease,transform .2s ease}`,
+    `.dif li{display:flex;gap:16px;align-items:center;font-weight:600;font-size:16.5px;background:${c.fundo};border:${b}px solid ${bordaViva};border-radius:${rc}px;padding:22px 24px;transition:border-color .2s ease,transform .2s ease}`,
     `.dif li:hover{transform:translateY(-2px);border-color:${c.marca}66}`,
     `.faixa-dif{padding:clamp(30px,4vw,46px) 0;border-top:1px solid ${c.borda};border-bottom:1px solid ${c.borda}}`,
     ".faixa-dif::before{display:none}",
@@ -201,7 +273,7 @@ function css(c: Cores, f: Forma): string {
     `.cta p{color:${c.suave};max-width:46ch;margin:0 auto 30px;font-size:17px}`,
     ".contato{display:grid;gap:14px;grid-template-columns:1fr;margin-top:38px;text-align:left}",
     "@media(min-width:700px){.contato{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}}",
-    `.contato a{display:block;text-decoration:none;padding:18px 20px;border:${b}px solid ${c.borda};border-radius:${r}px;background:${c.fundo};transition:border-color .2s ease,transform .2s ease}`,
+    `.contato a{display:block;text-decoration:none;padding:18px 20px;border:${b}px solid ${bordaViva};border-radius:${r}px;background:${c.fundo};transition:border-color .2s ease,transform .2s ease}`,
     `.contato a:hover{border-color:${c.marca};transform:translateY(-2px)}`,
     `.contato .rot{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:${c.suave};margin-bottom:6px;font-weight:700}`,
     ".contato .val{font-weight:600;font-size:15px;word-break:break-word}",
@@ -279,6 +351,23 @@ const SCRIPT_ANIMACAO = `<script>
 })();
 </script>`;
 
+/**
+ * Cabeçalho que encolhe ao rolar — só entra na página quando `f.refinado`.
+ * Sem script o cabeçalho fica no tamanho normal, que já é o suficiente.
+ */
+const SCRIPT_ENCOLHE = `<script>
+(function(){
+  var h=document.querySelector('header');
+  if(!h)return;
+  function ajustar(){
+    if(window.scrollY>36)h.classList.add('encolhido');
+    else h.classList.remove('encolhido');
+  }
+  addEventListener('scroll',ajustar,{passive:true});
+  ajustar();
+})();
+</script>`;
+
 const ESTRELA =
   '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="m12 17.27 5.18 3.13-1.37-5.89 4.57-3.96-6.02-.51L12 4.5 9.64 10.04l-6.02.51 4.57 3.96-1.37 5.89z"/></svg>';
 
@@ -306,6 +395,34 @@ function selo(
   <strong>${nota}</strong>
   <span class="selo-txt">${google.avaliacoes} avaliações no Google</span>
 </div>`;
+}
+
+/**
+ * Cartão flutuante com a nota do Google sobre a foto do topo dividido.
+ *
+ * É o mesmo lugar que a referência usava para um número inventado
+ * ("98%, segundo a Forbes"). Aqui é o único número da página que não é
+ * chute — mesma regra do `selo()` acima, só que em formato de cartão em
+ * vez de pastilha, porque é o que cabe sobre uma foto grande.
+ */
+function flutuanteGoogle(google: { nota: number; avaliacoes: number }): string {
+  const nota = google.nota.toFixed(1).replace(".", ",");
+  return `<div class="flutuante">
+  <div class="flutuante-nota">${nota}</div>
+  <div class="flutuante-txt">${google.avaliacoes} avaliações reais no Google</div>
+</div>`;
+}
+
+/**
+ * Rótulo + título de seção, centralizado com divisor embaixo quando o tom
+ * é refinado — só faz sentido em seção de coluna única (serviços,
+ * perguntas, como funciona). Sobre e contato são de duas colunas e ficam
+ * à esquerda, como no site de referência.
+ */
+function introSecao(rotulo: string, titulo: string, f: Forma): string {
+  const corpo = `<p class="eyebrow">${esc(rotulo)}</p><h2 class="titulo-sec">${esc(titulo)}</h2>`;
+  if (!f.refinado) return corpo;
+  return `<div class="intro-centro">${corpo}<div class="divisor-centro"></div></div>`;
 }
 
 const CHECK =
@@ -515,8 +632,7 @@ export function renderizarSite(
 
   const passos = conteudo.passos.length
     ? `<section class="sec" id="como"><div class="env rev">
-  <p class="eyebrow">Como funciona</p>
-  <h2 class="titulo-sec">${esc(conteudo.passos_titulo)}</h2>
+  ${introSecao("Como funciona", conteudo.passos_titulo, f)}
   <div class="passos">${conteudo.passos
     .map(
       (p, i) =>
@@ -530,8 +646,7 @@ export function renderizarSite(
   // funcionando se o script da animação não rodar.
   const faq = conteudo.faq.length
     ? `<section class="sec" id="perguntas"><div class="env rev">
-  <p class="eyebrow">Perguntas frequentes</p>
-  <h2 class="titulo-sec">Antes de você perguntar</h2>
+  ${introSecao("Perguntas frequentes", "Antes de você perguntar", f)}
   <div class="faq">${conteudo.faq
     .map(
       (f) =>
@@ -551,8 +666,7 @@ export function renderizarSite(
 </div></section>`;
 
   const blocoServicos = `<section class="sec" id="servicos"><div class="env rev">
-  <p class="eyebrow">O que fazemos</p>
-  <h2 class="titulo-sec">${esc(conteudo.servicos_titulo)}</h2>
+  ${introSecao("O que fazemos", conteudo.servicos_titulo, f)}
   <div class="grade" style="margin-top:38px">${servicos}</div>
 </div></section>`;
 
@@ -615,8 +729,10 @@ export function renderizarSite(
     ? `<a class="btn" href="${zap}" target="_blank" rel="noopener">${esc(conteudo.cta_botao)}</a>`
     : "";
   // No topo com foto o botao vazado some sobre a imagem: vira branco solido.
+  // No tratamento refinado o CTA do topo vem contornado em vez de solido ou
+  // branco — o veu escuro por tras da foto ja garante contraste suficiente.
   const botaoHero = zap
-    ? `<a class="btn${heroImg ? " claro" : ""}" href="${zap}" target="_blank" rel="noopener">${esc(conteudo.cta_botao)}</a>`
+    ? `<a class="btn${f.refinado ? " contorno" : heroImg ? " claro" : ""}" href="${zap}" target="_blank" rel="noopener">${esc(conteudo.cta_botao)}</a>`
     : "";
 
   const titulo = `${esc(conteudo.titulo)}${briefing.regiao ? ` — ${esc(briefing.regiao)}` : ""}`;
@@ -644,9 +760,13 @@ export function renderizarSite(
   // numa faixa logo abaixo do texto.
   let topo: string;
   if (conteudo.layout === "dividido" && imagens[0]) {
+    // O cartão flutuante só entra com nota real do Google: sem prova
+    // social de verdade, não inventa um número no lugar dele.
+    const flutuante =
+      f.refinado && briefing.google ? flutuanteGoogle(briefing.google) : "";
     topo = `<section class="hero dividido liso"><div class="env">
   <div>${textoTopo}</div>
-  <div class="lado"><img src="${heroImg}" alt="${esc(imagens[0].alt)}" style="background:${esc(imagens[0].cor)}"></div>
+  <div class="lado"><img src="${heroImg}" alt="${esc(imagens[0].alt)}" style="background:${esc(imagens[0].cor)}">${flutuante}</div>
 </div></section>`;
   } else if (conteudo.layout === "centrado") {
     topo = `<section class="hero centrado liso"><div class="env">${textoTopo}</div></section>
@@ -681,8 +801,12 @@ ${heroImg ? `<link rel="preconnect" href="https://images.pexels.com">` : ""}
 <span id="topo"></span>
 ${assinatura ? `<div class="fita">${esc(assinatura)}</div>` : ""}
 <header><div class="env">
-  <a class="marca" href="#topo">${esc(conteudo.titulo)}</a>
-  <nav class="menu">
+  <a class="marca" href="#topo">${
+    f.refinado
+      ? `<span class="marca-selo"><span>${esc((conteudo.titulo.trim()[0] ?? "•").toUpperCase())}</span></span>`
+      : ""
+  }${esc(conteudo.titulo)}</a>
+  <nav class="menu${f.refinado ? " refinado" : ""}">
     <a href="#sobre">Sobre</a>
     <a href="#servicos">Serviços</a>
     ${passos ? `<a href="#como">Como funciona</a>` : ""}
@@ -711,6 +835,7 @@ ${miolo}
 </div></footer>
 ${zap ? `<a class="zap" href="${zap}" target="_blank" rel="noopener" aria-label="Falar no WhatsApp">${ZAP}</a>` : ""}
 ${SCRIPT_ANIMACAO}
+${f.refinado ? SCRIPT_ENCOLHE : ""}
 </body>
 </html>`;
 }
