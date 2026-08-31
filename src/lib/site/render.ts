@@ -55,6 +55,16 @@ function css(c: Cores, f: Forma): string {
    * que emoldura conteúdo ganha o tom da marca, não o cromo da página.
    */
   const bordaViva = f.refinado ? `${c.marca}38` : c.borda;
+  /**
+   * Fundo "vidro" de cartão, diferencial e contato — só no refinado.
+   *
+   * Em vez da cor chapada da página, o cartão sai um tom acima (superfície)
+   * com blur por trás, como o `.flutuante` do topo dividido já fazia. É o
+   * mesmo tratamento repetido em vez de inventado: dá o ar institucional do
+   * site de referência sem depender de imagem atrás para o blur ter efeito.
+   */
+  const fundoCartao = f.refinado ? `${c.superficie}cc` : c.fundo;
+  const filtroCartao = f.refinado ? "backdrop-filter:blur(14px);" : "";
   return [
     "*,*::before,*::after{box-sizing:border-box}",
     "html{scroll-behavior:smooth}",
@@ -149,6 +159,11 @@ function css(c: Cores, f: Forma): string {
     ".hero{position:relative;isolation:isolate;overflow:hidden}",
     ".hero .env{position:relative;z-index:2;padding:clamp(80px,14vw,168px) 0 clamp(64px,11vw,132px)}",
     `.hero h1{font-size:clamp(${t(36)}px,${t(6.6)}vw,${t(64)}px);max-width:15ch}`,
+    /* última palavra da chamada em itálico na cor da marca — a assinatura
+       do institucional de referência ("Legal Excellence" em itálico
+       dourado). Só no refinado: nos outros tons a chamada é sempre uma
+       cor só, sem quebrar o peso do título. */
+    f.refinado ? `.acento{font-style:italic;color:${c.marca}}` : "",
     ".hero .sub{font-size:clamp(17px,2.2vw,21px);max-width:50ch;margin-bottom:34px;opacity:.92}",
     ".acoes{display:flex;flex-wrap:wrap;gap:12px}",
 
@@ -185,6 +200,12 @@ function css(c: Cores, f: Forma): string {
       ? "@media(max-width:640px){.flutuante{position:static;margin-top:16px;max-width:none}}"
       : "",
     ".hero.dividido .lado img{width:100%;height:clamp(280px,40vw,460px);object-fit:cover}",
+    /* foto do topo em preto-e-branco sutil no refinado — o mesmo tratamento
+       do institucional de referência, que nunca mostra a foto em cor plena
+       antes do hover. Aqui não há hover no topo, então fica sempre discreta. */
+    f.refinado
+      ? ".hero.dividido .lado img{filter:grayscale(45%) contrast(1.05)}"
+      : "",
 
     /* layout centrado: sem foto atras do texto; ela entra logo abaixo */
     ".hero.centrado .env{text-align:center;padding-bottom:clamp(40px,6vw,64px)}",
@@ -193,6 +214,10 @@ function css(c: Cores, f: Forma): string {
     ".hero.centrado .acoes{justify-content:center}",
     `.faixa{width:min(1140px,90vw);margin:0 auto clamp(56px,9vw,104px);border-radius:${rc}px;overflow:hidden;border:${b}px solid ${bordaViva};box-shadow:${f.sombra}}`,
     ".faixa img{width:100%;height:clamp(240px,34vw,420px);object-fit:cover}",
+    f.refinado
+      ? ".faixa img{filter:grayscale(65%);transition:filter .5s ease}"
+      : "",
+    f.refinado ? ".faixa:hover img{filter:grayscale(0)}" : "",
     /* Sem foto o topo era um gradiente diagonal chapado. Agora leva dois
        focos de luz da cor da marca, que dão profundidade sem custar
        imagem nenhuma. */
@@ -205,6 +230,7 @@ function css(c: Cores, f: Forma): string {
        chegar ilegivel no celular do cliente */
     ".hero.foto{color:#fff}",
     ".hero .fundo{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center}",
+    f.refinado ? ".hero .fundo{filter:grayscale(45%) contrast(1.05)}" : "",
     ".hero .veu{position:absolute;inset:0;z-index:1;background:linear-gradient(105deg,rgba(8,10,14,.86) 0%,rgba(8,10,14,.66) 46%,rgba(8,10,14,.34) 100%)}",
     ".hero.foto .eyebrow{color:#fff;opacity:.82}",
 
@@ -214,16 +240,29 @@ function css(c: Cores, f: Forma): string {
     `.sobre .corpo{font-size:17px;color:${c.suave}}`,
     `.moldura{border-radius:${rc}px;overflow:hidden;border:${b}px solid ${bordaViva};box-shadow:${f.sombra}}`,
     ".moldura img{width:100%;height:clamp(260px,36vw,400px);object-fit:cover}",
+    f.refinado
+      ? ".moldura img{filter:grayscale(65%);transition:filter .5s ease}"
+      : "",
+    f.refinado ? ".moldura:hover img{filter:grayscale(0)}" : "",
 
     /* ---------- servicos ---------- */
     ".grade{display:grid;gap:18px;grid-template-columns:1fr}",
     "@media(min-width:640px){.grade{grid-template-columns:repeat(2,1fr)}}",
     "@media(min-width:980px){.grade{grid-template-columns:repeat(3,1fr)}}",
-    `.card{background:${c.fundo};border:${b}px solid ${bordaViva};border-radius:${rc}px;padding:30px 28px;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}`,
+    `.card{background:${fundoCartao};${filtroCartao}border:${b}px solid ${bordaViva};border-radius:${rc}px;padding:30px 28px;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}`,
     `.card:hover{transform:translateY(-3px);border-color:${c.marca}66;box-shadow:0 22px 44px -26px ${c.marca}55}`,
     ".card h3{font-size:19px;margin-bottom:.35em}",
     `.card p{color:${c.suave};font-size:15px;margin:0}`,
     `.num{display:grid;place-items:center;width:38px;height:38px;border-radius:${Math.min(r,12)}px;background:${c.marca};color:${c.marcaTexto};font-weight:700;font-size:14px;margin-bottom:18px}`,
+    /* no refinado o selo nasce discreto (tingido, não sólido) e só vira a
+       cor cheia da marca quando o cartão ganha hover — o mesmo aceso que o
+       ícone de área de atuação do site de referência. */
+    f.refinado
+      ? `.card .num{background:${c.marca}17;color:${c.marca};transition:background .25s ease,color .25s ease}`
+      : "",
+    f.refinado
+      ? `.card:hover .num{background:${c.marca};color:${c.marcaTexto}}`
+      : "",
 
     /* ---------- como funciona ---------- */
     ".passos{display:grid;gap:clamp(26px,3.4vw,36px);grid-template-columns:1fr;margin-top:44px;counter-reset:passo}",
@@ -260,7 +299,7 @@ function css(c: Cores, f: Forma): string {
        da marca, que e o que da peso a uma linha de texto curta. */
     ".dif{display:grid;gap:16px;grid-template-columns:1fr;list-style:none;padding:0;margin:0}",
     "@media(min-width:760px){.dif{grid-template-columns:repeat(3,1fr)}}",
-    `.dif li{display:flex;gap:16px;align-items:center;font-weight:600;font-size:16.5px;background:${c.fundo};border:${b}px solid ${bordaViva};border-radius:${rc}px;padding:22px 24px;transition:border-color .2s ease,transform .2s ease}`,
+    `.dif li{display:flex;gap:16px;align-items:center;font-weight:600;font-size:16.5px;background:${fundoCartao};${filtroCartao}border:${b}px solid ${bordaViva};border-radius:${rc}px;padding:22px 24px;transition:border-color .2s ease,transform .2s ease}`,
     `.dif li:hover{transform:translateY(-2px);border-color:${c.marca}66}`,
     `.faixa-dif{padding:clamp(30px,4vw,46px) 0;border-top:1px solid ${c.borda};border-bottom:1px solid ${c.borda}}`,
     ".faixa-dif::before{display:none}",
@@ -273,7 +312,7 @@ function css(c: Cores, f: Forma): string {
     `.cta p{color:${c.suave};max-width:46ch;margin:0 auto 30px;font-size:17px}`,
     ".contato{display:grid;gap:14px;grid-template-columns:1fr;margin-top:38px;text-align:left}",
     "@media(min-width:700px){.contato{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}}",
-    `.contato a{display:block;text-decoration:none;padding:18px 20px;border:${b}px solid ${bordaViva};border-radius:${r}px;background:${c.fundo};transition:border-color .2s ease,transform .2s ease}`,
+    `.contato a{display:block;text-decoration:none;padding:18px 20px;border:${b}px solid ${bordaViva};border-radius:${r}px;background:${fundoCartao};${filtroCartao}transition:border-color .2s ease,transform .2s ease}`,
     `.contato a:hover{border-color:${c.marca};transform:translateY(-2px)}`,
     `.contato .rot{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:${c.suave};margin-bottom:6px;font-weight:700}`,
     ".contato .val{font-weight:600;font-size:15px;word-break:break-word}",
@@ -424,6 +463,21 @@ function introSecao(rotulo: string, titulo: string, f: Forma): string {
   if (!f.refinado) return corpo;
   return `<div class="intro-centro">${corpo}<div class="divisor-centro"></div></div>`;
 }
+
+/**
+ * Marca a última palavra da chamada em `<em class="acento">` — só chamada
+ * quando `f.refinado`. Frase de uma palavra só sai inteira sem marcação:
+ * itálico na palavra inteira do H1 pesaria demais.
+ */
+function comAcento(texto: string): string {
+  const partes = texto.trim().split(/\s+/);
+  if (partes.length < 2) return esc(texto);
+  const ultima = partes.pop()!;
+  return `${esc(partes.join(" "))} <em class="acento">${esc(ultima)}</em>`;
+}
+
+const SETA =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:8px;vertical-align:-2px"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 
 const CHECK =
   '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -744,7 +798,7 @@ export function renderizarSite(
     : "";
   const textoTopo = `
     ${eyebrow}
-    <h1>${esc(conteudo.chamada)}</h1>
+    <h1>${f.refinado ? comAcento(conteudo.chamada) : esc(conteudo.chamada)}</h1>
     <p class="sub">${esc(conteudo.subchamada)}</p>
     <div class="acoes">
       ${botaoHero}
@@ -752,7 +806,7 @@ export function renderizarSite(
         conteudo.layout === "classico" && heroImg
           ? ' style="color:#fff;border-color:rgba(255,255,255,.45)"'
           : ""
-      }>Ver serviços</a>
+      }>Ver serviços${f.refinado ? SETA : ""}</a>
     </div>
     ${provaSocial}`;
 
