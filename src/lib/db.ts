@@ -1319,3 +1319,46 @@ export async function salvarWebhookDb(
     );
   checar(error);
 }
+
+const FUSO_BR = "America/Sao_Paulo";
+
+function hojeEmBrasilia(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: FUSO_BR });
+}
+
+export async function contarDisparosHoje(userId: string): Promise<number> {
+  const hoje = hojeEmBrasilia();
+
+  if (DEMO) {
+    const leadsDaPessoa = new Set(
+      estado()
+        .leads.filter((lead) => lead.responsavel_id === userId)
+        .map((lead) => lead.id)
+    );
+
+    return estado().interacoes.filter(
+      (interacao) =>
+        interacao.tipo === "whatsapp" &&
+        interacao.direcao !== "entrada" &&
+        interacao.criado_em.slice(0, 10) === hoje &&
+        leadsDaPessoa.has(interacao.lead_id)
+    ).length;
+  }
+
+  // O Brasil não tem horário de verão desde 2019, então -03:00 mantém o
+  // começo e o fim do dia comercial estáveis mesmo com o servidor em UTC.
+  const inicio = new Date(`${hoje}T00:00:00-03:00`);
+  const fim = new Date(inicio);
+  fim.setDate(fim.getDate() + 1);
+
+  const { count, error } = await createClient()
+    .from(T.interacoes)
+    .select("lead:lh_leads!inner(responsavel_id)", { count: "exact", head: true })
+    .eq("tipo", "whatsapp")
+    .neq("direcao", "entrada")
+    .eq("lead.responsavel_id", userId)
+    .gte("criado_em", inicio.toISOString())
+    .lt("criado_em", fim.toISOString());
+  checar(error);
+  return count ?? 0;
+}

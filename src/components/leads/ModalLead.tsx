@@ -33,7 +33,7 @@ import {
   excluirLead,
   registrarDisparo,
 } from "@/app/actions/leads";
-import { dispararPeloN8n } from "@/app/actions/disparo";
+import { consultarFilaHoje, dispararPeloN8n } from "@/app/actions/disparo";
 import { atribuirLead } from "@/app/actions/equipe";
 import { listarDemos } from "@/app/actions/site";
 import { urlDemo } from "@/lib/site/url";
@@ -51,6 +51,14 @@ import { EditorSinais, TagsSinais } from "./Sinais";
 import Timeline from "./Timeline";
 
 type Aba = "detalhes" | "historico" | "whatsapp" | "instagram" | "demo";
+
+type FilaHoje = {
+  enviados: number;
+  teto: number;
+  dentroDaJanela: boolean;
+  janelaInicio: string;
+  janelaFim: string;
+};
 
 type Props = {
   lead: Lead;
@@ -127,6 +135,7 @@ export default function ModalLead({
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
   const [mensagem, setMensagem] = useState("");
   const [copiado, setCopiado] = useState(false);
+  const [filaHoje, setFilaHoje] = useState<FilaHoje | null>(null);
   // muda para sortear outra variacao do mesmo template
   const [semente, setSemente] = useState(0);
 
@@ -169,6 +178,18 @@ export default function ModalLead({
 
   const numero = telefoneWhatsapp(lead.telefone);
   const link = numero ? linkWhatsapp(lead.telefone, mensagem) : "";
+
+  useEffect(() => {
+    if (aba !== "whatsapp" || !n8nAtivo) return;
+
+    let vivo = true;
+    consultarFilaHoje().then((r) => {
+      if (vivo && r.ok) setFilaHoje(r.data ?? null);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [aba, n8nAtivo]);
 
   function salvar(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -261,6 +282,9 @@ export default function ModalLead({
         return;
       }
       if (r.data) aoAtualizar(r.data);
+      setFilaHoje((fila) =>
+        fila ? { ...fila, enviados: fila.enviados + 1 } : null
+      );
       aoMudarInteracoes(lead.id, [
         {
           id: `tmp-${Date.now()}`,
@@ -336,6 +360,15 @@ export default function ModalLead({
   }
 
   const meta = STATUS_META[lead.status];
+  const restantesHoje = filaHoje
+    ? Math.max(filaHoje.teto - filaHoje.enviados, 0)
+    : null;
+  const bloqueioDaFila =
+    filaHoje && !filaHoje.dentroDaJanela
+      ? `Disparo permitido somente das ${filaHoje.janelaInicio} às ${filaHoje.janelaFim}.`
+      : filaHoje && filaHoje.enviados >= filaHoje.teto
+        ? `Você já mandou ${filaHoje.enviados} de ${filaHoje.teto} mensagens hoje. Volta amanhã.`
+        : null;
 
   return (
     <Modal
@@ -826,11 +859,21 @@ export default function ModalLead({
                   <button
                     type="button"
                     onClick={dispararAutomatico}
-                    disabled={pendente || !mensagem}
+                    disabled={pendente || !mensagem || !!bloqueioDaFila}
                     className="btn-ghost w-full"
                   >
                     {pendente ? "Enfileirando..." : "⚡ Disparar pelo n8n"}
                   </button>
+                  {filaHoje && (
+                    <p className="text-center text-xs text-slate-400">
+                      Restam {restantesHoje} de {filaHoje.teto} mensagens hoje.
+                    </p>
+                  )}
+                  {bloqueioDaFila && (
+                    <p className="text-center text-xs text-amber-300">
+                      {bloqueioDaFila}
+                    </p>
+                  )}
                   <p className="text-center text-[11px] leading-relaxed text-slate-500">
                     Vai para a fila do n8n, que envia pela Evolution no ritmo
                     dele. Entrega, leitura e resposta voltam para o histórico.

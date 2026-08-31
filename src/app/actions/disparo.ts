@@ -7,6 +7,7 @@ import {
   criarInteracaoDb,
   listarInteracoes,
   listarNaoPerturbe,
+  contarDisparosHoje,
   obterConexao,
   usuarioAtual,
 } from "@/lib/db";
@@ -15,6 +16,19 @@ import { mensagemDeErro } from "@/lib/erros";
 import { enviarParaN8n } from "@/lib/n8n";
 import { soDigitos, telefoneWhatsapp } from "@/lib/format";
 import type { ActionResult, Lead, LeadStatus } from "@/lib/types";
+
+const FUSO_BR = "America/Sao_Paulo";
+const TETO_DIARIO_PADRAO = 40;
+const JANELA_INICIO_PADRAO = "09:00";
+const JANELA_FIM_PADRAO = "20:00";
+
+function horaEmBrasilia(): string {
+  return new Date().toLocaleTimeString("pt-BR", {
+    timeZone: FUSO_BR,
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 /**
  * Manda o disparo para a fila do n8n.
@@ -53,6 +67,26 @@ export async function dispararPeloN8n(
     const userId = await usuarioAtual();
     if (!userId) return { ok: false, erro: "Sessão expirada. Entre de novo." };
     const conexao = await obterConexao(userId);
+
+    const horaAtual = horaEmBrasilia();
+    const janelaInicio = (conexao?.janela_inicio ?? JANELA_INICIO_PADRAO).slice(0, 5);
+    const janelaFim = (conexao?.janela_fim ?? JANELA_FIM_PADRAO).slice(0, 5);
+    const teto = conexao?.teto_diario ?? TETO_DIARIO_PADRAO;
+
+    if (horaAtual < janelaInicio || horaAtual > janelaFim) {
+      return {
+        ok: false,
+        erro: `Disparo permitido somente das ${janelaInicio} às ${janelaFim}.`,
+      };
+    }
+
+    const enviados = await contarDisparosHoje(userId);
+    if (enviados >= teto) {
+      return {
+        ok: false,
+        erro: `Você já mandou ${enviados} de ${teto} mensagens hoje. Volta amanhã.`,
+      };
+    }
 
     const interacao = await criarInteracaoDb(lead.id, {
       tipo: "whatsapp",
@@ -107,6 +141,40 @@ export async function dispararPeloN8n(
     revalidatePath("/");
 
     return { ok: true, data: atualizado };
+  } catch (e) {
+    return { ok: false, erro: mensagemDeErro(e) };
+  }
+}
+
+export async function consultarFilaHoje(): Promise<
+  ActionResult<{
+    enviados: number;
+    teto: number;
+    dentroDaJanela: boolean;
+    janelaInicio: string;
+    janelaFim: string;
+  } | null>
+> {
+  try {
+    const userId = await usuarioAtual();
+    if (!userId) return { ok: false, erro: "Sessão expirada. Entre de novo." };
+
+    const conexao = await obterConexao(userId);
+    const janelaInicio = (conexao?.janela_inicio ?? JANELA_INICIO_PADRAO).slice(0, 5);
+    const janelaFim = (conexao?.janela_fim ?? JANELA_FIM_PADRAO).slice(0, 5);
+    const horaAtual = horaEmBrasilia();
+
+    return {
+      ok: true,
+      data: {
+        enviados: await contarDisparosHoje(userId),
+        teto: conexao?.teto_diario ?? TETO_DIARIO_PADRAO,
+        dentroDaJanela:
+          horaAtual >= janelaInicio && horaAtual <= janelaFim,
+        janelaInicio,
+        janelaFim,
+      },
+    };
   } catch (e) {
     return { ok: false, erro: mensagemDeErro(e) };
   }
