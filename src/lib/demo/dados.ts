@@ -23,6 +23,11 @@ const SEM_INSTAGRAM = {
   google_nota: null,
   google_avaliacoes: null,
   responsavel_id: null,
+  lat: null,
+  lng: null,
+  site_conteudo: null,
+  site_em: null,
+  site_erro: null,
 } as const;
 
 /**

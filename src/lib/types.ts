@@ -68,6 +68,13 @@ export type Lead = {
    * lead ja nasce com dono e ninguem precisa distribuir na mao.
    */
   responsavel_id: string | null;
+  /** coordenadas para o mapa; nulas ate alguem geocodificar o endereco */
+  lat: number | null;
+  lng: number | null;
+  /** conteudo lido do site do lead, para alimentar demo e abordagem */
+  site_conteudo: Record<string, unknown> | null;
+  site_em: string | null;
+  site_erro: string | null;
   criado_em: string;
   atualizado_em: string;
 };
@@ -181,5 +188,10 @@ export type Conexao = {
   status: "open" | "connecting" | "close";
   /** o webhook do n8n desta pessoa; null cai no do ambiente */
   webhook_url: string | null;
+  /** quantos disparos por dia essa pessoa pode fazer; numero banido e o risco real */
+  teto_diario: number;
+  /** janela de horario em que o disparo pode sair, "HH:MM" */
+  janela_inicio: string;
+  janela_fim: string;
   atualizado_em: string;
 };

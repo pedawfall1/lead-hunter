@@ -129,7 +129,7 @@ export async function excluirProjetoDb(id: string): Promise<void> {
 /* --------------------------------- leads -------------------------------- */
 
 const COLUNAS_LEAD =
-  "id, projeto_id, nome, telefone, endereco, instagram, email, sinais, status, nota, proximo_contato, ig_dados, ig_run_id, ig_em, ig_erro, ig_bruto, place_id, google_nota, google_avaliacoes, responsavel_id, criado_em, atualizado_em";
+  "id, projeto_id, nome, telefone, endereco, instagram, email, sinais, status, nota, proximo_contato, ig_dados, ig_run_id, ig_em, ig_erro, ig_bruto, place_id, google_nota, google_avaliacoes, responsavel_id, lat, lng, site_conteudo, site_em, site_erro, criado_em, atualizado_em";
 
 export async function listarLeads(projetoId?: string): Promise<Lead[]> {
   if (DEMO) {
@@ -363,6 +363,11 @@ export const SEM_ENRIQUECIMENTO = {
   // Lead novo nasce sem dono no modo demo; em producao quem o importou
   // fica responsavel, por conta do default do banco.
   responsavel_id: null,
+  lat: null,
+  lng: null,
+  site_conteudo: null,
+  site_em: null,
+  site_erro: null,
 } as const;
 
 export async function inserirLeadsDb(
@@ -1232,7 +1237,9 @@ export async function obterConexao(userId: string): Promise<Conexao | null> {
 
   const { data, error } = await createClient()
     .from(T.conexoes)
-    .select("user_id, instancia, numero, status, webhook_url, atualizado_em")
+    .select(
+      "user_id, instancia, numero, status, webhook_url, teto_diario, janela_inicio, janela_fim, atualizado_em"
+    )
     .eq("user_id", userId)
     .maybeSingle();
   checar(error);
