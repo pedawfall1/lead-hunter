@@ -35,6 +35,7 @@ import {
 } from "@/app/actions/leads";
 import { consultarFilaHoje, dispararPeloN8n } from "@/app/actions/disparo";
 import { atribuirLead } from "@/app/actions/equipe";
+import { enviarParaArium } from "@/app/actions/arium";
 import { listarDemos } from "@/app/actions/site";
 import { urlDemo } from "@/lib/site/url";
 import type {
@@ -108,6 +109,8 @@ export default function ModalLead({
   const [pendente, iniciar] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
   const [salvo, setSalvo] = useState(false);
+  const [enviandoArium, setEnviandoArium] = useState(false);
+  const [enviadoArium, setEnviadoArium] = useState(false);
 
   // As demos moram aqui, e nao dentro da aba Demo, porque a aba WhatsApp
   // tambem precisa delas: e de onde sai a variavel {demo} da mensagem.
@@ -218,6 +221,22 @@ export default function ModalLead({
       aoExcluir(lead.id);
       aoFechar();
     });
+  }
+
+  async function enviarParaCrm() {
+    setEnviandoArium(true);
+    setErro(null);
+    try {
+      const r = await enviarParaArium(lead.id, lead.projeto_id);
+      if (!r.ok) {
+        setErro(r.erro);
+        return;
+      }
+      setEnviadoArium(true);
+      setTimeout(() => setEnviadoArium(false), 2500);
+    } finally {
+      setEnviandoArium(false);
+    }
   }
 
   function reagendar(dias: number | null) {
@@ -685,10 +704,29 @@ export default function ModalLead({
           </div>
 
           <div className="flex items-center justify-between gap-2 pt-1">
-            <button type="button" onClick={remover} className="btn-danger" disabled={pendente}>
-              <IconTrash className="h-4 w-4" />
-              Excluir
-            </button>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={remover} className="btn-danger" disabled={pendente}>
+                <IconTrash className="h-4 w-4" />
+                Excluir
+              </button>
+              <button
+                type="button"
+                onClick={enviarParaCrm}
+                className="btn-ghost"
+                disabled={enviandoArium}
+                title="Cria (ou reaproveita) este lead como contato no Arium CRM"
+              >
+                {enviadoArium ? (
+                  <>
+                    <IconCheck className="h-4 w-4" /> Enviado
+                  </>
+                ) : enviandoArium ? (
+                  "Enviando..."
+                ) : (
+                  "Enviar pro Arium"
+                )}
+              </button>
+            </div>
 
             <div className="flex items-center gap-2">
               {salvo && (
